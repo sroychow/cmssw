@@ -155,7 +155,7 @@ void HiggsTriLeptonCrossTriggerOfflineMonitor::bookHistograms(DQMStore::IBooker 
   bookME(ibooker,sfl1ptME_variableBinning_,histname,histtitle,met_variable_binning_);
   setMETitle(sfl1ptME_variableBinning_,"p_T [GeV]","events / [GeV]");
   
-  histname = "sflep1PtVsLS"; histtitle = "Laading"  + sfTag + " p_T vs LS";
+  histname = "sflep1PtVsLS"; histtitle = "Leading"  + sfTag + " p_T vs LS";
   bookME(ibooker,sfl1ptVsLS_,histname,histtitle,ls_binning_.nbins, ls_binning_.xmin, ls_binning_.xmax,met_binning_.xmin, met_binning_.xmax);
   setMETitle(sfl1ptVsLS_,"LS","p_T [GeV]");
   
@@ -315,8 +315,8 @@ void HiggsTriLeptonCrossTriggerOfflineMonitor::fillDescriptions(edm::Configurati
   desc.add<edm::InputTag>( "electrons",edm::InputTag("gedGsfElectrons") );
   desc.add<edm::InputTag>( "muons",    edm::InputTag("muons") );
   desc.add<edm::InputTag>( "vertices",    edm::InputTag("vertices") );
-  desc.add<std::string>("eleSelection", "pT > 7 && abs(eta) < 2.5");
-  desc.add<std::string>("muoSelection", "pT > 5 &&  abs(eta) < 2.4 && (isGlobalMuon || (isTrackerMuon && numberOfMatches>0)) && muonBestTrackType != 2 ");
+  desc.add<std::string>("eleSelection", "pt > 7 && abs(eta) < 2.5");
+  desc.add<std::string>("muoSelection", "pt > 5 &&  abs(eta) < 2.4 && (isGlobalMuon || (isTrackerMuon && numberOfMatches>0)) && muonBestTrackType != 2 ");
   desc.add<int>("nelectrons", 0);
   desc.add<int>("nmuons",     0);
   desc.add<int>("leptonPDG",     0);
