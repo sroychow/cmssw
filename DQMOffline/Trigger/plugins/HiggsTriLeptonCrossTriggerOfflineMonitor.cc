@@ -308,20 +308,20 @@ void HiggsTriLeptonCrossTriggerOfflineMonitor::analyze(edm::Event const& iEvent,
     sfL1_eta = muons[0].eta();
     sfL2_pt = muons[1].pt();
     sfL2_phi = muons[1].phi();
-    sfL2_phi = muons[1].eta();
+    sfL2_eta = muons[1].eta();
     cfL_pt = electrons[0].pt();
     cfL_phi = electrons[0].phi();
-    cfL_phi = electrons[0].eta();
+    cfL_eta = electrons[0].eta();
   } else if (lepPdg_ == 11) {
     sfL1_pt = electrons[0].pt();
     sfL1_phi = electrons[0].phi();
-    sfL1_phi = electrons[0].eta();
+    sfL1_eta = electrons[0].eta();
     sfL2_pt = electrons[1].pt();
     sfL2_phi = electrons[1].phi();
-    sfL2_phi = electrons[1].eta();
+    sfL2_eta = electrons[1].eta();
     cfL_pt = muons[0].pt();
     cfL_phi = muons[0].phi();
-    cfL_phi = muons[0].eta();
+    cfL_eta = muons[0].eta();
   }
 
   // filling histograms (denominator)  
@@ -430,7 +430,7 @@ void HiggsTriLeptonCrossTriggerOfflineMonitor::fillDescriptions(edm::Configurati
   histoPSet.add<edm::ParameterSetDescription>("lepPSet", lepPSet);
   histoPSet.add<edm::ParameterSetDescription>("phiPSet", phiPSet);
   histoPSet.add<edm::ParameterSetDescription>("etaPSet", etaPSet);
-  std::vector<double> bins = {0.,20.,40.,60.,80.,90.,100.,110.,120.,130.,140.,150.,160.,170.,180.,190.,200.,220.,240.,260.,280.,300.,350.,400.,450.,1000.};
+  std::vector<double> bins = {0.,10.,20.,30.,40.,50.,60.,70.,80.,90.,100.,110.,120.,130.,140.,150.,160.,170.,180.,190.,200.,220.,240.,260.,280.,300.,350.,400.,450.,1000.};
   histoPSet.add<std::vector<double> >("lepPtBinning", bins);
 
   edm::ParameterSetDescription lsPSet;
