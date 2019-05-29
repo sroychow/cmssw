@@ -18,6 +18,7 @@ namespace gen {
 
 	class WeightGroupInfo {
         public:
+	        WeightGroupInfo() {}
 	        WeightGroupInfo(std::string header): 
                 headerEntry_(header), name_(header), firstId_(0), lastId_(0) {}
             int getWeightVectorEntry(const std::string& wgtId, size_t weightEntry) {

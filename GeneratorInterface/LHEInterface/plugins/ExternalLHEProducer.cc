@@ -49,6 +49,7 @@ Implementation:
 
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEXMLStringProduct.h"
 
@@ -158,6 +159,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<LHEEventProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
+  produces<LHEWeightInfoProduct>();
 }
 
 
@@ -326,6 +328,22 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   unsigned int skip = 0;
   reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
+  std::cout << "Adding the Weight product!";
+  std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
+  gen::WeightGroupInfo scaleInfo(
+      "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
+  );
+  scaleInfo.setWeightType(gen::scaleWeights);
+
+  gen::WeightGroupInfo cenPdfInfo(
+      "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
+  );
+  cenPdfInfo.setWeightType(gen::pdfWeights);
+
+  weightInfoProduct->addWeightGroupInfo(scaleInfo);
+  weightInfoProduct->addWeightGroupInfo(cenPdfInfo);
+  run.put(std::move(weightInfoProduct));
+
   nextEvent();
   if (runInfoLast) {
     runInfo = runInfoLast;
@@ -343,12 +361,11 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
     // keep a copy around in case of merging
     runInfoProducts.push_back(new LHERunInfoProduct(*product));
     wasMerged = false;
-  
+
     run.put(std::move(product));
   
     runInfo.reset();
   }
-
 }
 
 // ------------ method called when ending the processing of a run  ------------
@@ -360,7 +377,7 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
     std::unique_ptr<LHERunInfoProduct> product(runInfoProducts.pop_front().release());
     run.put(std::move(product));
   }
-  
+ 
   nextEvent();
   if (partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure) << "Error in ExternalLHEProducer::endRunProduce().  "
@@ -373,7 +390,6 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
   if (unlink(outputFile_.c_str())) {
     throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_ << " (errno=" << errno << ", " << strerror(errno) << ").";
   }  
-
 }
 
 // ------------ Close all the open file descriptors ------------

@@ -2,6 +2,7 @@
 #include <vector>
 #include "GeneratorInterface/LHEInterface/plugins/LHEProvenanceHelper.h"
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
+#include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 
 #include "DataFormats/Provenance/interface/ProcessHistory.h"
 #include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
@@ -15,7 +16,8 @@
 #include "FWCore/Version/interface/GetReleaseVersion.h"
 
 namespace edm {
-  LHEProvenanceHelper::LHEProvenanceHelper(TypeID const& eventProductType, TypeID const& runProductType, ProductRegistry& productRegistry)
+  LHEProvenanceHelper::LHEProvenanceHelper(TypeID const& eventProductType, TypeID const& runProductType, 
+          TypeID const& weightProductType, ProductRegistry& productRegistry)
         : eventProductBranchDescription_(BranchDescription(
                                                   InEvent
                                                   , "source"
@@ -40,12 +42,25 @@ namespace edm {
                                                   , ParameterSetID()
                                                   , TypeWithDict(runProductType.typeInfo())
                                                   , false))
+        , weightProductBranchDescription_(BranchDescription(
+                                                  InRun
+                                                  , "source"
+                                                  , "LHEFile"
+                                                  // , "LHE"
+                                                  , "LHEWeightInfoProduct"
+                                                  , "LHEWeightInfoProduct"
+                                                  , ""
+                                                  , "LHESource"
+                                                  , ParameterSetID()
+                                                  , TypeWithDict(weightProductType.typeInfo())
+                                                  , false))
         , eventProductProvenance_(eventProductBranchDescription_.branchID())
         , commonProcessParameterSet_(fillCommonProcessParameterSet())
         , processParameterSet_() {
     
     // Add the products to the product registry  
     productRegistry.copyProduct(eventProductBranchDescription_);
+    productRegistry.copyProduct(weightProductBranchDescription_);
     productRegistry.copyProduct(runProductBranchDescription_);
   }
 

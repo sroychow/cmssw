@@ -13,25 +13,16 @@
 
 class LHEWeightInfoProduct {
     public:
-        LHEWeightInfoProduct() {
-            gen::WeightGroupInfo scaleInfo(
-                "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
-            );
-            //scaleInfo.isPDF = false;
-            //scaleInfo.pdfLabel = "";
-            //scaleInfo.pdfLHAID = "";
+        LHEWeightInfoProduct() {}
+	    LHEWeightInfoProduct(const LHEWeightInfoProduct& other) {weightGroupsInfo_ = other.weightGroupsInfo_;}
+	    LHEWeightInfoProduct(LHEWeightInfoProduct&& other) {weightGroupsInfo_ = std::move(other.weightGroupsInfo_);}
+        ~LHEWeightInfoProduct() {}
+        LHEWeightInfoProduct(std::vector<gen::WeightGroupInfo>& weightGroups) {
+            weightGroupsInfo_ = weightGroups;
+        }
+        LHEWeightInfoProduct &operator = (const LHEWeightInfoProduct &other) {weightGroupsInfo_ = other.weightGroupsInfo_; return * this; }
+        LHEWeightInfoProduct &operator = (LHEWeightInfoProduct &&other) {weightGroupsInfo_ = std::move(other.weightGroupsInfo_); return *this;}
 
-            gen::WeightGroupInfo cenPdfInfo(
-                "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
-            );
-
-            //cenPdfInfo.isPDF = true;
-            //cenPdfInfo.pdfLabel = "NNPDF31_nnlo_hessian_pdfas";
-            //cenPdfInfo.pdfLHAID = "3061000";
-
-            weightGroupsInfo_.push_back(scaleInfo);
-            weightGroupsInfo_.push_back(cenPdfInfo);
-        };
         std::vector<gen::WeightGroupInfo> getWeightGroupsInfo() { return weightGroupsInfo_; }
         void addWeightGroupInfo(gen::WeightGroupInfo info) {  
             weightGroupsInfo_.push_back(info); 

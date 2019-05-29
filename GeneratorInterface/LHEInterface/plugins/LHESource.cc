@@ -23,6 +23,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
@@ -36,7 +37,7 @@ LHESource::LHESource(const edm::ParameterSet &params,
                      const edm::InputSourceDescription &desc) :
   ProducerSourceFromFiles(params, desc, false),
   reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
-  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), productRegistryUpdate()),
+  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), edm::TypeID(typeid(LHEWeightInfoProduct)), productRegistryUpdate()),
   phid_()
 {
   nextEvent();
@@ -116,6 +117,7 @@ LHESource::readRun_(edm::RunPrincipal& runPrincipal) {
   runPrincipal.fillRunPrincipal(processHistoryRegistryForUpdate());
 
   putRunInfoProduct(runPrincipal);
+  putWeightInfoProduct(runPrincipal);
 }
 
 void
@@ -129,6 +131,26 @@ void LHESource::putRunInfoProduct(edm::RunPrincipal& iRunPrincipal) {
     auto product = std::make_unique<LHERunInfoProduct>(*runInfoProductLast_);
     std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<LHERunInfoProduct>(std::move(product)));
     iRunPrincipal.put(lheProvenanceHelper_.runProductBranchDescription_, std::move(rdp));
+  }
+}
+
+void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
+  if (runInfoProductLast_) {
+    auto product = std::make_unique<LHEWeightInfoProduct>();
+    gen::WeightGroupInfo scaleInfo(
+        "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
+    );
+    scaleInfo.setWeightType(gen::scaleWeights);
+
+    gen::WeightGroupInfo cenPdfInfo(
+        "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
+    );
+    cenPdfInfo.setWeightType(gen::pdfWeights);
+
+    product->addWeightGroupInfo(scaleInfo);
+    product->addWeightGroupInfo(cenPdfInfo);
+    std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<LHEWeightInfoProduct>(std::move(product)));
+    iRunPrincipal.put(lheProvenanceHelper_.weightProductBranchDescription_, std::move(rdp));
   }
 }
 
