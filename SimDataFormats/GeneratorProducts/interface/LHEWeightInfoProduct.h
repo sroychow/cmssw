@@ -14,19 +14,15 @@
 class LHEWeightInfoProduct {
     public:
         LHEWeightInfoProduct() {}
-	    LHEWeightInfoProduct(const LHEWeightInfoProduct& other) {weightGroupsInfo_ = other.weightGroupsInfo_;}
-	    LHEWeightInfoProduct(LHEWeightInfoProduct&& other) {weightGroupsInfo_ = std::move(other.weightGroupsInfo_);}
+        LHEWeightInfoProduct(std::vector<gen::WeightGroupInfo>& weightGroups);
+	    LHEWeightInfoProduct(const LHEWeightInfoProduct& other); 
+	    LHEWeightInfoProduct(LHEWeightInfoProduct&& other);
         ~LHEWeightInfoProduct() {}
-        LHEWeightInfoProduct(std::vector<gen::WeightGroupInfo>& weightGroups) {
-            weightGroupsInfo_ = weightGroups;
-        }
-        LHEWeightInfoProduct &operator = (const LHEWeightInfoProduct &other) {weightGroupsInfo_ = other.weightGroupsInfo_; return * this; }
-        LHEWeightInfoProduct &operator = (LHEWeightInfoProduct &&other) {weightGroupsInfo_ = std::move(other.weightGroupsInfo_); return *this;}
+        LHEWeightInfoProduct& operator=(const LHEWeightInfoProduct &other); 
+        LHEWeightInfoProduct& operator=(LHEWeightInfoProduct &&other); 
 
-        std::vector<gen::WeightGroupInfo> getWeightGroupsInfo() { return weightGroupsInfo_; }
-        void addWeightGroupInfo(gen::WeightGroupInfo info) {  
-            weightGroupsInfo_.push_back(info); 
-        }
+        std::vector<gen::WeightGroupInfo> getWeightGroupsInfo();
+        void addWeightGroupInfo(gen::WeightGroupInfo info);
 
     private:
         std::vector<gen::WeightGroupInfo> weightGroupsInfo_;

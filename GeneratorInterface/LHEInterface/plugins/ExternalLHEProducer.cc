@@ -159,7 +159,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<LHEEventProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
-  produces<LHEWeightInfoProduct>();
+  produces<LHEWeightInfoProduct, edm::Transition::BeginRun>();
 }
 
 
@@ -328,7 +328,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   unsigned int skip = 0;
   reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
-  std::cout << "Adding the Weight product!";
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
   gen::WeightGroupInfo scaleInfo(
       "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
