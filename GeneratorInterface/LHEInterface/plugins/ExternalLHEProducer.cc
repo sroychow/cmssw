@@ -51,11 +51,13 @@ Implementation:
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEWeightProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEXMLStringProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
+#include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
@@ -83,6 +85,7 @@ private:
 
   int closeDescriptors(int preserve);
   void executeScript();
+  int findWeightGroup(std::string id, int previousIndex);
   std::unique_ptr<std::string> readOutput();
 
   void nextEvent();
@@ -106,6 +109,7 @@ private:
   std::shared_ptr<lhef::LHEEvent>	partonLevel;
   boost::ptr_deque<LHERunInfoProduct>	runInfoProducts;
   bool					wasMerged;
+  std::vector<gen::WeightGroupInfo> weightGroups_;
   
   class FileCloseSentry : private boost::noncopyable {
   public:
@@ -157,6 +161,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<LHEXMLStringProduct, edm::Transition::BeginRun>("LHEScriptOutput"); 
 
   produces<LHEEventProduct>();
+  produces<LHEWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
   produces<LHEWeightInfoProduct, edm::Transition::BeginRun>();
@@ -201,6 +206,23 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
                 partonLevel->weights().end(),
                 boost::bind(&LHEEventProduct::addWeight,
                             product.get(), _1));
+
+  std::unique_ptr<LHEWeightProduct> weightProduct(new LHEWeightProduct);
+  weightProduct->setNumWeightSets(weightGroups_.size());
+  int weightGroupIndex = 0;
+  int weightNum = 0;
+  for (const auto& weight : partonLevel->weights()) {
+    if (weightNum > 8)
+        continue;
+    weightGroupIndex = findWeightGroup(weight.id, weightGroupIndex);
+    std::cout << "Size is " << weightGroups_.size() << std::endl;
+    int entry = weightGroups_.at(weightGroupIndex).weightVectorEntry(weight.id, weightNum);
+    std::cout << "Still going. Entry is " << entry << std::endl;
+    weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
+    weightNum++;
+  }
+  iEvent.put(std::move(weightProduct));
+
   product->setScales(partonLevel->scales());
   if (nPartonMapping_.empty()) {
     product->setNpLO(partonLevel->npLO());
@@ -329,18 +351,16 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-  gen::WeightGroupInfo scaleInfo(
-      "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
-  );
-  scaleInfo.setWeightType(gen::scaleWeights);
-
+  gen::WeightGroupInfo scaleInfo = getExampleScaleWeights();
+  
   gen::WeightGroupInfo cenPdfInfo(
       "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
   );
-  cenPdfInfo.setWeightType(gen::pdfWeights);
+  cenPdfInfo.setWeightType(gen::kPdfWeights);
 
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
   weightInfoProduct->addWeightGroupInfo(cenPdfInfo);
+  weightGroups_ = weightInfoProduct->getWeightGroupsInfo();
   run.put(std::move(weightInfoProduct));
 
   nextEvent();
@@ -513,6 +533,11 @@ ExternalLHEProducer::executeScript()
     throw cms::Exception("ExternalLHEProducer") << "Child failed with exit code " << rc << ".";
   }
 
+}
+
+
+int ExternalLHEProducer::findWeightGroup(std::string wgtId, int previousIndex) {
+    return 0;
 }
 
 // ------------ Read the output script ------------

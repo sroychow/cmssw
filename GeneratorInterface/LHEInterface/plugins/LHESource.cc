@@ -140,12 +140,12 @@ void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
     gen::WeightGroupInfo scaleInfo(
         "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
     );
-    scaleInfo.setWeightType(gen::scaleWeights);
+    scaleInfo.setWeightType(gen::kScaleWeights);
 
     gen::WeightGroupInfo cenPdfInfo(
         "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
     );
-    cenPdfInfo.setWeightType(gen::pdfWeights);
+    cenPdfInfo.setWeightType(gen::kPdfWeights);
 
     product->addWeightGroupInfo(scaleInfo);
     product->addWeightGroupInfo(cenPdfInfo);

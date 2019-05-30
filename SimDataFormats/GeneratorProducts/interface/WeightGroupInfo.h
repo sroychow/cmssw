@@ -7,41 +7,64 @@
 #include <string>
 
 namespace gen {
-    typedef std::pair<size_t, std::string> weightId;
+    struct WeightMetaInfo {
+        int globalIndex;
+        int localIndex;
+        std::string id;
+        std::string label;
+    };
 
     enum WeightType {
-        pdfWeights,
-        scaleWeights,
-        matrixElementWeights,
-        unknownWeights,
+        kPdfWeights,
+        kScaleWeights,
+        kMatrixElementWeights,
+        kUnknownWeights,
+        kShowerWeights,
     };
 
 	class WeightGroupInfo {
         public:
 	        WeightGroupInfo() {}
+	        WeightGroupInfo(std::string header, std::string name): 
+                headerEntry_(header), name_(name), firstId_(-1), lastId_(-1) {}
 	        WeightGroupInfo(std::string header): 
                 headerEntry_(header), name_(header), firstId_(0), lastId_(0) {}
-            int getWeightVectorEntry(const std::string& wgtId, size_t weightEntry) {
+
+            int weightVectorEntry(const std::string& wgtId) {
+                return weightVectorEntry(wgtId, 0);
+            }
+
+            int weightVectorEntry(const std::string& wgtId, int weightEntry) {
                 int orderedEntry = weightEntry - firstId_;
                 int entry = -1;
                 if (orderedEntry >= 0 && static_cast<size_t>(orderedEntry) < idsContained_.size())
-                    if (idsContained_.at(orderedEntry).second == wgtId)
+                    if (idsContained_.at(orderedEntry).id == wgtId)
                         return orderedEntry;
                 //auto it = std::find(
                 return entry;
             }
-            void addContainedID(std::string id, size_t weightEntry) {
-                if (!indexInRange(weightEntry))
-                    throw std::domain_error("This entry is out of the expected range");
-                size_t orderedEntry = weightEntry - firstId_;
-                idsContained_.insert(idsContained_.begin()+weightEntry, std::make_pair(orderedEntry, id));
+
+            void addContainedId(int weightEntry, std::string id, std::string label="") {
+                if (firstId_ == -1 || weightEntry < firstId_)
+                    firstId_ = weightEntry;
+                if (firstId_ == -1 || weightEntry > lastId_)
+                    lastId_ = weightEntry;
+                
+                int orderedEntry = weightEntry - firstId_;
+                WeightMetaInfo info;
+                info.globalIndex = weightEntry;
+                info.localIndex = orderedEntry;
+                info.id = id;
+                info.label = label;
+
+                idsContained_.insert(idsContained_.begin()+orderedEntry, info);
             }
+
+            std::vector<WeightMetaInfo> containedIds() { return idsContained_; }
+
             void setWeightType(WeightType type) { weightType_ = type; }
 
-            void setFirstEntry(size_t entryNum) { firstId_ = entryNum;}
-            void setLastEntry(size_t entryNum) { lastId_ = entryNum;}
-
-            bool indexInRange(size_t index) {
+            bool indexInRange(int index) {
                 return (index <= lastId_ && index >= firstId_);
             }
 
@@ -49,9 +72,9 @@ namespace gen {
             std::string headerEntry_;
             std::string name_;
             WeightType weightType_;
-            std::vector<weightId> idsContained_;
-            size_t firstId_;
-            size_t lastId_;
+            std::vector<WeightMetaInfo> idsContained_;
+            int firstId_;
+            int lastId_;
 	};
 }
 
