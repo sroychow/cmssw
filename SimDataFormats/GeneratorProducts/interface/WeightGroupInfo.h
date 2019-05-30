@@ -5,6 +5,7 @@
  *
  */
 #include <string>
+#include <algorithm>
 
 namespace gen {
     struct WeightMetaInfo {
@@ -30,6 +31,15 @@ namespace gen {
 	        WeightGroupInfo(std::string header): 
                 headerEntry_(header), name_(header), firstId_(0), lastId_(0) {}
 
+            WeightMetaInfo weightMetaInfo(int weightEntry) {
+                return idsContained_.at(weightEntry);
+            }
+
+            WeightMetaInfo weightMetaInfo(std::string wgtId) {
+                int weightEntry = weightVectorEntry(wgtId);
+                return idsContained_.at(weightEntry);
+            }
+
             int weightVectorEntry(const std::string& wgtId) {
                 return weightVectorEntry(wgtId, 0);
             }
@@ -40,7 +50,10 @@ namespace gen {
                 if (orderedEntry >= 0 && static_cast<size_t>(orderedEntry) < idsContained_.size())
                     if (idsContained_.at(orderedEntry).id == wgtId)
                         return orderedEntry;
-                //auto it = std::find(
+                auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 
+                                [wgtId] (const WeightMetaInfo& w) { return w.id == wgtId; });
+                if (it != idsContained_.end())
+                    return std::distance(idsContained_.begin(), it);
                 return entry;
             }
 
@@ -57,14 +70,16 @@ namespace gen {
                 info.id = id;
                 info.label = label;
 
+                if (static_cast<int>(idsContained_.size()) < orderedEntry)
+                    idsContained_.resize(orderedEntry);
                 idsContained_.insert(idsContained_.begin()+orderedEntry, info);
             }
 
-            std::vector<WeightMetaInfo> containedIds() { return idsContained_; }
+            std::vector<WeightMetaInfo> containedIds() const { return idsContained_; }
 
             void setWeightType(WeightType type) { weightType_ = type; }
 
-            bool indexInRange(int index) {
+            bool indexInRange(int index) const {
                 return (index <= lastId_ && index >= firstId_);
             }
 

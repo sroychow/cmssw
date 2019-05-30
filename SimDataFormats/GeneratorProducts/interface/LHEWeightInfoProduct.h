@@ -21,7 +21,8 @@ class LHEWeightInfoProduct {
         LHEWeightInfoProduct& operator=(const LHEWeightInfoProduct &other); 
         LHEWeightInfoProduct& operator=(LHEWeightInfoProduct &&other); 
 
-        std::vector<gen::WeightGroupInfo> getWeightGroupsInfo();
+        const std::vector<gen::WeightGroupInfo>& allWeightGroupsInfo() const;
+        const gen::WeightGroupInfo& containingWeightGroupInfo(int index) const;
         void addWeightGroupInfo(gen::WeightGroupInfo info);
 
     private:

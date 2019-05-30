@@ -352,6 +352,7 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
   gen::WeightGroupInfo scaleInfo = getExampleScaleWeights();
+  //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
   
   gen::WeightGroupInfo cenPdfInfo(
       "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
@@ -360,7 +361,7 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
   weightInfoProduct->addWeightGroupInfo(cenPdfInfo);
-  weightGroups_ = weightInfoProduct->getWeightGroupsInfo();
+  weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
   run.put(std::move(weightInfoProduct));
 
   nextEvent();
