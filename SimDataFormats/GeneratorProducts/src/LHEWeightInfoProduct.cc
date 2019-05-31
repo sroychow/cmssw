@@ -29,6 +29,10 @@ const gen::WeightGroupInfo& LHEWeightInfoProduct::containingWeightGroupInfo(int 
     throw std::domain_error("Failed to find containing weight group");
 }
 
+const gen::WeightGroupInfo& LHEWeightInfoProduct::orderedWeightGroupInfo(int weightGroupIndex) const {
+    return weightGroupsInfo_.at(weightGroupIndex);
+}
+
 void LHEWeightInfoProduct::addWeightGroupInfo(gen::WeightGroupInfo info) {  
     weightGroupsInfo_.push_back(info); 
 }

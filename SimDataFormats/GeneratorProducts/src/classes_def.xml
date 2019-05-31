@@ -228,9 +228,7 @@
  <class name="gen::WeightGroupInfo" ClassVersion="6">
   <version ClassVersion="6" checksum="1055618343"/>
  </class>
- <class name="gen::WeightMetaInfo" ClassVersion="4">
-  <version ClassVersion="4" checksum="3369458440"/>
- </class>
+ <class name="gen::WeightMetaInfo"/>
  <class name="std::vector<gen::WeightsInfo>"/>
  <class name="std::vector<gen::WeightGroupInfo>"/>
 	<class name="edm::Wrapper&lt;LHERunInfoProduct&gt;"/>

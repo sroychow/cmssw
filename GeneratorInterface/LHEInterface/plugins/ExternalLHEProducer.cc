@@ -85,7 +85,7 @@ private:
 
   int closeDescriptors(int preserve);
   void executeScript();
-  int findWeightGroup(std::string id, int previousIndex);
+  int findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);
   std::unique_ptr<std::string> readOutput();
 
   void nextEvent();
@@ -212,11 +212,17 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int weightGroupIndex = 0;
   int weightNum = 0;
   for (const auto& weight : partonLevel->weights()) {
-    if (weightNum > 8)
-        continue;
-    weightGroupIndex = findWeightGroup(weight.id, weightGroupIndex);
-    std::cout << "Size is " << weightGroups_.size() << std::endl;
+    weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
+    std::cout << "Weight group index" << weightGroupIndex << std::endl;
+    std::cout << weightGroups_.at(1).name() << std::endl;
+    if (weightGroupIndex < 0) {
+        std::cout << "Yep that's the case.";
+        std::cout << " num Contained IDs " << weightGroups_.at(1).containedIds().size() << std::endl;
+        for (auto& id : weightGroups_.at(1).containedIds())
+            std::cout << id.id;
+    }
     int entry = weightGroups_.at(weightGroupIndex).weightVectorEntry(weight.id, weightNum);
+    std::cout << "Matching entry is " << entry;
     std::cout << "Still going. Entry is " << entry << std::endl;
     weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
     weightNum++;
@@ -353,15 +359,13 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
   gen::WeightGroupInfo scaleInfo = getExampleScaleWeights();
   //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
+  std::vector<gen::WeightGroupInfo> pdfSets = getExamplePdfWeights();
   
-  gen::WeightGroupInfo cenPdfInfo(
-      "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
-  );
-  cenPdfInfo.setWeightType(gen::kPdfWeights);
-
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
-  weightInfoProduct->addWeightGroupInfo(cenPdfInfo);
+  for (auto& pdfSet : pdfSets)
+    weightInfoProduct->addWeightGroupInfo(pdfSet);
   weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
+  std::cout << "Number of groups is " << weightGroups_.size() << std::endl;
   run.put(std::move(weightInfoProduct));
 
   nextEvent();
@@ -537,8 +541,26 @@ ExternalLHEProducer::executeScript()
 }
 
 
-int ExternalLHEProducer::findWeightGroup(std::string wgtId, int previousIndex) {
-    return 0;
+int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex) {
+    // Start search at previous index, under expectation of ordered weights
+    std::cout << "Here we are";
+    for (int index = previousGroupIndex; 
+            index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
+        auto& weightGroup = weightGroups_.at(previousGroupIndex);
+        // Fast search assuming order is not perturbed outside of weight group
+        if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex))
+            return static_cast<int>(index);
+    }
+    std::cout << "Done";
+
+    // Fall back to unordered search
+    int counter = 0;
+    for (auto& weightGroup : weightGroups_) {
+        if (weightGroup.containsWeight(wgtId, weightIndex))
+            return counter;
+        counter++;
+    }
+    return -1;
 }
 
 // ------------ Read the output script ------------

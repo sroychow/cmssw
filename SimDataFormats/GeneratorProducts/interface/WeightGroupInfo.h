@@ -9,8 +9,8 @@
 
 namespace gen {
     struct WeightMetaInfo {
-        int globalIndex;
-        int localIndex;
+        size_t globalIndex;
+        size_t localIndex;
         std::string id;
         std::string label;
     };
@@ -29,7 +29,7 @@ namespace gen {
 	        WeightGroupInfo(std::string header, std::string name): 
                 headerEntry_(header), name_(name), firstId_(-1), lastId_(-1) {}
 	        WeightGroupInfo(std::string header): 
-                headerEntry_(header), name_(header), firstId_(0), lastId_(0) {}
+                headerEntry_(header), name_(header), firstId_(-1), lastId_(-1) {}
 
             WeightMetaInfo weightMetaInfo(int weightEntry) {
                 return idsContained_.at(weightEntry);
@@ -44,12 +44,18 @@ namespace gen {
                 return weightVectorEntry(wgtId, 0);
             }
 
+            int containsWeight(const std::string& wgtId, int weightEntry) {
+                return weightVectorEntry(wgtId, weightEntry) != -1;
+            }
+
             int weightVectorEntry(const std::string& wgtId, int weightEntry) {
-                int orderedEntry = weightEntry - firstId_;
                 int entry = -1;
-                if (orderedEntry >= 0 && static_cast<size_t>(orderedEntry) < idsContained_.size())
-                    if (idsContained_.at(orderedEntry).id == wgtId)
-                        return orderedEntry;
+                if (!indexInRange(weightEntry)) {
+                    size_t orderedEntry = weightEntry - firstId_;
+                    if (orderedEntry < idsContained_.size())
+                        if (idsContained_.at(orderedEntry).id == wgtId)
+                            return orderedEntry;
+                }
                 auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 
                                 [wgtId] (const WeightMetaInfo& w) { return w.id == wgtId; });
                 if (it != idsContained_.end())
@@ -58,26 +64,38 @@ namespace gen {
             }
 
             void addContainedId(int weightEntry, std::string id, std::string label="") {
-                if (firstId_ == -1 || weightEntry < firstId_)
+                if (firstId_ == -1 || weightEntry < firstId_) {
                     firstId_ = weightEntry;
-                if (firstId_ == -1 || weightEntry > lastId_)
+                    // Reset to reflect that indices will be shifted
+                    for (auto& id : idsContained_)
+                        id.localIndex = id.globalIndex - firstId_;
+                }
+                if (weightEntry > lastId_)
                     lastId_ = weightEntry;
                 
-                int orderedEntry = weightEntry - firstId_;
                 WeightMetaInfo info;
                 info.globalIndex = weightEntry;
-                info.localIndex = orderedEntry;
+                info.localIndex = weightEntry - firstId_;
                 info.id = id;
                 info.label = label;
 
-                if (static_cast<int>(idsContained_.size()) < orderedEntry)
-                    idsContained_.resize(orderedEntry);
-                idsContained_.insert(idsContained_.begin()+orderedEntry, info);
+                if (idsContained_.size() < info.localIndex) {
+                    idsContained_.resize(info.localIndex);
+                    idsContained_.insert(idsContained_.begin()+info.localIndex, info);
+                }
+                else if (idsContained_.size() == info.localIndex) {
+                    idsContained_.push_back(info);
+                }
+                else {
+                    idsContained_.resize(info.localIndex+1);
+                    idsContained_[info.localIndex] = info;
+                }
             }
 
             std::vector<WeightMetaInfo> containedIds() const { return idsContained_; }
 
             void setWeightType(WeightType type) { weightType_ = type; }
+            std::string name() { return name_; }
 
             bool indexInRange(int index) const {
                 return (index <= lastId_ && index >= firstId_);

@@ -28,14 +28,10 @@ class LHEWeightProduct {
             if (static_cast<int>(weightsVector_.size()) <= setEntry)
                 throw std::domain_error("Out of range weight");
             auto& weights = weightsVector_.at(setEntry);
-            if (static_cast<int>(weights.size()) == weightNum)
-                weights.push_back(weight);
-            else if (static_cast<int>(weights.size()) < weightNum) {
-                weights.resize(weightNum);
-                weights.insert(weights.begin()+weightNum, weight);
+            if (static_cast<int>(weights.size()) <= weightNum) {
+                weights.resize(weightNum+1);
             }
-            else
-                weights[weightNum] = weight;
+            weights[weightNum] = weight;
         }
         const WeightsContainer& weights() const { return weightsVector_; }
 

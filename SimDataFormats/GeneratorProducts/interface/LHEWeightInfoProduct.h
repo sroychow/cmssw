@@ -23,6 +23,7 @@ class LHEWeightInfoProduct {
 
         const std::vector<gen::WeightGroupInfo>& allWeightGroupsInfo() const;
         const gen::WeightGroupInfo& containingWeightGroupInfo(int index) const;
+        const gen::WeightGroupInfo& orderedWeightGroupInfo(int index) const;
         void addWeightGroupInfo(gen::WeightGroupInfo info);
 
     private:
