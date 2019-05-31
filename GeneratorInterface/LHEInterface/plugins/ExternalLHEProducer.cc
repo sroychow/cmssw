@@ -213,17 +213,7 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int weightNum = 0;
   for (const auto& weight : partonLevel->weights()) {
     weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
-    std::cout << "Weight group index" << weightGroupIndex << std::endl;
-    std::cout << weightGroups_.at(1).name() << std::endl;
-    if (weightGroupIndex < 0) {
-        std::cout << "Yep that's the case.";
-        std::cout << " num Contained IDs " << weightGroups_.at(1).containedIds().size() << std::endl;
-        for (auto& id : weightGroups_.at(1).containedIds())
-            std::cout << id.id;
-    }
     int entry = weightGroups_.at(weightGroupIndex).weightVectorEntry(weight.id, weightNum);
-    std::cout << "Matching entry is " << entry;
-    std::cout << "Still going. Entry is " << entry << std::endl;
     weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
     weightNum++;
   }
@@ -365,7 +355,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   for (auto& pdfSet : pdfSets)
     weightInfoProduct->addWeightGroupInfo(pdfSet);
   weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
-  std::cout << "Number of groups is " << weightGroups_.size() << std::endl;
   run.put(std::move(weightInfoProduct));
 
   nextEvent();
@@ -543,7 +532,6 @@ ExternalLHEProducer::executeScript()
 
 int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex) {
     // Start search at previous index, under expectation of ordered weights
-    std::cout << "Here we are";
     for (int index = previousGroupIndex; 
             index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
         auto& weightGroup = weightGroups_.at(previousGroupIndex);
@@ -551,7 +539,6 @@ int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int
         if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex))
             return static_cast<int>(index);
     }
-    std::cout << "Done";
 
     // Fall back to unordered search
     int counter = 0;
