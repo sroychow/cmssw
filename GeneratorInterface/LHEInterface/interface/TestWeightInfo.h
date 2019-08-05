@@ -8,8 +8,8 @@ std::string parseId(std::string label) {
     return std::string(matches.str(1));
 }
 
-gen::WeightGroupInfo getExampleScaleWeights() { 
-    gen::WeightGroupInfo scaleInfo(
+gen::WeightGroupInfo* getExampleScaleWeights() { 
+    gen::WeightGroupInfo* scaleInfo = new gen::WeightGroupInfo(
             "<weightgroup combine=\"envelope\" name=\"Central scale variation\">",
             "centralScaleVariations"
             );
@@ -24,16 +24,16 @@ gen::WeightGroupInfo getExampleScaleWeights() {
         R"(<weight MUF="2" MUR="0.5" PDF="263400" id="8"> mur=0.5 muf=2 </weight>)",
         R"(<weight MUF="0.5" MUR="0.5" PDF="263400" id="9"> mur=0.5 muf=0.5 </weight>)",
     };
-    scaleInfo.setWeightType(gen::kScaleWeights);
+    scaleInfo->setWeightType(gen::kScaleWeights);
 
     for (size_t i = 0; i < entries.size(); i++) {
-        scaleInfo.addContainedId(i, parseId(entries[i]), entries[i]); 
+        scaleInfo->addContainedId(i, parseId(entries[i]), entries[i]); 
     }
     return scaleInfo;
 }
 
-gen::WeightGroupInfo getExampleScaleWeightsOutOfOrder() { 
-    gen::WeightGroupInfo scaleInfo(
+gen::WeightGroupInfo* getExampleScaleWeightsOutOfOrder() { 
+    gen::WeightGroupInfo* scaleInfo = new gen::WeightGroupInfo(
             "<weightgroup combine=\"envelope\" name=\"Central scale variation\">",
             "centralScaleVariations"
             );
@@ -48,19 +48,15 @@ gen::WeightGroupInfo getExampleScaleWeightsOutOfOrder() {
         R"(<weight MUF="1" MUR="0.5" PDF="263400" id="7"> mur=0.5 muf=1 </weight>)",
         R"(<weight MUF="0.5" MUR="0.5" PDF="263400" id="9"> mur=0.5 muf=0.5 </weight>)",
     };
-    scaleInfo.setWeightType(gen::kScaleWeights);
+    scaleInfo->setWeightType(gen::kScaleWeights);
 
     for (size_t i = 0; i < entries.size(); i++) {
-        scaleInfo.addContainedId(i, parseId(entries[i]), entries[i]); 
+        scaleInfo->addContainedId(i, parseId(entries[i]), entries[i]); 
     }
     return scaleInfo;
 }
 
-std::vector<gen::WeightGroupInfo> getExamplePdfWeights() { 
-    gen::WeightGroupInfo scaleInfo(
-            "<weightgroup combine=\"envelope\" name=\"Central scale variation\">",
-            "centralScaleVariations"
-            );
+std::vector<gen::WeightGroupInfo*> getExamplePdfWeights() { 
     std::vector<std::string> entries = {
         R"(<weightgroup combine="hessian" name="NNPDF31_nnlo_hessian_pdfas">)",
         R"(<weight MUF="1" MUR="1" PDF="306000" id="10"> Member 0 of sets NNPDF31_nnlo_hessian_pdfas</weight>)",
@@ -991,18 +987,18 @@ std::vector<gen::WeightGroupInfo> getExamplePdfWeights() {
     R"(</weightgroup>)",
     };
 
-    std::vector<gen::WeightGroupInfo> pdfWeights;
+    std::vector<gen::WeightGroupInfo*> pdfWeights;
 
     //Don't forget about the scale weights
     int counter = 8;
     for (const auto& entry : entries) {
         if (entry.find("<weightgroup") != std::string::npos) {
-            pdfWeights.push_back(gen::WeightGroupInfo(entry));
+            pdfWeights.push_back(new gen::WeightGroupInfo(entry));
         }
         else if (entry.find("</weightgroup") == std::string::npos) {
             std::cout << "Adding! " << entry << " ID " << parseId(entry) << std::endl;
-            auto& currentSet = pdfWeights.back();
-            currentSet.addContainedId(counter, parseId(entry), entry); 
+            auto currentSet = pdfWeights.back();
+            currentSet->addContainedId(counter, parseId(entry), entry); 
         }
         counter++;
     }

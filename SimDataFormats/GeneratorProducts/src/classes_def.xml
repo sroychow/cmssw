@@ -197,9 +197,7 @@
 	<class name="LHERunInfoProduct::Header" ClassVersion="10">
   <version ClassVersion="10" checksum="1310911082"/>
  </class>
- <class name="LHEWeightInfoProduct" ClassVersion="4">
-  <version ClassVersion="4" checksum="829980141"/>
- </class>
+ <class name="LHEWeightInfoProduct"/>
  <class name="LHEWeightProduct"/>
  <class name="LHEXMLStringProduct" ClassVersion="11">
   <version ClassVersion="10" checksum="4158740350"/>
@@ -231,6 +229,8 @@
  <class name="gen::WeightMetaInfo"/>
  <class name="std::vector<gen::WeightsInfo>"/>
  <class name="std::vector<gen::WeightGroupInfo>"/>
+ <class name="std::vector<gen::WeightGroupInfo*>"/>
+ <class name="edm::OwnVector<gen::WeightGroupInfo>"/>
 	<class name="edm::Wrapper&lt;LHERunInfoProduct&gt;"/>
 	<class name="edm::Wrapper&lt;LHEWeightInfoProduct&gt;"/>
 	<class name="edm::Wrapper&lt;LHEWeightProduct&gt;"/>
