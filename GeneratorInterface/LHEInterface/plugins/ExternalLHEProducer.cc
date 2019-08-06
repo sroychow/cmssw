@@ -213,6 +213,9 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int weightNum = 0;
   for (const auto& weight : partonLevel->weights()) {
     weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
+    if (weightGroupIndex < 0 || weightGroupIndex >= static_cast<int>(weightGroups_.size())) {
+        continue;
+    }
     auto group = weightGroups_[weightGroupIndex];
     int entry = group.weightVectorEntry(weight.id, weightNum);
     weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
@@ -533,12 +536,14 @@ ExternalLHEProducer::executeScript()
 
 int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex) {
     // Start search at previous index, under expectation of ordered weights
+    previousGroupIndex = previousGroupIndex >=0 ? previousGroupIndex : 0;
     for (int index = previousGroupIndex; 
             index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
         gen::WeightGroupInfo& weightGroup = weightGroups_[previousGroupIndex];
         // Fast search assuming order is not perturbed outside of weight group
-        if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex))
+        if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex)) {
             return static_cast<int>(index);
+        }
     }
 
     // Fall back to unordered search

@@ -996,11 +996,9 @@ edm::OwnVector<gen::WeightGroupInfo> getExamplePdfWeights() {
             pdfWeights.push_back(new gen::WeightGroupInfo(entry));
         }
         else if (entry.find("</weightgroup") == std::string::npos) {
-            std::cout << "Adding! " << entry << " ID " << parseId(entry) << std::endl;
-            auto currentSet = pdfWeights.back();
-            currentSet.addContainedId(counter, parseId(entry), entry); 
+            auto& currentSet = pdfWeights.back();
+            currentSet.addContainedId(++counter, parseId(entry), entry); 
         }
-        counter++;
     }
     return pdfWeights;
 }
