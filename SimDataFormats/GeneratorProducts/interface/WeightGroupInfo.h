@@ -31,6 +31,30 @@ namespace gen {
 	        WeightGroupInfo(std::string header): 
                 headerEntry_(header), name_(header), firstId_(-1), lastId_(-1) {}
 
+            //WeightGroupInfo& operator=(const WeightGroupInfo &other) {
+            //    headerEntry_ = other.headerEntry_;
+            //    name_ = other.name_;
+            //    weightType_ = other.weightType_;
+            //    idsContained_ = other.idsContained_;
+            //    firstId_ = other.firstId_;
+            //    lastId_ = other.lastId_;
+            //    return * this; 
+            //}
+
+            //WeightGroupInfo& operator=(WeightGroupInfo &&other) {
+            //    headerEntry_ = std::move(other.headerEntry_);
+            //    name_ = std::move(other.name_);
+            //    weightType_ = std::move(other.weightType_);
+            //    idsContained_ = std::move(other.idsContained_);
+            //    firstId_ = std::move(other.firstId_);
+            //    lastId_ = std::move(other.lastId_);
+            //    return *this;
+            //}
+
+            WeightGroupInfo* clone() const {
+                return new WeightGroupInfo(*this);
+            }
+
             WeightMetaInfo weightMetaInfo(int weightEntry) {
                 return idsContained_.at(weightEntry);
             }

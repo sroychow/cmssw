@@ -109,7 +109,7 @@ private:
   std::shared_ptr<lhef::LHEEvent>	partonLevel;
   boost::ptr_deque<LHERunInfoProduct>	runInfoProducts;
   bool					wasMerged;
-  std::vector<gen::WeightGroupInfo*> weightGroups_;
+  edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
   
   class FileCloseSentry : private boost::noncopyable {
   public:
@@ -213,10 +213,8 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int weightNum = 0;
   for (const auto& weight : partonLevel->weights()) {
     weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
-    auto group = weightGroups_.at(weightGroupIndex);
-    if (!group)
-        throw std::out_of_range("Invalid index " + weightGroupIndex);
-    int entry = group->weightVectorEntry(weight.id, weightNum);
+    auto group = weightGroups_[weightGroupIndex];
+    int entry = group.weightVectorEntry(weight.id, weightNum);
     weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
     weightNum++;
   }
@@ -350,9 +348,9 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-  gen::WeightGroupInfo* scaleInfo = getExampleScaleWeights();
+  gen::WeightGroupInfo scaleInfo = getExampleScaleWeights();
   //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
-  std::vector<gen::WeightGroupInfo*> pdfSets = getExamplePdfWeights();
+  edm::OwnVector<gen::WeightGroupInfo> pdfSets = getExamplePdfWeights();
   
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
   for (auto pdfSet : pdfSets)
@@ -537,16 +535,16 @@ int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int
     // Start search at previous index, under expectation of ordered weights
     for (int index = previousGroupIndex; 
             index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
-        gen::WeightGroupInfo* weightGroup = weightGroups_.at(previousGroupIndex);
+        gen::WeightGroupInfo& weightGroup = weightGroups_[previousGroupIndex];
         // Fast search assuming order is not perturbed outside of weight group
-        if (weightGroup->indexInRange(weightIndex) && weightGroup->containsWeight(wgtId, weightIndex))
+        if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex))
             return static_cast<int>(index);
     }
 
     // Fall back to unordered search
     int counter = 0;
     for (auto weightGroup : weightGroups_) {
-        if (weightGroup->containsWeight(wgtId, weightIndex))
+        if (weightGroup.containsWeight(wgtId, weightIndex))
             return counter;
         counter++;
     }

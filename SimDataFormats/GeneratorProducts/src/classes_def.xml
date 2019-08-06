@@ -231,6 +231,7 @@
  <class name="std::vector<gen::WeightGroupInfo>"/>
  <class name="std::vector<gen::WeightGroupInfo*>"/>
  <class name="edm::OwnVector<gen::WeightGroupInfo>"/>
+ <class name="edm::Wrapper<gen::WeightGroupInfo>"/>
 	<class name="edm::Wrapper&lt;LHERunInfoProduct&gt;"/>
 	<class name="edm::Wrapper&lt;LHEWeightInfoProduct&gt;"/>
 	<class name="edm::Wrapper&lt;LHEWeightProduct&gt;"/>
