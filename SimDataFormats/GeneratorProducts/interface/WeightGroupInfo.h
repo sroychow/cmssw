@@ -38,8 +38,8 @@ namespace gen {
                 copy(other);
                 return *this; 
             }
+            virtual ~WeightGroupInfo() {};
             void copy(const WeightGroupInfo &other);
-
             WeightGroupInfo* clone() const;
             WeightMetaInfo weightMetaInfo(int weightEntry);
             WeightMetaInfo weightMetaInfo(std::string wgtId);
@@ -63,7 +63,7 @@ namespace gen {
             int firstId() const { return firstId_; }
             int lastId() const { return lastId_; }
 
-        private:
+        protected:
             std::string headerEntry_;
             std::string name_;
             WeightType weightType_;

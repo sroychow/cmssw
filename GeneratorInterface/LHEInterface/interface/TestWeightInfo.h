@@ -1,4 +1,5 @@
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 #include <regex>
 
 std::string parseId(std::string label) {
@@ -993,7 +994,7 @@ edm::OwnVector<gen::WeightGroupInfo> getExamplePdfWeights() {
     int counter = 8;
     for (const auto& entry : entries) {
         if (entry.find("<weightgroup") != std::string::npos) {
-            pdfWeights.push_back(new gen::WeightGroupInfo(entry));
+            pdfWeights.push_back(new gen::PdfWeightGroupInfo(entry));
         }
         else if (entry.find("</weightgroup") == std::string::npos) {
             auto& currentSet = pdfWeights.back();
