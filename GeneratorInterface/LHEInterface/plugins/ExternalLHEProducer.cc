@@ -58,6 +58,7 @@ Implementation:
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 #include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
+#include "GeneratorInterface/LHEInterface/interface/LHEWeightGroupReaderHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
@@ -350,38 +351,50 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   unsigned int skip = 0;
   reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
+  
+
+  
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-  gen::WeightGroupInfo scaleInfo = getExampleScaleWeights();
+  gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
+  edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
   //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
-  edm::OwnVector<gen::WeightGroupInfo> pdfSets = getExamplePdfWeights();
+
+  // setup file reader
+  string LHEfilename ="cmsgrid_final.lhe";
+  LHEWeightGroupReaderHelper reader;
+  reader.parseLHEFile(LHEfilename);
+  scaleInfo = *reader.getScaleInfo();
+  pdfSet = reader.getPdfVector();
+
+
   
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
   for (auto pdfSet : pdfSets)
-    weightInfoProduct->addWeightGroupInfo(pdfSet);
+      weightInfoProduct->addWeightGroupInfo(pdfSet);
   weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
   run.put(std::move(weightInfoProduct));
 
   nextEvent();
   if (runInfoLast) {
-    runInfo = runInfoLast;
+      runInfo = runInfoLast;
   
-    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
-    std::for_each(runInfo->getHeaders().begin(),
-                  runInfo->getHeaders().end(),
-                  boost::bind(&LHERunInfoProduct::addHeader,
-                              product.get(), _1));
-    std::for_each(runInfo->getComments().begin(),
-                  runInfo->getComments().end(),
-                  boost::bind(&LHERunInfoProduct::addComment,
-                              product.get(), _1));
+      std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+      std::for_each(runInfo->getHeaders().begin(),
+		    runInfo->getHeaders().end(),
+		    boost::bind(&LHERunInfoProduct::addHeader,
+				product.get(), _1));
+      std::for_each(runInfo->getComments().begin(),
+		    runInfo->getComments().end(),
+		    boost::bind(&LHERunInfoProduct::addComment,
+				product.get(), _1));
   
-    // keep a copy around in case of merging
-    runInfoProducts.push_back(new LHERunInfoProduct(*product));
-    wasMerged = false;
+      // keep a copy around in case of merging
+      runInfoProducts.push_back(new LHERunInfoProduct(*product));
+      wasMerged = false;
 
-    run.put(std::move(product));
+      run.put(std::move(product));
   
-    runInfo.reset();
+      runInfo.reset();
   }
 }
 
