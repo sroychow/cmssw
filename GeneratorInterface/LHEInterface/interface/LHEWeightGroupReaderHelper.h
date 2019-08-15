@@ -14,14 +14,17 @@
 
 class LHEWeightGroupReaderHelper {
 public:
-    LHEWeightGroupReaderHelper() : curWeight(gen::kUnknownWeights) {}
+    LHEWeightGroupReaderHelper() : curWeight_(gen::kUnknownWeights) {
+        weightGroupStart_ = std::regex(".*<weightgroup.+>.*");
+        weightGroupEnd_ = std::regex(".*</weightgroup>.*");
+        weightContent_ = std::regex("<weight.*>\\s*(.+)</weight>");
+    }
 
     //// possibly add more versions of this functions for different inputs
     void parseLHEFile(std::string filename);
 
 
-    gen::WeightGroupInfo* getScaleInfo() {return scaleInfo;}
-    edm::OwnVector<gen::WeightGroupInfo> getPdfVector() {return pdfVector;}
+    edm::OwnVector<gen::WeightGroupInfo> getWeightGroups() {return weightGroups_;}
     
 private:
     // Functions
@@ -29,12 +32,11 @@ private:
     std::map<std::string, std::string> getTagsMap(std::string, std::regex);
 
     // Variables
-    gen::WeightType curWeight;
-    gen::WeightGroupInfo* scaleInfo;
-    edm::OwnVector<gen::WeightGroupInfo> pdfVector;
-    std::regex weightStart = std::regex(".*<weightgroup.+>.*");
-    std::regex weightEnd = std::regex(".*</weightgroup>.*");
-    std::regex weightContent = std::regex("<weight.*>\\s*(.+)</weight>");
+    gen::WeightType curWeight_;
+    edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
+    std::regex weightGroupStart_;
+    std::regex weightGroupEnd_;
+    std::regex weightContent_;
 
 };
 
@@ -54,44 +56,45 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
 
 
     std::string line;
-    std::smatch m;
+    std::smatch matches;
+    // TODO: Not sure the weight indexing is right here, this seems to more or less
+    // count the lines which isn't quite the goal. TOCHECK!
     int index = 0;
     while(getline(file, line)) {
-	if(std::regex_match(line, weightStart)) {
+	if(std::regex_match(line, weightGroupStart_)) {
 	    std::string groupLine = line;
 	    std::string name = getTagsMap(line, groupTags)["name"];
 
+        //TODO: Fine for now, but in general there should also be a check on the PDF weights,
+        // e.g., it could be an unknown weight
 	    if(name == "Central scale variation")
-		curWeight = gen::kScaleWeights;
-	    else 
-		curWeight = gen::kPdfWeights;
+            weightGroups_.push_back(new gen::ScaleWeightGroupInfo(groupLine));
+	    else
+            weightGroups_.push_back(new gen::PdfWeightGroupInfo(groupLine));
 
 	    /// file weights
-	    while(getline(file, line) && !std::regex_match(line, weightEnd)) {
-		auto tmp = getTagsMap(line, infoTags);
-		std::regex_search(line, m, weightContent);
-		std::string content = m[1].str();
+	    while(getline(file, line) && !std::regex_match(line, weightGroupEnd_)) {
+            auto tagsMap = getTagsMap(line, infoTags);
+            std::regex_search(line, matches, weightContent_);
+            // TODO: Add proper check that it worked
+            std::string content = matches[1].str();
 
-		gen::WeightGroupInfo* tmpWeight = nullptr;
-		if(curWeight == gen::kScaleWeights) {
-		    tmpWeight = new gen::ScaleWeightGroupInfo(groupLine);
-		    scaleInfo = tmpWeight;
-		}
-		else if(curWeight == gen::kPdfWeights) {
-		    tmpWeight = new gen::PdfWeightGroupInfo(groupLine);
-		    // pdfVector.push_back(tmpWeight);
-		}
-		tmpWeight->addContainedId(index, tmp["id"], line);
-		
-		if(curWeight == gen::kPdfWeights) //hate hate hate
-		    pdfVector.push_back(tmpWeight);
-		index++;
-		
-	    }
-	    curWeight = gen::kUnknownWeights;
-	}
+            auto& group = weightGroups_.back();
+            if (group.weightType() == gen::kScaleWeights) {
+                float muR = std::stof(tagsMap["MUR"]);
+                float muF = std::stof(tagsMap["MUF"]);
+                auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
+                scaleGroup.addContainedId(index, tagsMap["id"], line, muR, muF);
+            }
+            else
+                group.addContainedId(index, tagsMap["id"], line);
+
+            index++;
+            
+            curWeight_ = gen::kUnknownWeights;
+        }
     }
-
+    }
 }
 
 

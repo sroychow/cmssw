@@ -355,19 +355,16 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
   
   std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-  gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
-  edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
+  //gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
+  //edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
   //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
 
   // setup file reader
   std::string LHEfilename ="cmsgrid_final.lhe";
   LHEWeightGroupReaderHelper reader;
   reader.parseLHEFile(LHEfilename);
-  scaleInfo = *reader.getScaleInfo();
-  pdfSets = reader.getPdfVector();
   
-  weightInfoProduct->addWeightGroupInfo(scaleInfo);
-  for (auto pdfSet : pdfSets)
+  for (auto pdfSet : reader.getWeightGroups())
       weightInfoProduct->addWeightGroupInfo(pdfSet);
   weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
   run.put(std::move(weightInfoProduct));
