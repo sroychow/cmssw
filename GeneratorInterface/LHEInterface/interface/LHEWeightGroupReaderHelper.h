@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <regex>
+#include <fstream>
 
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
@@ -13,7 +14,7 @@
 
 class LHEWeightGroupReaderHelper {
 public:
-    LHEWeightGroupReaderHelper() : curGroup(gen::kUnknownWeights) {}
+    LHEWeightGroupReaderHelper() : curWeight(gen::kUnknownWeights) {}
 
     //// possibly add more versions of this functions for different inputs
     void parseLHEFile(std::string filename);
@@ -31,17 +32,16 @@ private:
     gen::WeightType curWeight;
     gen::WeightGroupInfo* scaleInfo;
     edm::OwnVector<gen::WeightGroupInfo> pdfVector;
-    std::regex weightStart(".*<weightgroup.+>.*");
-    std::regex weightEnd(".*</weightgroup>.*");
-    std::regex weightContent("<weight.*>\\s*(.+)</weight>");
+    std::regex weightStart = std::regex(".*<weightgroup.+>.*");
+    std::regex weightEnd = std::regex(".*</weightgroup>.*");
+    std::regex weightContent = std::regex("<weight.*>\\s*(.+)</weight>");
 
 };
 
 void
 LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
-    ifstream file;
+    std::ifstream file;
     file.open(filename);
-
 
     //// may put in constructor, can have flag to specify these values
     ////     To make this class a little more flexible
@@ -52,7 +52,7 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
     std::regex infoTags = createRegexSearch(weightInfo);
     /// end that comment
 
-    
+
     std::string line;
     std::smatch m;
     int index = 0;
@@ -60,28 +60,33 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
 	if(std::regex_match(line, weightStart)) {
 	    std::string groupLine = line;
 	    std::string name = getTagsMap(line, groupTags)["name"];
-            
+
 	    if(name == "Central scale variation")
-		    curWeight = gen::kScaleWeights;
-		else 
-		    curWeight = gen::kPdfWeights;
+		curWeight = gen::kScaleWeights;
+	    else 
+		curWeight = gen::kPdfWeights;
 
 	    /// file weights
-            
 	    while(getline(file, line) && !std::regex_match(line, weightEnd)) {
 		auto tmp = getTagsMap(line, infoTags);
 		std::regex_search(line, m, weightContent);
 		std::string content = m[1].str();
 
 		gen::WeightGroupInfo* tmpWeight = nullptr;
-		if(curWeight == gen::kScaleWeights) 
+		if(curWeight == gen::kScaleWeights) {
 		    tmpWeight = new gen::ScaleWeightGroupInfo(groupLine);
-		else if(curWeight == gen::kPdfWeights) 
+		    scaleInfo = tmpWeight;
+		}
+		else if(curWeight == gen::kPdfWeights) {
 		    tmpWeight = new gen::PdfWeightGroupInfo(groupLine);
-		
-		tmpWeight->setWeightType(curWeight);
+		    // pdfVector.push_back(tmpWeight);
+		}
 		tmpWeight->addContainedId(index, tmp["id"], line);
-                index++;
+		
+		if(curWeight == gen::kPdfWeights) //hate hate hate
+		    pdfVector.push_back(tmpWeight);
+		index++;
+		
 	    }
 	    curWeight = gen::kUnknownWeights;
 	}
@@ -113,7 +118,7 @@ std::regex
 LHEWeightGroupReaderHelper::createRegexSearch(std::vector<std::string> names) {
     std::string s = "(?:";
     size_t numNames = names.size();
-    for(int i=0; i < numNames; ++i) {
+    for(size_t i=0; i < numNames; ++i) {
 	s += "\\s*(" + names[i] + ")=\"([^\"]+)\"";
 	if(i != numNames - 1) {
 	    s += "|";
