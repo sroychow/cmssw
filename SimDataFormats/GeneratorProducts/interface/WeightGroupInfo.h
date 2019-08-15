@@ -26,7 +26,7 @@ namespace gen {
 
 	class WeightGroupInfo {
         public:
-            WeightGroupInfo() : headerEntry_(""), name_(""), firstId_(-1), lastId_(-1) {}
+            WeightGroupInfo() : WeightGroupInfo("") {}
 	        WeightGroupInfo(std::string header, std::string name): 
                 headerEntry_(header), name_(name), firstId_(-1), lastId_(-1) {}
 	        WeightGroupInfo(std::string header): 

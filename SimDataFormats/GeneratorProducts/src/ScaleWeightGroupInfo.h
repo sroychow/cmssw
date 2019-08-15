@@ -13,3 +13,4 @@ namespace gen {
         return new PdfWeightGroupInfo(*this);
     }
 }
+

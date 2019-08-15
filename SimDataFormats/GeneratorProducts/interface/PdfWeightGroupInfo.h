@@ -25,7 +25,7 @@ namespace gen {
             PdfWeightGroupInfo(const PdfWeightGroupInfo &other) {
                 copy(other);
             }
-            virtual ~PdfWeightGroupInfo() override {};
+            virtual ~PdfWeightGroupInfo() override {}
             void copy(const PdfWeightGroupInfo &other);
             PdfWeightGroupInfo* clone() const;
 
