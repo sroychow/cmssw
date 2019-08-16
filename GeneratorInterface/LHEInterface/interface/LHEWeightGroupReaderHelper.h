@@ -20,7 +20,7 @@ public:
     void parseLHEFile(std::string filename);
 
 
-    gen::WeightGroupInfo* getScaleInfo() {return scaleInfo;}
+    gen::WeightGroupInfo getScaleInfo() {return scaleInfo;}
     edm::OwnVector<gen::WeightGroupInfo> getPdfVector() {return pdfVector;}
     
 private:
@@ -30,7 +30,7 @@ private:
 
     // Variables
     gen::WeightType curWeight;
-    gen::WeightGroupInfo* scaleInfo;
+    gen::WeightGroupInfo scaleInfo;
     edm::OwnVector<gen::WeightGroupInfo> pdfVector;
     std::regex weightStart = std::regex(".*<weightgroup.+>.*");
     std::regex weightEnd = std::regex(".*</weightgroup>.*");
@@ -72,21 +72,17 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
 		std::regex_search(line, m, weightContent);
 		std::string content = m[1].str();
 
-		gen::WeightGroupInfo* tmpWeight = nullptr;
+		gen::WeightGroupInfo tmpWeight;
 		if(curWeight == gen::kScaleWeights) {
-		    tmpWeight = new gen::ScaleWeightGroupInfo(groupLine);
+		    tmpWeight = gen::ScaleWeightGroupInfo(groupLine);
 		    scaleInfo = tmpWeight;
 		}
 		else if(curWeight == gen::kPdfWeights) {
-		    tmpWeight = new gen::PdfWeightGroupInfo(groupLine);
-		    // pdfVector.push_back(tmpWeight);
+		    pdfVector.push_back(new gen::PdfWeightGroupInfo(groupLine));
+		    tmpWeight = pdfVector.back();
 		}
-		tmpWeight->addContainedId(index, tmp["id"], line);
-		
-		if(curWeight == gen::kPdfWeights) //hate hate hate
-		    pdfVector.push_back(tmpWeight);
+		tmpWeight.addContainedId(index, tmp["id"], line);
 		index++;
-		
 	    }
 	    curWeight = gen::kUnknownWeights;
 	}

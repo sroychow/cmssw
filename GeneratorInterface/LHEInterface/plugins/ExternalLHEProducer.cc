@@ -363,7 +363,7 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   std::string LHEfilename ="cmsgrid_final.lhe";
   LHEWeightGroupReaderHelper reader;
   reader.parseLHEFile(LHEfilename);
-  scaleInfo = *reader.getScaleInfo();
+  scaleInfo = reader.getScaleInfo();
   pdfSets = reader.getPdfVector();
   
   weightInfoProduct->addWeightGroupInfo(scaleInfo);
