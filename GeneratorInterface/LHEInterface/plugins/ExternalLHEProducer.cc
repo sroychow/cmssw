@@ -354,21 +354,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   
 
   
-  std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-  //gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
-  //edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
-  //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
-
-  // setup file reader
-  std::string LHEfilename ="cmsgrid_final.lhe";
-  LHEWeightGroupReaderHelper reader;
-  reader.parseLHEFile(LHEfilename);
-  
-  for (auto pdfSet : reader.getWeightGroups())
-      weightInfoProduct->addWeightGroupInfo(pdfSet);
-  weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
-  run.put(std::move(weightInfoProduct));
-
   nextEvent();
   if (runInfoLast) {
       runInfo = runInfoLast;
@@ -389,6 +374,26 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
       run.put(std::move(product));
   
+      std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
+      //gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
+      //edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
+      //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
+
+      // setup file reader
+      std::string LHEfilename ="cmsgrid_final.lhe";
+      LHEWeightGroupReaderHelper reader;
+      //reader.parseLHEFile(LHEfilename);
+      std::cout << "Trying to find header initrwgt. Size is ";
+      std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
+      for (auto line : runInfo->findHeader("initrwgt"))
+          std::cout << "Line in header is " << line << std::endl;
+      reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+      
+      for (auto weightGroup : reader.getWeightGroups())
+          weightInfoProduct->addWeightGroupInfo(weightGroup);
+      weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
+      run.put(std::move(weightInfoProduct));
+
       runInfo.reset();
   }
 }
