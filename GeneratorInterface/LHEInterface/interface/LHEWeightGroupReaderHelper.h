@@ -10,6 +10,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 
 
 class LHEWeightGroupReaderHelper {
@@ -22,6 +23,7 @@ public:
 
     //// possibly add more versions of this functions for different inputs
     void parseLHEFile(std::string filename);
+    void parseWeightGroupsFromHeader(std::vector<std::string> lheHeader);
 
 
     edm::OwnVector<gen::WeightGroupInfo> getWeightGroups() {return weightGroups_;}
@@ -61,15 +63,14 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
     int index = 0;
     while(getline(file, line)) {
 	if(std::regex_match(line, weightGroupStart_)) {
-	    std::string groupLine = line;
 	    std::string name = getTagsMap(line, groupTags)["name"];
 
         //TODO: Fine for now, but in general there should also be a check on the PDF weights,
         // e.g., it could be an unknown weight
 	    if(name == "Central scale variation")
-		weightGroups_.push_back(new gen::ScaleWeightGroupInfo(groupLine));
+            weightGroups_.push_back(new gen::ScaleWeightGroupInfo(line));
 	    else
-	weightGroups_.push_back(new gen::PdfWeightGroupInfo(groupLine));
+            weightGroups_.push_back(new gen::PdfWeightGroupInfo(line));
 
 	    /// file weights
 	    while(getline(file, line) && !std::regex_match(line, weightGroupEnd_)) {
@@ -94,6 +95,64 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
     }
 }
 
+void
+LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string> lheHeader) {
+    //// may put in constructor, can have flag to specify these values
+    ////     To make this class a little more flexible
+    std::vector<std::string> weightGroup = {"name|type", "combine"};
+    std::vector<std::string> weightInfo = {"MUF", "id", "MUR", "PDF"};
+            
+    std::regex groupTags = createRegexSearch(weightGroup);
+    std::regex infoTags = createRegexSearch(weightInfo);
+    /// end that comment
+
+
+    std::smatch matches;
+    // TODO: Not sure the weight indexing is right here, this seems to more or less
+    // count the lines which isn't quite the goal. TOCHECK!
+    int index = 0;
+    bool foundGroup = false;
+    for (std::string headerLine : lheHeader) {
+        std::cout << "Header line is:" << headerLine << std::endl;
+        //TODO: Fine for now, but in general there should also be a check on the PDF weights,
+        // e.g., it could be an unknown weight
+        std::cout << "weightGroupStart_ .*<weightgroup.+>.* ... match? " << static_cast<int>(std::regex_match(headerLine, weightGroupStart_)) << std::endl;
+        if (std::regex_match(headerLine, weightGroupStart_)) {
+            std::cout << "Adding new group for headerLine" << std::endl;
+            foundGroup = true;
+	        std::string name = getTagsMap(headerLine, groupTags)["name"];
+
+            if(name == "Central scale variation")
+                weightGroups_.push_back(new gen::ScaleWeightGroupInfo(headerLine));
+            else
+                weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
+        }
+	    /// file weights
+        else if (foundGroup && !std::regex_match(headerLine, weightGroupEnd_)) {
+            std::cout << "Adding new weight for headerLine" << std::endl;
+            auto tagsMap = getTagsMap(headerLine, infoTags);
+            std::regex_search(headerLine, matches, weightContent_);
+            // TODO: Add proper check that it worked
+            std::string content = matches[1].str();
+
+            auto& group = weightGroups_.back();
+            if (group.weightType() == gen::kScaleWeights) {
+                float muR = std::stof(tagsMap["MUR"]);
+                float muF = std::stof(tagsMap["MUF"]);
+                auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
+                scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
+            }
+            else
+                group.addContainedId(index, tagsMap["id"], headerLine);
+
+            index++;
+        }
+        else {
+            std::cout << " No match..." << std::endl;
+            foundGroup = false;
+        }
+    }
+}
 
 std::map<std::string, std::string>
 LHEWeightGroupReaderHelper::getTagsMap(std::string s, std::regex r) {
