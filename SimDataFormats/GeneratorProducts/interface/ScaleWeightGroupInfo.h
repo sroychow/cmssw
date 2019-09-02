@@ -57,7 +57,7 @@ namespace gen {
             size_t muR05muF05Index() { return imuR05muF05_; }
             size_t muR05muF1Index() { return imuR05muF1_; }
             size_t muR05muF2Index() { return imuR05muF2_; }
-    }_;
+    };
 }
 
 #endif
