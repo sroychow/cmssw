@@ -296,107 +296,114 @@ void
 ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 {
 
-  // pass the number of events as previous to last argument
+    // pass the number of events as previous to last argument
+    std::ostringstream eventStream;
+    eventStream << nEvents_;
+    // args_.push_back(eventStream.str());
+    args_.insert(args_.begin() + 1, eventStream.str());
+
+    // pass the random number generator seed as last argument
+
+    edm::Service<edm::RandomNumberGenerator> rng;
+
+    if ( ! rng.isAvailable()) {
+	throw cms::Exception("Configuration")
+	    << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
+	    "which is not present in the configuration file.  You must add the service\n"
+	    "in the configuration file if you want to run ExternalLHEProducer";
+    }
+    std::ostringstream randomStream;
+    randomStream << rng->mySeed(); 
+    // args_.push_back(randomStream.str());
+    args_.insert(args_.begin() + 2, randomStream.str());
+
+    // args_.emplace_back(std::to_string(nThreads_));
+    args_.insert(args_.begin() + 3, std::to_string(nThreads_));
+
+    for ( unsigned int iArg = 0; iArg < args_.size() ; iArg++ ) {
+	LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args_[iArg];
+    }
+
+    executeScript();
   
-  std::ostringstream eventStream;
-  eventStream << nEvents_;
-  // args_.push_back(eventStream.str());
-  args_.insert(args_.begin() + 1, eventStream.str());
+    //fill LHEXMLProduct (streaming read directly into compressed buffer to save memory)
+    std::unique_ptr<LHEXMLStringProduct> p(new LHEXMLStringProduct);
 
-  // pass the random number generator seed as last argument
+    //store the XML file only if explictly requested
+    if (storeXML_) {
+	std::ifstream instream(outputFile_);
+	if (!instream) {
+	    throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_ << ".";
+	}  
+	instream.seekg (0, instream.end);
+	int insize = instream.tellg();
+	instream.seekg (0, instream.beg);  
+	p->fillCompressedContent(instream, 0.25*insize);
+	instream.close();
+    }
+    run.put(std::move(p), "LHEScriptOutput");
 
-  edm::Service<edm::RandomNumberGenerator> rng;
+    // LHE C++ classes translation
+    // (read back uncompressed file from disk in streaming mode again to save memory)
 
-  if ( ! rng.isAvailable()) {
-    throw cms::Exception("Configuration")
-      << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
-      "which is not present in the configuration file.  You must add the service\n"
-      "in the configuration file if you want to run ExternalLHEProducer";
-  }
-  std::ostringstream randomStream;
-  randomStream << rng->mySeed(); 
-  // args_.push_back(randomStream.str());
-  args_.insert(args_.begin() + 2, randomStream.str());
+    std::vector<std::string> infiles(1, outputFile_);
+    unsigned int skip = 0;
+    reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
-  // args_.emplace_back(std::to_string(nThreads_));
-  args_.insert(args_.begin() + 3, std::to_string(nThreads_));
-
-  for ( unsigned int iArg = 0; iArg < args_.size() ; iArg++ ) {
-    LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args_[iArg];
-  }
-
-  executeScript();
+    
+    nextEvent();
+    if (runInfoLast) {
+	runInfo = runInfoLast;
   
-  //fill LHEXMLProduct (streaming read directly into compressed buffer to save memory)
-  std::unique_ptr<LHEXMLStringProduct> p(new LHEXMLStringProduct);
-
-  //store the XML file only if explictly requested
-  if (storeXML_) {
-    std::ifstream instream(outputFile_);
-    if (!instream) {
-      throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_ << ".";
-    }  
-    instream.seekg (0, instream.end);
-    int insize = instream.tellg();
-    instream.seekg (0, instream.beg);  
-    p->fillCompressedContent(instream, 0.25*insize);
-    instream.close();
-  }
-  run.put(std::move(p), "LHEScriptOutput");
-
-  // LHE C++ classes translation
-  // (read back uncompressed file from disk in streaming mode again to save memory)
-
-  std::vector<std::string> infiles(1, outputFile_);
-  unsigned int skip = 0;
-  reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
-
+	std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+	std::for_each(runInfo->getHeaders().begin(),
+		      runInfo->getHeaders().end(),
+		      boost::bind(&LHERunInfoProduct::addHeader,
+				  product.get(), _1));
+	std::for_each(runInfo->getComments().begin(),
+		      runInfo->getComments().end(),
+		      boost::bind(&LHERunInfoProduct::addComment,
+				  product.get(), _1));
   
+	// keep a copy around in case of merging
+	runInfoProducts.push_back(new LHERunInfoProduct(*product));
+	wasMerged = false;
 
+	run.put(std::move(product));
   
-  nextEvent();
-  if (runInfoLast) {
-      runInfo = runInfoLast;
-  
-      std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
-      std::for_each(runInfo->getHeaders().begin(),
-		    runInfo->getHeaders().end(),
-		    boost::bind(&LHERunInfoProduct::addHeader,
-				product.get(), _1));
-      std::for_each(runInfo->getComments().begin(),
-		    runInfo->getComments().end(),
-		    boost::bind(&LHERunInfoProduct::addComment,
-				product.get(), _1));
-  
-      // keep a copy around in case of merging
-      runInfoProducts.push_back(new LHERunInfoProduct(*product));
-      wasMerged = false;
+	std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
+	//gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
+	//edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
+	//gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
 
-      run.put(std::move(product));
-  
-      std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-      //gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
-      //edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
-      //gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
+	// setup file reader
+	//std::string LHEfilename ="cmsgrid_final.lhe";
+	//	std::string LHEfilename = "DrellYan_LO_MGMLMv233_2016_weightInfo.txt";
+	//std::string LHEfilename = "DrellYan_LO_MGMLMv242_2017_weightInfo.txt";
+	// std::string LHEfilename = "DrellYan_NLO_MGFXFXv233_2016_weightInfo.txt";
+	// std::string LHEfilename = "DrellYan_NLO_MGFXFXv242_2017_weightInfo.txt";
+	// std::string LHEfilename = "WZVBS_2017_weightInfo.txt"; // ****
+	std::string LHEfilename = "WZVBS_private_weightInfo.txt";
+	// std::string LHEfilename = "ZZTo4L_powheg_2016_weightInfo.txt";
+	// std::string LHEfilename = "ZZTo4L_powheg_2017_weightInfo.txt";
 
-      // setup file reader
-      std::string LHEfilename ="cmsgrid_final.lhe";
-      LHEWeightGroupReaderHelper reader;
-      //reader.parseLHEFile(LHEfilename);
-      std::cout << "Trying to find header initrwgt. Size is ";
-      std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
-      for (auto line : runInfo->findHeader("initrwgt"))
-          std::cout << "Line in header is " << line << std::endl;
-      reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+	dylanTest::LHEWeightGroupReaderHelper reader;
+	//reader.parseLHEFile(LHEfilename);
+	std::cout << "Trying to find header initrwgt. Size is ";
+	std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
+	// for (auto line : runInfo->findHeader("initrwgt"))
+	//     std::cout << "Line in header is " << line;
+	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
-      for (auto weightGroup : reader.getWeightGroups())
-          weightInfoProduct->addWeightGroupInfo(weightGroup);
-      weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
-      run.put(std::move(weightInfoProduct));
+	for (auto weightGroup : reader.getWeightGroups())
+	    weightInfoProduct->addWeightGroupInfo(weightGroup);
+	weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
+	run.put(std::move(weightInfoProduct));
 
-      runInfo.reset();
-  }
+	runInfo.reset();
+    }
 }
+
 
 // ------------ method called when ending the processing of a run  ------------
 void 
