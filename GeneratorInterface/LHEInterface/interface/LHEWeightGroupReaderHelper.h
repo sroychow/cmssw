@@ -65,11 +65,14 @@ LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
     while(getline(file, line)) {
 	if(std::regex_match(line, weightGroupStart_)) {
 	    std::string name = getTagsMap(line, groupTags)["name"];
+        std::cout << "Name is " << name << std::endl;
 
         //TODO: Fine for now, but in general there should also be a check on the PDF weights,
         // e.g., it could be an unknown weight
-	    if(name == "Central scale variation")
+	    if(name.find("scale") != std::string::npos) {
+            std::cout << "Yes, it's a scale variation!" << std::endl;
             weightGroups_.push_back(new gen::ScaleWeightGroupInfo(line));
+        }
 	    else
             weightGroups_.push_back(new gen::PdfWeightGroupInfo(line));
 
@@ -125,10 +128,16 @@ LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string>
             foundGroup = true;
 	        std::string name = getTagsMap(headerLine, groupTags)["name"];
 
-            if(name == "Central scale variation")
-                weightGroups_.push_back(new gen::ScaleWeightGroupInfo(headerLine));
+            std::cout << "Name is " << name << std::endl;
+
+            //TODO: Fine for now, but in general there should also be a check on the PDF weights,
+            // e.g., it could be an unknown weight
+            if(name.find("scale") != std::string::npos) {
+                std::cout << "Yes, it's a scale variation!" << std::endl;
+                weightGroups_.push_back(new gen::ScaleWeightGroupInfo(name));
+            }
             else
-                weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
+                weightGroups_.push_back(new gen::PdfWeightGroupInfo(name));
         }
 	    /// file weights
         else if (foundGroup && !std::regex_match(headerLine, weightGroupEnd_)) {
@@ -140,8 +149,8 @@ LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string>
 
             auto& group = weightGroups_.back();
             if (group.weightType() == gen::kScaleWeights) {
-                float muR = std::stof(tagsMap["MUR"]);
-                float muF = std::stof(tagsMap["MUF"]);
+                float muR = (!tagsMap["MUR"].empty() && std::isdigit(tagsMap["MUR"][0])) ? std::stof(tagsMap["MUR"]) : 1;
+                float muF = (!tagsMap["MUF"].empty() && std::isdigit(tagsMap["MUF"][0])) ? std::stof(tagsMap["MUF"]) : 1;
                 auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
                 scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
             }
