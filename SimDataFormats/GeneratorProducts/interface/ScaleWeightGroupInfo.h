@@ -42,8 +42,8 @@ namespace gen {
             void copy(const ScaleWeightGroupInfo &other);
             ScaleWeightGroupInfo* clone() const;
 
-            void setMuRMuFIndex(WeightMetaInfo info, float muR, float muF);
-            void addContainedId(int weightEntry, std::string id, std::string label, float muR, float muF);
+	void setMuRMuFIndex(WeightMetaInfo info, float muR, float muF);
+	void addContainedId(int weightEntry, std::string id, std::string label, float muR, float muF);
 
             // Is a variation of the functional form of the dynamic scale
             bool isFunctionalFormVariation();
