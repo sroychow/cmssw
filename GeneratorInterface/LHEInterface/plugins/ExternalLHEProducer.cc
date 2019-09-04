@@ -386,13 +386,9 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 	std::string LHEfilename = "WZVBS_private_weightInfo.txt";
 	// std::string LHEfilename = "ZZTo4L_powheg_2016_weightInfo.txt";
 	// std::string LHEfilename = "ZZTo4L_powheg_2017_weightInfo.txt";
-
 	dylanTest::LHEWeightGroupReaderHelper reader;
+
 	//reader.parseLHEFile(LHEfilename);
-	std::cout << "Trying to find header initrwgt. Size is ";
-	std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
-	// for (auto line : runInfo->findHeader("initrwgt"))
-	//     std::cout << "Line in header is " << line;
 	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
 	for (auto weightGroup : reader.getWeightGroups())

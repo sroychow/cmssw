@@ -60,7 +60,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '102X_upgrade2018_realistic_v11
 
 process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
     #args = cms.vstring('/afs/hep.wisc.edu/home/kdlong/public/DarkMatter_MonoZPrime_V_Mx50_Mv500_gDMgQ1_LO_slc6_amd64_gcc481_CMSSW_7_1_30_tarball_Dummy.tgz'),
-    args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/ZZ_slc6_amd64_gcc630_CMSSW_9_3_0_ZZTo4L2017_pdf306000.tgz'),
+    #args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/ZZ_slc6_amd64_gcc630_CMSSW_9_3_0_ZZTo4L2017_pdf306000Dummy.tgz'),
+    args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/ZZ_4L_NNPDF30_13TeV_tarballDummy.tar.gz'),
     nEvents = cms.untracked.uint32(10),
     numberOfParameters = cms.uint32(1),
     outputFile = cms.string('cmsgrid_final.lhe'),

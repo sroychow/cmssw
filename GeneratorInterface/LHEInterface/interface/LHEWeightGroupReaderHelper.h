@@ -157,8 +157,6 @@ dylanTest::LHEWeightGroupReaderHelper::LHEWeightGroupReaderHelper() {
     weightContent_ = std::regex("<weight.*>\\s*(.+)\\s*</weight>\n*");
     scaleWeightMatch_ = std::regex(".*(Central scale variation|scale_variation).*\n?");
 
-    std::cout << "Init" << "\n";
-    
     /// Might change later, order matters and code doesn't pick choices
 
     // WZVBS_2017_weightInfo.txt : scale-sometimes
@@ -251,7 +249,6 @@ dylanTest::LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
 	    
 	    if(std::regex_match(name, scaleWeightMatch_)) {
 		weightGroups_.push_back(new gen::ScaleWeightGroupInfo(line));
-		std::cout << "scale weight" << "\n";
 	    }
 
 
@@ -290,18 +287,14 @@ dylanTest::LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<s
     int index = 0;
     bool foundGroup = false;
     for (std::string headerLine : lheHeader) {
-	std::cout << "Header line is:" << headerLine;
 	//TODO: Fine for now, but in general there should also be a check on the PDF weights,
 	// e.g., it could be an unknown weight
-	//std::cout << "weightGroupStart_ .*<weightgroup.+>.* ... match? " << static_cast<int>(std::regex_match(headerLine, weightGroupStart_)) << std::endl;
 	if (std::regex_match(headerLine, weightGroupStart_)) {
-	    //std::cout << "Adding new group for headerLine" << std::endl;
 	    foundGroup = true;
 	    std::string name = getMap_testAll(headerLine, {weightGroupInfo})["name"];
                 
 	    if(std::regex_match(name, scaleWeightMatch_)) {
 		weightGroups_.push_back(new gen::ScaleWeightGroupInfo(headerLine));
-		std::cout << "scale weight" << "\n";
 	    }
             
 	    else
@@ -309,22 +302,15 @@ dylanTest::LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<s
 	}
 	/// file weights
 	else if (foundGroup && !std::regex_match(headerLine, weightGroupEnd_)) {
-	    //std::cout << "Adding new weight for headerLine" << std::endl;
 	    auto tagsMap = getMap_testAll(headerLine, regexOptions);
-	    for(auto pair: tagsMap) {
-		std::cout << pair.first << ": " << pair.second << " | ";
-	    }
-	    std::cout << "\n";
 	    std::regex_search(headerLine, matches, weightContent_);
 	    // TODO: Add proper check that it worked
 	    std::string content = matches[1].str();
-	    // std::cout << content << "\n";
 	    
 	    auto& group = weightGroups_.back();
 	    if (group.weightType() == gen::kScaleWeights) {
 		float muR = std::stof(tagsMap["mur"]);
 		float muF = std::stof(tagsMap["muf"]);
-		std::cout << tagsMap["id"] << " " << muR << " " << muF << " " << content << "\n";
 		auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
 		scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
 	    }
