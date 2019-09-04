@@ -204,8 +204,8 @@ dylanTest::LHEWeightGroupReaderHelper::LHEWeightGroupReaderHelper() {
     // DrellYan_NLO_MGFXFXv242_2017_weightInfo.txt : other
     // DrellYan_NLO_MGFXFXv233_2016_weightInfo.txt : other
     RegexCreater rc_pdfAlt;
-    rc_scaleAlt.addValue("pdf", {"pdf set", "lhapdf", "pdfset"}, true);
-    rc_scaleAlt.addValue("id");
+    rc_pdfAlt.addValue("pdf", {"pdf set", "lhapdf", "pdfset"}, true);
+    rc_pdfAlt.addValue("id");
     regexOptions.push_back(rc_pdfAlt);
     
     // DrellYan_LO_MGMLMv233_2016_weightInfo.txt : other
@@ -231,8 +231,6 @@ dylanTest::LHEWeightGroupReaderHelper::getMap_testAll(std::string line, std::vec
     return std::map<std::string , std::string >();
 }
 
-
-    
 
 void
 dylanTest::LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
@@ -295,7 +293,7 @@ dylanTest::LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<s
 	std::cout << "Header line is:" << headerLine;
 	//TODO: Fine for now, but in general there should also be a check on the PDF weights,
 	// e.g., it could be an unknown weight
-	std::cout << "weightGroupStart_ .*<weightgroup.+>.* ... match? " << static_cast<int>(std::regex_match(headerLine, weightGroupStart_)) << std::endl;
+	//std::cout << "weightGroupStart_ .*<weightgroup.+>.* ... match? " << static_cast<int>(std::regex_match(headerLine, weightGroupStart_)) << std::endl;
 	if (std::regex_match(headerLine, weightGroupStart_)) {
 	    //std::cout << "Adding new group for headerLine" << std::endl;
 	    foundGroup = true;
