@@ -372,22 +372,8 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 	run.put(std::move(product));
   
 	std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
-	//gen::WeightGroupInfo scaleInfo;// = getExampleScaleWeights();
-	//edm::OwnVector<gen::WeightGroupInfo> pdfSets;// = getExamplePdfWeights();
-	//gen::WeightGroupInfo scaleInfo = getExampleScaleWeightsOutOfOrder();
 
-	// setup file reader
-	//std::string LHEfilename ="cmsgrid_final.lhe";
-	//	std::string LHEfilename = "DrellYan_LO_MGMLMv233_2016_weightInfo.txt";
-	//std::string LHEfilename = "DrellYan_LO_MGMLMv242_2017_weightInfo.txt";
-	// std::string LHEfilename = "DrellYan_NLO_MGFXFXv233_2016_weightInfo.txt";
-	// std::string LHEfilename = "DrellYan_NLO_MGFXFXv242_2017_weightInfo.txt";
-	// std::string LHEfilename = "WZVBS_2017_weightInfo.txt"; // ****
-	std::string LHEfilename = "WZVBS_private_weightInfo.txt";
-	// std::string LHEfilename = "ZZTo4L_powheg_2016_weightInfo.txt";
-	// std::string LHEfilename = "ZZTo4L_powheg_2017_weightInfo.txt";
-
-	dylanTest::LHEWeightGroupReaderHelper reader;
+	LHEWeightGroupReaderHelper reader;
 	//reader.parseLHEFile(LHEfilename);
 	std::cout << "Trying to find header initrwgt. Size is ";
 	std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
