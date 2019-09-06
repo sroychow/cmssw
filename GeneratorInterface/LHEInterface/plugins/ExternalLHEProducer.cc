@@ -375,10 +375,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
 	LHEWeightGroupReaderHelper reader;
 	//reader.parseLHEFile(LHEfilename);
-	std::cout << "Trying to find header initrwgt. Size is ";
-	std::cout << runInfo->findHeader("initrwgt").size() << std::endl;
-	// for (auto line : runInfo->findHeader("initrwgt"))
-	//     std::cout << "Line in header is " << line;
 	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
 	for (auto weightGroup : reader.getWeightGroups())
