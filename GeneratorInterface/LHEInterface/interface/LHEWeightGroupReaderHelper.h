@@ -155,62 +155,12 @@ LHEWeightGroupReaderHelper::isAWeight(std::string line) {
     XMLDocument xmlParser;
     int error = xmlParser.Parse(line.c_str());
     if (error) {
-	return false;
-	//do something....
+        return false;
+        //do something....
     }
     XMLElement* element = xmlParser.FirstChildElement();
     return element;
 }
-
-// void
-// LHEWeightGroupReaderHelper::parseLHEFile(std::string filename) {
-//     std::ifstream file;
-//     file.open(filename);
-
-//     std::string line;
-//     std::smatch matches;
-//     // TODO: Not sure the weight indexing is right here, this seems to more or less
-//     // count the lines which isn't quite the goal. TOCHECK!
-//     int index = 0;
-//     while(getline(file, line)) {
-//      if(std::regex_match(line, weightGroupStart_)) {
-//          std::string name = getMap_testAll(line, {weightGroupInfo})["name"];
-                
-//          //TODO: Fine for now, but in general there should also be a check on the PDF weights,
-//          // e.g., it could be an unknown weight
-            
-//          if(std::regex_match(name, scaleWeightMatch_)) {
-//              weightGroups_.push_back(new gen::ScaleWeightGroupInfo(line));
-//              std::cout << "scale weight" << "\n";
-//          }
-
-
-//          else
-//              weightGroups_.push_back(new gen::PdfWeightGroupInfo(line));
-
-//          /// file weights
-//          while(getline(file, line) && !std::regex_match(line, weightGroupEnd_)) {
-//              auto tagsMap = getMap_testAll(line, regexOptions);
-                
-//              std::regex_search(line, matches, weightContent_);
-//              // TODO: Add proper check that it worked
-//              std::string content = matches[1].str();
-
-//              auto& group = weightGroups_.back();
-//              if (group.weightType() == gen::kScaleWeights) {
-//                  float muR = std::stof(tagsMap["mur"]);
-//                  float muF = std::stof(tagsMap["muf"]);
-//                  auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
-//                  scaleGroup.addContainedId(index, tagsMap["id"], line, muR, muF);
-//              }
-//              else
-//                  group.addContainedId(index, tagsMap["id"], line);
-
-//              index++;                        
-//          }
-//      }
-//     }
-// }
 
 void
 LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string> lheHeader) {
@@ -220,11 +170,11 @@ LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string>
     bool foundGroup = false;
     
     for (std::string headerLine : lheHeader) {
-	std::cout << "Header line is:" << headerLine;
-	headerLine = sanitizeText(headerLine);
-        std::cout << "Header line is:" << weightGroups_.size() << " "<< headerLine;
-	//TODO: Fine for now, but in general there should also be a check on the PDF weights,
-        // e.g., it could be an unknown weight
+        std::cout << "Header line is:" << headerLine;
+        headerLine = sanitizeText(headerLine);
+            std::cout << "Header line is:" << weightGroups_.size() << " "<< headerLine;
+        //TODO: Fine for now, but in general there should also be a check on the PDF weights,
+            // e.g., it could be an unknown weight
         
         if (std::regex_match(headerLine, weightGroupStart_)) {
             //std::cout << "Adding new group for headerLine" << std::endl;
@@ -235,62 +185,62 @@ LHEWeightGroupReaderHelper::parseWeightGroupsFromHeader(std::vector<std::string>
                 
             if(name.find("Central scale variation") != std::string::npos ||
                name.find("scale_variation") != std::string::npos) {
-                weightGroups_.push_back(new gen::ScaleWeightGroupInfo(headerLine));
-                std::cout << "scale weight" << "\n";
+                weightGroups_.push_back(new gen::ScaleWeightGroupInfo(name));
             }
-	    else
-		weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
+            else
+		        weightGroups_.push_back(new gen::PdfWeightGroupInfo(name));
         }
         /// file weights
         else if (foundGroup && isAWeight(headerLine)) {
             //std::cout << "Adding new weight for headerLine" << std::endl;
             auto tagsMap = getAttributeMap(headerLine);
-	    for(auto pair: tagsMap) {
-		std::cout << pair.first << ": " << pair.second << " | ";
-	    }
+            for(auto pair: tagsMap) {
+                std::cout << pair.first << ": " << pair.second << " | ";
+            }
             std::cout << "\n";
             
             std::string content = tagsMap["content"];
-            if (tagsMap["id"] == std::string()) {
+            if (tagsMap["id"].empty()) {
                 std::cout << "error" << "\n";
                 // should do something
             }
             
             auto& group = weightGroups_.back();
             if (group.weightType() == gen::kScaleWeights) {
-                if (tagsMap["mur"] == std::string() || tagsMap["muf"] == std::string()) {
+                if (tagsMap["mur"].empty()  || tagsMap["muf"].empty()) {
                     std::cout << "error" << "\n";
                     // something should happen here
-		    continue;
+                    continue;
                 }
                 float muR = std::stof(tagsMap["mur"]);
                 float muF = std::stof(tagsMap["muf"]);
                 std::cout << tagsMap["id"] << " " << muR << " " << muF << " " << content << "\n";
                 auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
-		scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
+                scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
             }
             else
                 group.addContainedId(index, tagsMap["id"], headerLine);
+            
             index++;
-	}
-	// commented out since code doesn't work with this in....
-	// else if(isAWeight(headerLine)) {
-	//     // found header. Don't know what to do with it so just shove it into a new weightgroup for now
-	//     // do minimum work for it
-	//     weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
-	//     auto& group = weightGroups_.back();
-	//     auto tagsMap = getAttributeMap(headerLine);
-	//     group.addContainedId(index, tagsMap["id"], headerLine);
-	//     foundGroup = true;
-	//     index++;
-	// }
+	    }
+        // commented out since code doesn't work with this in....
+        // else if(isAWeight(headerLine)) {
+        //     // found header. Don't know what to do with it so just shove it into a new weightgroup for now
+        //     // do minimum work for it
+        //     weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
+        //     auto& group = weightGroups_.back();
+        //     auto tagsMap = getAttributeMap(headerLine);
+        //     group.addContainedId(index, tagsMap["id"], headerLine);
+        //     foundGroup = true;
+        //     index++;
+        // }
 	
-	else if(std::regex_match(headerLine, weightGroupEnd_)) {
-	    foundGroup = false;
-	} 
-	else {
-            std::cout << "problem!!!" << "\n";
-	}
+        else if(std::regex_match(headerLine, weightGroupEnd_)) {
+            foundGroup = false;
+        } 
+        else {
+                std::cout << "problem!!!" << "\n";
+        }
     }
 }
 
