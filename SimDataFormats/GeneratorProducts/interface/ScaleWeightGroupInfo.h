@@ -6,7 +6,7 @@
 namespace gen {
     class ScaleWeightGroupInfo : public WeightGroupInfo {
         private:
-            bool isFuncationFormVar_;
+            bool isFunctionalFormVar_;
             size_t icentral_;
             size_t imuR1muF2_;
             size_t imuR1muF05_;
@@ -21,7 +21,7 @@ namespace gen {
 	        ScaleWeightGroupInfo(std::string header, std::string name) : 
                 WeightGroupInfo(header, name) { 
                 weightType_ = kScaleWeights;
-                isFuncationFormVar_ = false;
+                isFunctionalFormVar_ = false;
                 icentral_ = 0;
                 imuR1muF2_ = 0;
                 imuR1muF05_ = 0;
@@ -47,7 +47,7 @@ namespace gen {
 
             // Is a variation of the functional form of the dynamic scale
             bool isFunctionalFormVariation();
-            void setIsFunctionalFormVariation(bool functionalVar) {isFuncationFormVar_ = functionalVar; }
+            void setIsFunctionalFormVariation(bool functionalVar) {isFunctionalFormVar_ = functionalVar; }
             size_t centralIndex() {return icentral_; }
             size_t muR1muF2Index() { return imuR1muF2_; }
             size_t muR1muF05Index() { return imuR1muF05_; }
