@@ -48,15 +48,15 @@ namespace gen {
             // Is a variation of the functional form of the dynamic scale
             bool isFunctionalFormVariation();
             void setIsFunctionalFormVariation(bool functionalVar) {isFunctionalFormVar_ = functionalVar; }
-            size_t centralIndex() {return icentral_; }
-            size_t muR1muF2Index() { return imuR1muF2_; }
-            size_t muR1muF05Index() { return imuR1muF05_; }
-            size_t muR2muF05Index() { return imuR2muF05_; }
-            size_t muR2muF1Index() { return imuR2muF1_; }
-            size_t muR2muF2Index() { return imuR2muF2_; }
-            size_t muR05muF05Index() { return imuR05muF05_; }
-            size_t muR05muF1Index() { return imuR05muF1_; }
-            size_t muR05muF2Index() { return imuR05muF2_; }
+            size_t centralIndex() const {return icentral_; }
+            size_t muR1muF2Index() const { return imuR1muF2_; }
+            size_t muR1muF05Index() const { return imuR1muF05_; }
+            size_t muR2muF05Index() const { return imuR2muF05_; }
+            size_t muR2muF1Index() const { return imuR2muF1_; }
+            size_t muR2muF2Index() const { return imuR2muF2_; }
+            size_t muR05muF05Index() const { return imuR05muF05_; }
+            size_t muR05muF1Index() const { return imuR05muF1_; }
+            size_t muR05muF2Index() const { return imuR05muF2_; }
     };
 }
 

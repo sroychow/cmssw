@@ -134,9 +134,9 @@ void TestAnalyzer::beginRun(edm::Run const& iRun, edm::EventSetup const&)
     edm::OwnVector<gen::WeightGroupInfo> groups = lheProd->allWeightGroupsInfo();
     for (const auto& group : groups) {
         std::cout << "Type of the weight is " << group.weightType() << " name is " << group.name() << std::endl;
-        if (group.weightType() == 0) {
+        if (group.weightType() == 1) {
             //gen::ScaleWeightGroupInfo* scaleInfo = group.clone();//static_cast<gen::ScaleWeightGroupInfo>(group);
-            gen::ScaleWeightGroupInfo* scaleInfo = static_cast<gen::ScaleWeightGroupInfo*>(&group);
+            const gen::ScaleWeightGroupInfo* scaleInfo = dynamic_cast<const gen::ScaleWeightGroupInfo*>(&group);
             std::cout << "muR05muF1 " << scaleInfo->muR05muF1Index() << std::endl;
             std::cout << "muR05muF05 " << scaleInfo->muR05muF05Index() << std::endl;
         }
