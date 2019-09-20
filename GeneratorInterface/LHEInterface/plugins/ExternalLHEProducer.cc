@@ -58,7 +58,7 @@ Implementation:
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 #include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
-#include "GeneratorInterface/LHEInterface/interface/LHEWeightGroupReaderHelper.h"
+#include "GeneratorInterface/Core/interface/LHEWeightGroupReaderHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
