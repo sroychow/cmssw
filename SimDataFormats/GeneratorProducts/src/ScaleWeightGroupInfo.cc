@@ -1,5 +1,6 @@
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace gen {
     void ScaleWeightGroupInfo::copy(const ScaleWeightGroupInfo &other) {

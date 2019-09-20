@@ -40,12 +40,12 @@ namespace gen {
             }
             virtual ~WeightGroupInfo() {};
             void copy(const WeightGroupInfo &other);
-            WeightGroupInfo* clone() const;
-            WeightMetaInfo weightMetaInfo(int weightEntry);
-            WeightMetaInfo weightMetaInfo(std::string wgtId);
-            int weightVectorEntry(const std::string& wgtId);
-            int containsWeight(const std::string& wgtId, int weightEntry);
-            int weightVectorEntry(const std::string& wgtId, int weightEntry);
+            virtual WeightGroupInfo* clone() const;
+            WeightMetaInfo weightMetaInfo(int weightEntry) const;
+            WeightMetaInfo weightMetaInfo(std::string wgtId) const;
+            int weightVectorEntry(const std::string& wgtId) const;
+            int containsWeight(const std::string& wgtId, int weightEntry) const;
+            int weightVectorEntry(const std::string& wgtId, int weightEntry) const;
             void addContainedId(int weightEntry, std::string id, std::string label);
             std::vector<WeightMetaInfo> containedIds() const;
             bool indexInRange(int index) const;

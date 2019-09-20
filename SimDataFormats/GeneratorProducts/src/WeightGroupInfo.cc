@@ -1,6 +1,7 @@
 #include <string>
 #include <algorithm>
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
+#include <iostream>
 
 namespace gen {
     void WeightGroupInfo::copy(const WeightGroupInfo &other) {
@@ -16,24 +17,24 @@ namespace gen {
         return new WeightGroupInfo(*this);
     }
 
-    WeightMetaInfo WeightGroupInfo::weightMetaInfo(int weightEntry) {
+    WeightMetaInfo WeightGroupInfo::weightMetaInfo(int weightEntry) const {
         return idsContained_.at(weightEntry);
     }
 
-    WeightMetaInfo WeightGroupInfo::weightMetaInfo(std::string wgtId) {
+    WeightMetaInfo WeightGroupInfo::weightMetaInfo(std::string wgtId) const {
         int weightEntry = weightVectorEntry(wgtId);
         return idsContained_.at(weightEntry);
     }
 
-    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId) {
+    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId) const {
         return weightVectorEntry(wgtId, 0);
     }
 
-    int WeightGroupInfo::containsWeight(const std::string& wgtId, int weightEntry) {
+    int WeightGroupInfo::containsWeight(const std::string& wgtId, int weightEntry) const {
         return weightVectorEntry(wgtId, weightEntry) != -1;
     }
 
-    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId, int weightEntry) {
+    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId, int weightEntry) const {
         int entry = -1;
         if (!indexInRange(weightEntry)) {
             size_t orderedEntry = weightEntry - firstId_;

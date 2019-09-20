@@ -107,10 +107,10 @@ private:
   std::unique_ptr<lhef::LHEReader>	reader_;
   std::shared_ptr<lhef::LHERunInfo>	runInfoLast;
   std::shared_ptr<lhef::LHERunInfo>	runInfo;
+  std::unique_ptr<LHEWeightInfoProduct>	weightInfoProduct_;
   std::shared_ptr<lhef::LHEEvent>	partonLevel;
   boost::ptr_deque<LHERunInfoProduct>	runInfoProducts;
   bool					wasMerged;
-  edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
   
   class FileCloseSentry : private boost::noncopyable {
   public:
@@ -165,7 +165,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<LHEWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
-  produces<LHEWeightInfoProduct, edm::Transition::BeginRun>();
+  produces<LHEWeightInfoProduct, edm::Transition::EndRun>();
 }
 
 
@@ -208,17 +208,18 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
                 boost::bind(&LHEEventProduct::addWeight,
                             product.get(), _1));
 
-  std::unique_ptr<LHEWeightProduct> weightProduct(new LHEWeightProduct);
-  weightProduct->setNumWeightSets(weightGroups_.size());
+  auto weightProduct = std::make_unique<LHEWeightProduct>();
+  weightProduct->setNumWeightSets(weightInfoProduct_->numberOfGroups());
   int weightGroupIndex = 0;
   int weightNum = 0;
   for (const auto& weight : partonLevel->weights()) {
     weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
-    if (weightGroupIndex < 0 || weightGroupIndex >= static_cast<int>(weightGroups_.size())) {
-        continue;
+    if (weightGroupIndex < 0 || weightGroupIndex >= weightInfoProduct_->numberOfGroups()) {
+        // Needs to be properly handled
+        throw std::range_error("Unmatched weight");
     }
-    auto group = weightGroups_[weightGroupIndex];
-    int entry = group.weightVectorEntry(weight.id, weightNum);
+    auto* group = weightInfoProduct_->orderedWeightGroupInfo(weightGroupIndex);
+    int entry = group->weightVectorEntry(weight.id, weightNum);
     weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
     weightNum++;
   }
@@ -371,16 +372,15 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
 	run.put(std::move(product));
   
-	std::unique_ptr<LHEWeightInfoProduct> weightInfoProduct(new LHEWeightInfoProduct);
+	weightInfoProduct_ = std::make_unique<LHEWeightInfoProduct>();
 
 	LHEWeightGroupReaderHelper reader;
 	//reader.parseLHEFile(LHEfilename);
 	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
-	for (auto weightGroup : reader.getWeightGroups())
-	    weightInfoProduct->addWeightGroupInfo(weightGroup);
-	weightGroups_ = weightInfoProduct->allWeightGroupsInfo();
-	run.put(std::move(weightInfoProduct));
+	for (auto& weightGroup : reader.getWeightGroups()) {
+	    weightInfoProduct_->addWeightGroupInfo(weightGroup.clone());
+    }
 
 	runInfo.reset();
     }
@@ -405,6 +405,7 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
   }  
   
   reader_.reset();  
+  run.put(std::move(weightInfoProduct_));
   
   if (unlink(outputFile_.c_str())) {
     throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_ << " (errno=" << errno << ", " << strerror(errno) << ").";
@@ -540,17 +541,19 @@ int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int
     // Start search at previous index, under expectation of ordered weights
     previousGroupIndex = previousGroupIndex >=0 ? previousGroupIndex : 0;
     for (int index = previousGroupIndex; 
-            index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
-        gen::WeightGroupInfo& weightGroup = weightGroups_[previousGroupIndex];
+            index < std::min(index+1, static_cast<int>(weightInfoProduct_->numberOfGroups())); index++) {
+        const gen::WeightGroupInfo* weightGroup = weightInfoProduct_->orderedWeightGroupInfo(index);
+        //    index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
+        //gen::WeightGroupInfo& weightGroup = weightGroups_[previousGroupIndex];
         // Fast search assuming order is not perturbed outside of weight group
-        if (weightGroup.indexInRange(weightIndex) && weightGroup.containsWeight(wgtId, weightIndex)) {
+        if (weightGroup->indexInRange(weightIndex) && weightGroup->containsWeight(wgtId, weightIndex)) {
             return static_cast<int>(index);
         }
     }
 
     // Fall back to unordered search
     int counter = 0;
-    for (auto weightGroup : weightGroups_) {
+    for (auto weightGroup : weightInfoProduct_->allWeightGroupsInfo()) {
         if (weightGroup.containsWeight(wgtId, weightIndex))
             return counter;
         counter++;
