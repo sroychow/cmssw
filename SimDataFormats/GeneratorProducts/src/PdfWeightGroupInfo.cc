@@ -1,5 +1,4 @@
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
-#include <iostream>
 
 namespace gen {
     void PdfWeightGroupInfo::copy(const PdfWeightGroupInfo &other) {

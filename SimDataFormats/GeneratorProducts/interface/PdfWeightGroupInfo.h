@@ -16,6 +16,7 @@ namespace gen {
             bool hasAlphasVars_;
             int alphasUpIndex_;
             int alphasDownIndex_;
+            std::vector<int> lhapdfIdsContained_;
         public:
             PdfWeightGroupInfo() : WeightGroupInfo() { weightType_ = kPdfWeights; }
 	        PdfWeightGroupInfo(std::string header, std::string name) : 
@@ -35,8 +36,11 @@ namespace gen {
             void setAlphasDownIndex(int alphasDownIndex) { alphasDownIndex_ = alphasDownIndex; }
             PdfUncertaintyType uncertaintyType() const { return uncertaintyType_; }
             bool hasAlphasVariations() const { return hasAlphasVars_; }
+            bool containsMultipleSets() const { return lhapdfIdsContained_.size() > 1; }
             int alphasUpIndex() const { return alphasUpIndex_; }
             int alphasDownIndex() const { return alphasDownIndex_; }
+            void addLhapdfId(int lhaid) { lhapdfIdsContained_.push_back(lhaid); }
+            std::vector<int> getLhapdfIdsContained() const { return lhapdfIdsContained_; }
     };
 }
 

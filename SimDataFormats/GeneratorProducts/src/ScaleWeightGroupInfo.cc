@@ -1,6 +1,5 @@
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include <stdexcept>
-#include <iostream>
 
 namespace gen {
     void ScaleWeightGroupInfo::copy(const ScaleWeightGroupInfo &other) {
@@ -46,7 +45,7 @@ namespace gen {
         else if (muR == 2.0 && muF == 2.0)
             muR2muF2Index_ = info.localIndex;
         else
-            throw std::invalid_argument("Invalid muF and muR variation is not a factor of two from central value");
+            isWellFormed_ = false;
     }
 }
 

@@ -1,10 +1,11 @@
 #include <string>
 #include <algorithm>
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
-#include <iostream>
+#include "FWCore/Utilities/interface/Exception.h"
 
 namespace gen {
     void WeightGroupInfo::copy(const WeightGroupInfo &other) {
+        isWellFormed_ = true;
         headerEntry_ = other.headerEntry();
         name_ = other.name();
         weightType_ = other.weightType();
@@ -14,7 +15,7 @@ namespace gen {
     }
 
     WeightGroupInfo* WeightGroupInfo::clone() const {
-        return new WeightGroupInfo(*this);
+        throw cms::Exception("LogicError", "WeightGroupInfo is abstract, so it's clone() method can't be implemented.\n");
     }
 
     WeightMetaInfo WeightGroupInfo::weightMetaInfo(int weightEntry) const {

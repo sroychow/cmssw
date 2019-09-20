@@ -62,8 +62,12 @@ namespace gen {
             std::vector<WeightMetaInfo> idsContained() const { return idsContained_; }
             int firstId() const { return firstId_; }
             int lastId() const { return lastId_; }
+            // Store whether the group was fully parsed succesfully
+            void setIsWellFormed(bool wellFormed) { isWellFormed_ = wellFormed; }
+            bool isWellFormed() const { return isWellFormed_; }
 
         protected:
+            bool isWellFormed_;
             std::string headerEntry_;
             std::string name_;
             WeightType weightType_;
