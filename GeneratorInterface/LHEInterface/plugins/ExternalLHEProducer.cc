@@ -379,6 +379,11 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
 	for (auto& weightGroup : reader.getWeightGroups()) {
+        if (weightGroup.weightType() == 1) {
+            gen::ScaleWeightGroupInfo* group = static_cast<gen::ScaleWeightGroupInfo*>(weightGroup.clone());
+            std::cout << "MuR1MuF2Index is " << group->muR1muF2Index();
+        }
+
 	    weightInfoProduct_->addWeightGroupInfo(weightGroup.clone());
     }
 

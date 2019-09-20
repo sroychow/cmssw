@@ -20,12 +20,11 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
     for j, weights in enumerate(weightInfo.weights()):
         print "-"*10, "Looking at entry", j, "length is", len(weights),"-"*10
         matching = weightInfoProd.orderedWeightGroupInfo(j)
-        print matching
+        print "Group is", matching
         if matching.weightType() == 1:
-            print "    muR1muF05Index", matching.muR1muF05Index()
-            print "    muR1muF1Index", matching.centralIndex()
-            print "    muR2muF2Index", matching.muR2muF2Index()
-            print "    muR05muF05Index", matching.muR05muF05Index()
+            for var in [(x, y) for x in ["05", "1", "2"] for y in ["05", "1", "2"]]:
+                name = "muR%smuF%sIndex" % (var[0], var[1]) if not (var[0] == "1" and var[1] == "1") else "centralIndex"
+                print name, getattr(matching, name)()
         else:
             print "uncertaintyType", "Hessian" if matching.uncertaintyType() == ROOT.gen.kHessianUnc else "MC"
         print "Weights length?", len(weights), "Contained ids lenths?", len(matching.containedIds())

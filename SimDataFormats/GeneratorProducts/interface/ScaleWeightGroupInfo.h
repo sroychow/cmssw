@@ -7,31 +7,31 @@ namespace gen {
     class ScaleWeightGroupInfo : public WeightGroupInfo {
         private:
             bool isFunctionalFormVar_;
-            size_t icentral_;
-            size_t imuR1muF2_;
-            size_t imuR1muF05_;
-            size_t imuR2muF05_;
-            size_t imuR2muF1_;
-            size_t imuR2muF2_;
-            size_t imuR05muF05_;
-            size_t imuR05muF1_;
-            size_t imuR05muF2_;
+            size_t centralIndex_;
+            size_t muR1muF2Index_;
+            size_t muR1muF05Index_;
+            size_t muR2muF05Index_;
+            size_t muR2muF1Index_;
+            size_t muR2muF2Index_;
+            size_t muR05muF05Index_;
+            size_t muR05muF1Index_;
+            size_t muR05muF2Index_;
         public:
             ScaleWeightGroupInfo() : ScaleWeightGroupInfo("") {}
 	        ScaleWeightGroupInfo(std::string header, std::string name) : 
                 WeightGroupInfo(header, name) { 
                 weightType_ = kScaleWeights;
                 isFunctionalFormVar_ = false;
-                icentral_ = 0;
-                imuR1muF2_ = 0;
-                imuR1muF05_ = 0;
-                imuR2muF05_ = 0;
-                imuR2muF1_ = 0;
-                imuR2muF2_ = 0;
-                imuR2muF05_ = 0;
-                imuR05muF05_ = 0;
-                imuR05muF1_ = 0;
-                imuR05muF2_ = 0;
+                centralIndex_ = 0;
+                muR1muF2Index_ = 0;
+                muR1muF05Index_ = 0;
+                muR2muF05Index_ = 0;
+                muR2muF1Index_ = 0;
+                muR2muF2Index_ = 0;
+                muR2muF05Index_ = 0;
+                muR05muF05Index_ = 0;
+                muR05muF1Index_ = 0;
+                muR05muF2Index_ = 0;
             }
 	        ScaleWeightGroupInfo(std::string header) : 
                 ScaleWeightGroupInfo(header, header) { } 
@@ -48,15 +48,15 @@ namespace gen {
             // Is a variation of the functional form of the dynamic scale
             bool isFunctionalFormVariation();
             void setIsFunctionalFormVariation(bool functionalVar) {isFunctionalFormVar_ = functionalVar; }
-            size_t centralIndex() const {return icentral_; }
-            size_t muR1muF2Index() const { return imuR1muF2_; }
-            size_t muR1muF05Index() const { return imuR1muF05_; }
-            size_t muR2muF05Index() const { return imuR2muF05_; }
-            size_t muR2muF1Index() const { return imuR2muF1_; }
-            size_t muR2muF2Index() const { return imuR2muF2_; }
-            size_t muR05muF05Index() const { return imuR05muF05_; }
-            size_t muR05muF1Index() const { return imuR05muF1_; }
-            size_t muR05muF2Index() const { return imuR05muF2_; }
+            size_t centralIndex() const {return centralIndex_; }
+            size_t muR1muF2Index() const { return muR1muF2Index_; }
+            size_t muR1muF05Index() const { return muR1muF05Index_; }
+            size_t muR2muF05Index() const { return muR2muF05Index_; }
+            size_t muR2muF1Index() const { return muR2muF1Index_; }
+            size_t muR2muF2Index() const { return muR2muF2Index_; }
+            size_t muR05muF05Index() const { return muR05muF05Index_; }
+            size_t muR05muF1Index() const { return muR05muF1Index_; }
+            size_t muR05muF2Index() const { return muR05muF2Index_; }
     };
 }
 
