@@ -58,7 +58,8 @@ Implementation:
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 #include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
-#include "GeneratorInterface/Core/interface/LHEWeightGroupReaderHelper.h"
+//#include "GeneratorInterface/Core/interface/LHEWeightGroupReaderHelper.h"
+#include "GeneratorInterface/Core/interface/LHEWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
@@ -374,11 +375,11 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   
 	weightInfoProduct_ = std::make_unique<LHEWeightInfoProduct>();
 
-	LHEWeightGroupReaderHelper reader;
+    gen::LHEWeightHelper weightHelper;
 	//reader.parseLHEFile(LHEfilename);
-	reader.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+	weightHelper.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
-	for (auto& weightGroup : reader.getWeightGroups()) {
+	for (auto& weightGroup : weightHelper.getWeightGroups()) {
         if (weightGroup.weightType() == 1) {
             gen::ScaleWeightGroupInfo* group = static_cast<gen::ScaleWeightGroupInfo*>(weightGroup.clone());
             std::cout << "MuR1MuF2Index is " << group->muR1muF2Index();
