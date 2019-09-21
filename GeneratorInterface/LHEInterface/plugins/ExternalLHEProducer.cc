@@ -106,9 +106,9 @@ private:
   std::map<unsigned, std::pair<unsigned, unsigned>> nPartonMapping_{};
 
   std::unique_ptr<lhef::LHEReader>	reader_;
+  gen::LHEWeightHelper weightHelper_;
   std::shared_ptr<lhef::LHERunInfo>	runInfoLast;
   std::shared_ptr<lhef::LHERunInfo>	runInfo;
-  std::unique_ptr<LHEWeightInfoProduct>	weightInfoProduct_;
   std::shared_ptr<lhef::LHEEvent>	partonLevel;
   boost::ptr_deque<LHERunInfoProduct>	runInfoProducts;
   bool					wasMerged;
@@ -209,21 +209,8 @@ ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
                 boost::bind(&LHEEventProduct::addWeight,
                             product.get(), _1));
 
-  auto weightProduct = std::make_unique<LHEWeightProduct>();
-  weightProduct->setNumWeightSets(weightInfoProduct_->numberOfGroups());
-  int weightGroupIndex = 0;
-  int weightNum = 0;
-  for (const auto& weight : partonLevel->weights()) {
-    weightGroupIndex = findWeightGroup(weight.id, weightNum, weightGroupIndex);
-    if (weightGroupIndex < 0 || weightGroupIndex >= weightInfoProduct_->numberOfGroups()) {
-        // Needs to be properly handled
-        throw std::range_error("Unmatched weight");
-    }
-    auto* group = weightInfoProduct_->orderedWeightGroupInfo(weightGroupIndex);
-    int entry = group->weightVectorEntry(weight.id, weightNum);
-    weightProduct->addWeight(weight.wgt, weightGroupIndex, entry);
-    weightNum++;
-  }
+  // Should also zero out the weights in the GenInfoProduct
+  auto weightProduct = weightHelper_.weightProduct(partonLevel->weights());
   iEvent.put(std::move(weightProduct));
 
   product->setScales(partonLevel->scales());
@@ -373,21 +360,8 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
 	run.put(std::move(product));
   
-	weightInfoProduct_ = std::make_unique<LHEWeightInfoProduct>();
-
-    gen::LHEWeightHelper weightHelper;
-	//reader.parseLHEFile(LHEfilename);
-	weightHelper.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+	weightHelper_.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
       
-	for (auto& weightGroup : weightHelper.getWeightGroups()) {
-        if (weightGroup.weightType() == 1) {
-            gen::ScaleWeightGroupInfo* group = static_cast<gen::ScaleWeightGroupInfo*>(weightGroup.clone());
-            std::cout << "MuR1MuF2Index is " << group->muR1muF2Index();
-        }
-
-	    weightInfoProduct_->addWeightGroupInfo(weightGroup.clone());
-    }
-
 	runInfo.reset();
     }
 }
@@ -411,7 +385,12 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
   }  
   
   reader_.reset();  
-  run.put(std::move(weightInfoProduct_));
+
+  auto weightInfoProduct = std::make_unique<LHEWeightInfoProduct>();
+  for (auto& weightGroup : weightHelper_.weightGroups()) {
+      weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
+  }
+  run.put(std::move(weightInfoProduct));
   
   if (unlink(outputFile_.c_str())) {
     throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_ << " (errno=" << errno << ", " << strerror(errno) << ").";
@@ -542,30 +521,6 @@ ExternalLHEProducer::executeScript()
 
 }
 
-
-int ExternalLHEProducer::findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex) {
-    // Start search at previous index, under expectation of ordered weights
-    previousGroupIndex = previousGroupIndex >=0 ? previousGroupIndex : 0;
-    for (int index = previousGroupIndex; 
-            index < std::min(index+1, static_cast<int>(weightInfoProduct_->numberOfGroups())); index++) {
-        const gen::WeightGroupInfo* weightGroup = weightInfoProduct_->orderedWeightGroupInfo(index);
-        //    index < std::min(index+1, static_cast<int>(weightGroups_.size())); index++) {
-        //gen::WeightGroupInfo& weightGroup = weightGroups_[previousGroupIndex];
-        // Fast search assuming order is not perturbed outside of weight group
-        if (weightGroup->indexInRange(weightIndex) && weightGroup->containsWeight(wgtId, weightIndex)) {
-            return static_cast<int>(index);
-        }
-    }
-
-    // Fall back to unordered search
-    int counter = 0;
-    for (auto weightGroup : weightInfoProduct_->allWeightGroupsInfo()) {
-        if (weightGroup.containsWeight(wgtId, weightIndex))
-            return counter;
-        counter++;
-    }
-    return -1;
-}
 
 // ------------ Read the output script ------------
 #define BUFSIZE 4096
