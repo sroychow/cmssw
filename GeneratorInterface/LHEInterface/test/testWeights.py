@@ -1,9 +1,11 @@
 from DataFormats.FWLite import Events,Handle,Runs
 import ROOT
-source = "externalLHEProducer"
+#source = "externalLHEProducer"
+source = "testWeights"
 
 #for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"," HIG-RunIIFall18wmLHEGS-00509_ordered.root","HIG-RunIIFall18wmLHEGS-00509_unordered.root"]:
-for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
+#for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
+for filename in ["test.root"]:
     runs = Runs(filename)
     run = runs.__iter__().next()
     weightInfoHandle = Handle("LHEWeightInfoProduct")
@@ -13,7 +15,6 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
     events = Events(filename)
     event = events.__iter__().next()
     weightHandle = Handle("LHEWeightProduct")
-    event.getByLabel("externalLHEProducer", weightHandle)
     event.getByLabel(source, weightHandle)
     weightInfo = weightHandle.product()
     print "Content of the weights"
