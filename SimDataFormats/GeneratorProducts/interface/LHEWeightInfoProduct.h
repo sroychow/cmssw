@@ -25,6 +25,8 @@ class LHEWeightInfoProduct {
         const edm::OwnVector<gen::WeightGroupInfo>& allWeightGroupsInfo() const;
         const gen::WeightGroupInfo* containingWeightGroupInfo(int index) const;
         const gen::WeightGroupInfo* orderedWeightGroupInfo(int index) const;
+        std::vector<gen::WeightGroupInfo*> weightGroupsByType(gen::WeightType type) const;
+        std::vector<int> weightGroupIndicesByType(gen::WeightType type) const;
         void addWeightGroupInfo(gen::WeightGroupInfo* info);
         const int numberOfGroups() const { return weightGroupsInfo_.size(); }
 

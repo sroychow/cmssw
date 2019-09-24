@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    GenAnalysis/MergingAnalyzer
-// Class:      MergingAnalyzer
+// Package:    GenAnalysis/LHEWeightsTest
+// Class:      LHEWeightsTest
 //
-/**\class MergingAnalyzer MergingAnalyzer.cc GenAnalysis/MergingAnalyzer/plugins/MergingAnalyzer.cc
+/**\class LHEWeightsTest LHEWeightsTest.cc GenAnalysis/LHEWeightsTest/plugins/LHEWeightsTest.cc
 
  Description: [one line class summary]
 
@@ -26,6 +26,7 @@
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 
 #include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -41,6 +42,13 @@
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+
+#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEWeightProduct.h"
+
+#include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 
 #include "Math/VectorUtil.h"
 
@@ -58,30 +66,36 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class MergingAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
    public:
-      explicit MergingAnalyzer(const edm::ParameterSet&);
-      ~MergingAnalyzer();
+      explicit LHEWeightsTest(const edm::ParameterSet&);
+      ~LHEWeightsTest();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 
    private:
       virtual void beginJob() override;
+      virtual void endRun(edm::Run const& iRun, edm::EventSetup const&) {}
+      virtual void beginRun(edm::Run const& iRun, edm::EventSetup const&) override;
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
 
       void setup_variables(const edm::Event& iEvent);
+      std::vector<double> setup_weights(const edm::Event& iEvent);
 
       // ----------member data ---------------------------
       std::string tag_;
       bool isMiniaod_;
-      std::vector<int> scaleWeightOrder_;
+      std::vector<int> scaleWeightsOrder_;
+      unsigned int scaleWeightsIndex_;
 
       edm::EDGetTokenT<reco::GenParticleCollection> genParticleToken_;
       edm::EDGetTokenT<reco::GenJetCollection> genJetToken_;
       edm::EDGetTokenT<LHEEventProduct> LHEToken_;
       edm::EDGetTokenT<GenEventInfoProduct> GenToken_;
+      edm::EDGetTokenT<LHEWeightProduct> lheWeightToken_;
+      edm::EDGetTokenT<LHEWeightInfoProduct> lheWeightInfoToken_;
       edm::Service<TFileService> fileservice;
 
       std::map<TString, TH2D*> histograms2d;
@@ -107,18 +121,19 @@ class MergingAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  
 //
 // constructors and destructor
 //
-MergingAnalyzer::MergingAnalyzer(const edm::ParameterSet& iConfig) :
+LHEWeightsTest::LHEWeightsTest(const edm::ParameterSet& iConfig) :
   tag_(iConfig.getParameter<std::string>("tag")),
   isMiniaod_(iConfig.getParameter<bool>("miniaod")),
   genParticleToken_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleSrc"))),
   genJetToken_(consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetSrc"))),
   LHEToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("LHESrc"))),
-  GenToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenSrc")))
-
+  GenToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenSrc"))),
+  lheWeightToken_(consumes<LHEWeightProduct>(edm::InputTag("testWeights"))),
+  lheWeightInfoToken_(consumes<LHEWeightInfoProduct, edm::InRun>(edm::InputTag("testWeights")))
 
 {
    //now do what ever initialization is needed
-   usesResource("TFileService");
+   //usesResource("TFileService");
    TFileDirectory subdirectory = fileservice->mkdir( tag_ );
 
    h_count_event = subdirectory.make<TH1D>("h_count_event",     "h_count_event;Dummy;Events",        1,0,1);
@@ -133,8 +148,6 @@ MergingAnalyzer::MergingAnalyzer(const edm::ParameterSet& iConfig) :
    histograms2d["dilepton_pt"] = subdirectory.make<TH2D>("dilepton_pt", "Dilepton p_{T}; p_{T} (GeV);weight;Events",200,0,2000, nweights, -0.5, nweights-0.5);
    histograms2d["n_leptons"]   = subdirectory.make<TH2D>("n_leptons",   "number of leptons;n_lep;weight;Events",10,-0.5,9.5, nweights, -0.5, nweights-0.5);
 
-   // histograms2d["njet"] = subdirectory.make<TH2D>("njet_over_pt",     "pt threshold;njet;Events",10,-5,95,10,-0.5,9.5);
-
    tree = subdirectory.make<TTree>("events","events");
    for(auto const entry : histograms1d){
       tree->Branch(entry.first, &variables[entry.first],(entry.first+"/D").Data());
@@ -143,7 +156,7 @@ MergingAnalyzer::MergingAnalyzer(const edm::ParameterSet& iConfig) :
 }
 
 
-MergingAnalyzer::~MergingAnalyzer()
+LHEWeightsTest::~LHEWeightsTest()
 {
 
    // do anything here that needs to be done at desctruction time
@@ -286,9 +299,8 @@ std::vector<reco::GenJet> clean_v_jets(const std::vector<reco::GenJet> & genJets
 }
 
 
-void MergingAnalyzer::setup_variables(const edm::Event& iEvent) {
+void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
    using namespace edm;
-
 
    //// Initialize with dummy values
    for ( auto pair : variables ) {
@@ -320,35 +332,18 @@ void MergingAnalyzer::setup_variables(const edm::Event& iEvent) {
       auto z_cand = find_z_candidate(leptons);
       variables["dilepton_pt"] = (z_cand.first.p4() + z_cand.second.p4()).pt();
    }
+   else
+      variables["dilepton_pt"] = 0;
+
    //// Jets
-   std::vector<reco::GenJet> jets = clean_v_jets(clean_jets(select_jets(*genJets),leptons));
+   std::vector<reco::GenJet> jets = clean_jets(select_jets(*genJets),leptons);
+   //std::vector<reco::GenJet> jets = clean_v_jets(clean_jets(select_jets(*genJets),leptons));
    int njets = jets.size();
    variables["n_jets"] = njets;
-   if(njets>0){
-      variables["pt_jet1"]   = jets.at(0).pt() ;
-   }
-   if(njets>1){
-      variables["pt_jet2"]   = jets.at(1).pt() ;
-   }
-   if(njets>2){
-      variables["pt_jet3"]   = jets.at(2).pt() ;
-   }
-   if(njets>3){
-      variables["pt_jet4"]   = jets.at(3).pt() ;
-   }
-
-
-   // for (unsigned int i = 0; i<=10; i++){
-
-   //    float threshold = i*10;
-   //    int njet = 0;
-   //    for ( auto const & j : jets ) {
-   //       if(j.pt() > threshold){
-   //          njet++;
-   //       }
-   //    }
-   //    histograms2d["njet"]->Fill(threshold,njet,variables["weight"]);
-   // }
+   variables["pt_jet1"]   = njets > 0 ? jets.at(0).pt() : -999;
+   variables["pt_jet2"]   = njets > 1 ? jets.at(1).pt() : -999;
+   variables["pt_jet3"]   = njets > 2 ? jets.at(2).pt() : -999;
+   variables["pt_jet4"]   = njets > 3 ? jets.at(3).pt() : -999;
 
    double ht = 0;
    for(auto const & j : jets){
@@ -357,22 +352,24 @@ void MergingAnalyzer::setup_variables(const edm::Event& iEvent) {
    variables["ht"] = ht;
 
 }
-std::vector<double> setup_weights(const edm::Event& iEvent) {
-   edm::Handle<LHEEventProduct> lheHandle;
-   iEvent.getByLabel("testWeights", lheHandle);
-   const LHEWeightProduct * lheWeights = lheHandle.product();
-   std::vector<float> weights = lheWeights.weights();
+std::vector<double> LHEWeightsTest::setup_weights(const edm::Event& iEvent) {
+   edm::Handle<LHEWeightProduct> lheWeightHandle;
+   iEvent.getByToken(lheWeightToken_, lheWeightHandle);
+   const LHEWeightProduct * lheWeights = lheWeightHandle.product();
+   WeightsContainer weights = lheWeights->weights();
+   auto scaleWeights = weights.at(scaleWeightsIndex_);
+   std::vector<double> keepWeights;
 
-   for(auto i : scaleWeightOrder_){
-      weights.push_back(weights[i]);
+   for(auto i : scaleWeightsOrder_){
+      keepWeights.push_back(scaleWeights[i]);
    }
-   return weights;
+   return keepWeights;
 }
 
 
 // ------------ method called for each event  ------------
 void
-MergingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+LHEWeightsTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
@@ -380,11 +377,10 @@ MergingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
    tree->Fill();
    auto weights = setup_weights(iEvent);
    h_count_event->Fill(0.5);
-   h_count_sumw->Fill(0.5,weights.at(0));
+   h_count_sumw->Fill(0.5,weights.at(4));
 
    for( auto pair : histograms2d ) {
       for(uint i=0; i<weights.size(); i++) {
-         // cout << pair.first <<
          double value = variables.at(pair.first);
          if(value > -9998){
                pair.second->Fill(value,i,weights.at(i));
@@ -396,19 +392,19 @@ MergingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-MergingAnalyzer::beginJob()
+LHEWeightsTest::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-MergingAnalyzer::endJob()
+LHEWeightsTest::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-MergingAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+LHEWeightsTest::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -417,35 +413,33 @@ MergingAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
 }
 
 void 
-LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es) {
-    edm::Handle<LHEWeightInfoProduct> lheWeightInfoHandle;
+LHEWeightsTest::beginRun(edm::Run const& run, edm::EventSetup const& es) {
+    //edm::Handle<LHEWeightInfoProduct> lheWeightsInfoHandle;
     // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
-    run.getByLabel("testWeights", lheWeightInfoHandle);
+    //run.getByLabel("testWeights", lheWeightsInfoHandle);
+    //edm::Handle<GenRunInfoProduct> lheWeightsInfoHandle;
+    //run.getByLabel("generator", lheWeightsInfoHandle);
+    edm::Handle<LHEWeightInfoProduct> lheWeightInfoHandle;
+    run.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function
-    gen::ScaleWeightGroup scaleWeightInfo;
-    for (const auto& group : lheWeightInfoHandle->allWeightGroupsInfo()) {
-        if (std::find("scale", group.name()) != std::string::npos) {
-            scaleWeightInfo = group;
-            break;
-        }
-    }
-    
+    scaleWeightsIndex_ = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights).front();
+    auto scaleWeights = static_cast<const gen::ScaleWeightGroupInfo*>(
+            lheWeightInfoHandle->orderedWeightGroupInfo(scaleWeightsIndex_));
     // nano ordering of mur=0.5 muf=0.5 ; [1] is mur=0.5 muf=1 ; [2] is mur=0.5 muf=2 ; [3] is mur=1 muf=0.5 ; 
     // [4] is mur=1 muf=1 ; [5] is mur=1 muf=2 ; [6] is mur=2 muf=0.5 ; [7] is mur=2 muf=1 ; [8] is mur=2 muf=2 *
-    scaleWeightOrder_ = { group.muR05muF05Index(),
-        group.muR05muF1Index(),
-        group.muR05muF2Index(),
-        group.muR1muF05Index(),
-        group.centralIndex(),
-        group.muR1muF2Index(),
-        group.muR2muF05Index(),
-        group.muR2muF1Index(),
-        group.muR2muF2Index(),
-    }
-
+    scaleWeightsOrder_.clear();
+    scaleWeightsOrder_.push_back(scaleWeights->muR05muF05Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR05muF1Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR05muF2Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR1muF05Index());
+    scaleWeightsOrder_.push_back(scaleWeights->centralIndex());
+    scaleWeightsOrder_.push_back(scaleWeights->muR1muF2Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR2muF05Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR2muF1Index());
+    scaleWeightsOrder_.push_back(scaleWeights->muR2muF2Index());
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(MergingAnalyzer);
+DEFINE_FWK_MODULE(LHEWeightsTest);
 

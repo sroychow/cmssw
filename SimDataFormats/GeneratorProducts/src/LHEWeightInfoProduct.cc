@@ -35,6 +35,24 @@ const gen::WeightGroupInfo* LHEWeightInfoProduct::orderedWeightGroupInfo(int wei
     return &weightGroupsInfo_[weightGroupIndex];
 }
 
+std::vector<gen::WeightGroupInfo*> LHEWeightInfoProduct::weightGroupsByType(gen::WeightType type) const {
+    std::vector<gen::WeightGroupInfo*> matchingGroups;
+    for (size_t i = 0; i < weightGroupsInfo_.size(); i++) {
+        if (weightGroupsInfo_[i].weightType() == type)
+            matchingGroups.push_back(weightGroupsInfo_[i].clone());
+    }
+    return matchingGroups;
+}
+
+std::vector<int> LHEWeightInfoProduct::weightGroupIndicesByType(gen::WeightType type) const {
+    std::vector<int> matchingGroupIndices;
+    for (size_t i = 0; i < weightGroupsInfo_.size(); i++) {
+        if (weightGroupsInfo_[i].weightType() == type)
+            matchingGroupIndices.push_back(i);
+    }
+    return matchingGroupIndices;
+}
+
 void LHEWeightInfoProduct::addWeightGroupInfo(gen::WeightGroupInfo* info) {  
     weightGroupsInfo_.push_back(info); 
 }

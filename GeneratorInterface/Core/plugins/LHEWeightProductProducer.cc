@@ -52,7 +52,7 @@ LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iCon
         //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
 {
   produces<LHEWeightProduct>();
-  produces<LHEWeightInfoProduct, edm::Transition::EndRun>();
+  produces<LHEWeightInfoProduct, edm::Transition::BeginRun>();
 }
 
 
@@ -88,17 +88,17 @@ LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
     }
 
 	weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
+    auto weightInfoProduct = std::make_unique<LHEWeightInfoProduct>();
+    for (auto& weightGroup : weightHelper_.weightGroups()) {
+        weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
+    }
+    run.put(std::move(weightInfoProduct));
 }
 
 
 // ------------ method called when ending the processing of a run  ------------
 void 
 LHEWeightProductProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es) {
-  auto weightInfoProduct = std::make_unique<LHEWeightInfoProduct>();
-  for (auto& weightGroup : weightHelper_.weightGroups()) {
-      weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
-  }
-  run.put(std::move(weightInfoProduct));
 }
 
 DEFINE_FWK_MODULE(LHEWeightProductProducer);

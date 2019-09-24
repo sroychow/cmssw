@@ -1,5 +1,6 @@
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace gen {
     void ScaleWeightGroupInfo::copy(const ScaleWeightGroupInfo &other) {
@@ -9,7 +10,7 @@ namespace gen {
         muR2muF05Index_ = other.muR2muF05Index_;
         muR2muF1Index_ = other.muR2muF1Index_;
         muR2muF2Index_ = other.muR2muF2Index_;
-        muR2muF05Index_ = other.muR2muF05Index_;
+        muR05muF05Index_ = other.muR2muF05Index_;
         muR05muF1Index_ = other.muR05muF1Index_;
         muR05muF2Index_ = other.muR05muF2Index_;
         WeightGroupInfo::copy(other);
