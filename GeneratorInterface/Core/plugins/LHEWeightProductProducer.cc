@@ -79,7 +79,6 @@ LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
     // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
     run.getByLabel("externalLHEProducer", lheRunInfoHandle);
 
-    std::cout << "In the run" << std::endl;
     typedef std::vector<LHERunInfoProduct::Header>::const_iterator header_cit;
     LHERunInfoProduct::Header headerWeightInfo;
     for (header_cit iter=lheRunInfoHandle->headers_begin(); iter!=lheRunInfoHandle->headers_end(); iter++) { 
