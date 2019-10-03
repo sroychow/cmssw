@@ -1,27 +1,27 @@
 #include <vector>
 #include <string>
 
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 
-LHEWeightInfoProduct::LHEWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups) {
+GenWeightInfoProduct::GenWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups) {
     weightGroupsInfo_ = weightGroups;
 }
         
-LHEWeightInfoProduct& LHEWeightInfoProduct::operator=(const LHEWeightInfoProduct &other) {
+GenWeightInfoProduct& GenWeightInfoProduct::operator=(const GenWeightInfoProduct &other) {
     weightGroupsInfo_ = other.weightGroupsInfo_; 
     return * this; 
 }
 
-LHEWeightInfoProduct& LHEWeightInfoProduct::operator=(LHEWeightInfoProduct &&other) {
+GenWeightInfoProduct& GenWeightInfoProduct::operator=(GenWeightInfoProduct &&other) {
     weightGroupsInfo_ = std::move(other.weightGroupsInfo_); 
     return *this;
 }
 
-const edm::OwnVector<gen::WeightGroupInfo>& LHEWeightInfoProduct::allWeightGroupsInfo() const { 
+const edm::OwnVector<gen::WeightGroupInfo>& GenWeightInfoProduct::allWeightGroupsInfo() const { 
     return weightGroupsInfo_; 
 }
 
-const gen::WeightGroupInfo* LHEWeightInfoProduct::containingWeightGroupInfo(int index) const {
+const gen::WeightGroupInfo* GenWeightInfoProduct::containingWeightGroupInfo(int index) const {
     for (const auto& weightGroup : weightGroupsInfo_) {
         if (weightGroup.indexInRange(index))
             return &weightGroup;
@@ -29,13 +29,13 @@ const gen::WeightGroupInfo* LHEWeightInfoProduct::containingWeightGroupInfo(int 
     throw std::domain_error("Failed to find containing weight group");
 }
 
-const gen::WeightGroupInfo* LHEWeightInfoProduct::orderedWeightGroupInfo(int weightGroupIndex) const {
+const gen::WeightGroupInfo* GenWeightInfoProduct::orderedWeightGroupInfo(int weightGroupIndex) const {
     if (weightGroupIndex >= static_cast<int>(weightGroupsInfo_.size()))
         throw std::range_error("Weight index out of range!");
     return &weightGroupsInfo_[weightGroupIndex];
 }
 
-std::vector<gen::WeightGroupInfo*> LHEWeightInfoProduct::weightGroupsByType(gen::WeightType type) const {
+std::vector<gen::WeightGroupInfo*> GenWeightInfoProduct::weightGroupsByType(gen::WeightType type) const {
     std::vector<gen::WeightGroupInfo*> matchingGroups;
     for (size_t i = 0; i < weightGroupsInfo_.size(); i++) {
         if (weightGroupsInfo_[i].weightType() == type)
@@ -44,7 +44,7 @@ std::vector<gen::WeightGroupInfo*> LHEWeightInfoProduct::weightGroupsByType(gen:
     return matchingGroups;
 }
 
-std::vector<int> LHEWeightInfoProduct::weightGroupIndicesByType(gen::WeightType type) const {
+std::vector<int> GenWeightInfoProduct::weightGroupIndicesByType(gen::WeightType type) const {
     std::vector<int> matchingGroupIndices;
     for (size_t i = 0; i < weightGroupsInfo_.size(); i++) {
         if (weightGroupsInfo_[i].weightType() == type)
@@ -53,6 +53,6 @@ std::vector<int> LHEWeightInfoProduct::weightGroupIndicesByType(gen::WeightType 
     return matchingGroupIndices;
 }
 
-void LHEWeightInfoProduct::addWeightGroupInfo(gen::WeightGroupInfo* info) {  
+void GenWeightInfoProduct::addWeightGroupInfo(gen::WeightGroupInfo* info) {  
     weightGroupsInfo_.push_back(info); 
 }

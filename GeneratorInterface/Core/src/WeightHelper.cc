@@ -1,8 +1,8 @@
 #include "GeneratorInterface/Core/interface/WeightHelper.h"
 
 namespace gen {
-    std::unique_ptr<LHEWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights) {
-        auto weightProduct = std::make_unique<LHEWeightProduct>();
+    std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights) {
+        auto weightProduct = std::make_unique<GenWeightProduct>();
         weightProduct->setNumWeightSets(weightGroups_.size());
         int weightGroupIndex = 0;
         int weightNum = 0;

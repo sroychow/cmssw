@@ -32,7 +32,7 @@
  #include "FWCore/Utilities/interface/InputTag.h"
  #include "DataFormats/TrackReco/interface/Track.h"
  #include "DataFormats/TrackReco/interface/TrackFwd.h"
- #include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+ #include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
  #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
  #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 //
@@ -56,7 +56,7 @@ class TestAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
 
 
    private:
-      edm::EDGetTokenT<LHEWeightInfoProduct> lheWeightInfoToken_;
+      edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
       virtual void beginJob() override;
       void beginRun(edm::Run const& iRun, edm::EventSetup const&) override;
       void endRun(edm::Run const& iRun, edm::EventSetup const&) override;
@@ -78,7 +78,7 @@ class TestAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
 // constructors and destructor
 //
 TestAnalyzer::TestAnalyzer(const edm::ParameterSet& iConfig) :
-    lheWeightInfoToken_(consumes<LHEWeightInfoProduct, edm::InRun>(edm::InputTag("externalLHEProducer")))
+    lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InRun>(edm::InputTag("externalLHEProducer")))
 {
    //now do what ever initialization is needed
 
@@ -127,10 +127,10 @@ void TestAnalyzer::endRun(edm::Run const& iRun, edm::EventSetup const&) {}
 
 void TestAnalyzer::beginRun(edm::Run const& iRun, edm::EventSetup const&) 
 {   
-    edm::Handle<LHEWeightInfoProduct> lheWeightInfoHandle;
+    edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
     iRun.getByToken( lheWeightInfoToken_, lheWeightInfoHandle );
 
-    const LHEWeightInfoProduct* lheProd = lheWeightInfoHandle.product();
+    const GenWeightInfoProduct* lheProd = lheWeightInfoHandle.product();
     edm::OwnVector<gen::WeightGroupInfo> groups = lheProd->allWeightGroupsInfo();
     for (const auto& group : groups) {
         std::cout << "Type of the weight is " << group.weightType() << " name is " << group.name() << std::endl;

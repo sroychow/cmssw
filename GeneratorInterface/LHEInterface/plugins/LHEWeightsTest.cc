@@ -43,8 +43,8 @@
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
@@ -94,8 +94,8 @@ class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
       edm::EDGetTokenT<reco::GenJetCollection> genJetToken_;
       edm::EDGetTokenT<LHEEventProduct> LHEToken_;
       edm::EDGetTokenT<GenEventInfoProduct> GenToken_;
-      edm::EDGetTokenT<LHEWeightProduct> lheWeightToken_;
-      edm::EDGetTokenT<LHEWeightInfoProduct> lheWeightInfoToken_;
+      edm::EDGetTokenT<GenWeightProduct> lheWeightToken_;
+      edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
       edm::Service<TFileService> fileservice;
 
       std::map<TString, TH2D*> histograms2d;
@@ -128,8 +128,8 @@ LHEWeightsTest::LHEWeightsTest(const edm::ParameterSet& iConfig) :
   genJetToken_(consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetSrc"))),
   LHEToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("LHESrc"))),
   GenToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenSrc"))),
-  lheWeightToken_(consumes<LHEWeightProduct>(edm::InputTag("testWeights"))),
-  lheWeightInfoToken_(consumes<LHEWeightInfoProduct, edm::InRun>(edm::InputTag("testWeights")))
+  lheWeightToken_(consumes<GenWeightProduct>(edm::InputTag("testWeights"))),
+  lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InRun>(edm::InputTag("testWeights")))
 
 {
    //now do what ever initialization is needed
@@ -353,9 +353,9 @@ void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
 
 }
 std::vector<double> LHEWeightsTest::setup_weights(const edm::Event& iEvent) {
-   edm::Handle<LHEWeightProduct> lheWeightHandle;
+   edm::Handle<GenWeightProduct> lheWeightHandle;
    iEvent.getByToken(lheWeightToken_, lheWeightHandle);
-   const LHEWeightProduct * lheWeights = lheWeightHandle.product();
+   const GenWeightProduct * lheWeights = lheWeightHandle.product();
    WeightsContainer weights = lheWeights->weights();
    auto scaleWeights = weights.at(scaleWeightsIndex_);
    std::vector<double> keepWeights;
@@ -414,12 +414,12 @@ LHEWeightsTest::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 
 void 
 LHEWeightsTest::beginRun(edm::Run const& run, edm::EventSetup const& es) {
-    //edm::Handle<LHEWeightInfoProduct> lheWeightsInfoHandle;
+    //edm::Handle<GenWeightInfoProduct> lheWeightsInfoHandle;
     // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
     //run.getByLabel("testWeights", lheWeightsInfoHandle);
     //edm::Handle<GenRunInfoProduct> lheWeightsInfoHandle;
     //run.getByLabel("generator", lheWeightsInfoHandle);
-    edm::Handle<LHEWeightInfoProduct> lheWeightInfoHandle;
+    edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
     run.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function

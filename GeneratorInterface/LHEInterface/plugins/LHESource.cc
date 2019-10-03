@@ -23,7 +23,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
@@ -37,7 +37,7 @@ LHESource::LHESource(const edm::ParameterSet &params,
                      const edm::InputSourceDescription &desc) :
   ProducerSourceFromFiles(params, desc, false),
   reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
-  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), edm::TypeID(typeid(LHEWeightInfoProduct)), productRegistryUpdate()),
+  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), edm::TypeID(typeid(GenWeightInfoProduct)), productRegistryUpdate()),
   phid_()
 {
   nextEvent();
@@ -136,7 +136,7 @@ void LHESource::putRunInfoProduct(edm::RunPrincipal& iRunPrincipal) {
 
 void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
   if (runInfoProductLast_) {
-    auto product = std::make_unique<LHEWeightInfoProduct>();
+    auto product = std::make_unique<GenWeightInfoProduct>();
     gen::WeightGroupInfo scaleInfo(
         "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
     );
@@ -149,7 +149,7 @@ void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
 
     product->addWeightGroupInfo(&scaleInfo);
     product->addWeightGroupInfo(&cenPdfInfo);
-    std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<LHEWeightInfoProduct>(std::move(product)));
+    std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<GenWeightInfoProduct>(std::move(product)));
     iRunPrincipal.put(lheProvenanceHelper_.weightProductBranchDescription_, std::move(rdp));
   }
 }

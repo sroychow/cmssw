@@ -49,16 +49,16 @@ Implementation:
 
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEXMLStringProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 #include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
-//#include "GeneratorInterface/Core/interface/LHEWeightGroupReaderHelper.h"
+//#include "GeneratorInterface/Core/interface/GenWeightGroupReaderHelper.h"
 #include "GeneratorInterface/Core/interface/LHEWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -163,10 +163,10 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<LHEXMLStringProduct, edm::Transition::BeginRun>("LHEScriptOutput"); 
 
   produces<LHEEventProduct>();
-  produces<LHEWeightProduct>();
+  produces<GenWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
-  produces<LHEWeightInfoProduct, edm::Transition::EndRun>();
+  produces<GenWeightInfoProduct, edm::Transition::EndRun>();
 }
 
 
@@ -386,7 +386,7 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
   
   reader_.reset();  
 
-  auto weightInfoProduct = std::make_unique<LHEWeightInfoProduct>();
+  auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
   for (auto& weightGroup : weightHelper_.weightGroups()) {
       weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
   }

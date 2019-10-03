@@ -1,5 +1,5 @@
-#ifndef SimDataFormats_GeneratorProducts_LHEWeightProduct_h
-#define SimDataFormats_GeneratorProducts_LHEWeightProduct_h
+#ifndef SimDataFormats_GeneratorProducts_GenWeightProduct_h
+#define SimDataFormats_GeneratorProducts_GenWeightProduct_h
 
 #include <memory>
 #include <vector>
@@ -11,14 +11,14 @@
 
 typedef std::vector<std::vector<double>> WeightsContainer;
 
-class LHEWeightProduct {
+class GenWeightProduct {
     public:
-        LHEWeightProduct() { weightsVector_ = {}; }
-        LHEWeightProduct& operator=(LHEWeightProduct&& other) {
+        GenWeightProduct() { weightsVector_ = {}; }
+        GenWeightProduct& operator=(GenWeightProduct&& other) {
         weightsVector_ = std::move(other.weightsVector_);
         return *this;
         }
-        ~LHEWeightProduct() {}
+        ~GenWeightProduct() {}
 
         void setNumWeightSets(int num) { weightsVector_.resize(num); }
         void addWeightSet() { weightsVector_.push_back({}); }
@@ -39,5 +39,5 @@ class LHEWeightProduct {
         WeightsContainer weightsVector_;
 };
 
-#endif // GeneratorEvent_LHEInterface_LHEWeightProduct_h
+#endif // GeneratorEvent_LHEInterface_GenWeightProduct_h
 

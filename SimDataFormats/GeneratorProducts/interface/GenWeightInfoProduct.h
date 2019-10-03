@@ -1,5 +1,5 @@
-#ifndef SimDataFormats_GeneratorProducts_LHEWeightInfoProduct_h
-#define SimDataFormats_GeneratorProducts_LHEWeightInfoProduct_h
+#ifndef SimDataFormats_GeneratorProducts_GenWeightInfoProduct_h
+#define SimDataFormats_GeneratorProducts_GenWeightInfoProduct_h
 
 #include <iterator>
 #include <memory>
@@ -12,15 +12,15 @@
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 
-class LHEWeightInfoProduct {
+class GenWeightInfoProduct {
     public:
-        LHEWeightInfoProduct() {}
-        LHEWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups);
-	    LHEWeightInfoProduct(const LHEWeightInfoProduct& other); 
-	    LHEWeightInfoProduct(LHEWeightInfoProduct&& other);
-        ~LHEWeightInfoProduct() {}
-        LHEWeightInfoProduct& operator=(const LHEWeightInfoProduct &other); 
-        LHEWeightInfoProduct& operator=(LHEWeightInfoProduct &&other); 
+        GenWeightInfoProduct() {}
+        GenWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups);
+	    GenWeightInfoProduct(const GenWeightInfoProduct& other); 
+	    GenWeightInfoProduct(GenWeightInfoProduct&& other);
+        ~GenWeightInfoProduct() {}
+        GenWeightInfoProduct& operator=(const GenWeightInfoProduct &other); 
+        GenWeightInfoProduct& operator=(GenWeightInfoProduct &&other); 
 
         const edm::OwnVector<gen::WeightGroupInfo>& allWeightGroupsInfo() const;
         const gen::WeightGroupInfo* containingWeightGroupInfo(int index) const;
@@ -36,5 +36,5 @@ class LHEWeightInfoProduct {
 
 };
 
-#endif // GeneratorWeightInfo_LHEInterface_LHEWeightInfoProduct_h
+#endif // GeneratorWeightInfo_LHEInterface_GenWeightInfoProduct_h
 

@@ -16,7 +16,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
@@ -51,8 +51,8 @@ LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iCon
     lheEventToken_(consumes<LHEEventProduct>(edm::InputTag("externalLHEProducer")))
         //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
 {
-  produces<LHEWeightProduct>();
-  produces<LHEWeightInfoProduct, edm::Transition::BeginRun>();
+  produces<GenWeightProduct>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginRun>();
 }
 
 
@@ -88,7 +88,7 @@ LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
     }
 
 	weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
-    auto weightInfoProduct = std::make_unique<LHEWeightInfoProduct>();
+    auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
     for (auto& weightGroup : weightHelper_.weightGroups()) {
         weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
     }
