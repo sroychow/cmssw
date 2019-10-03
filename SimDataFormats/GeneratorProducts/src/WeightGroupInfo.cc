@@ -40,7 +40,7 @@ namespace gen {
         if (!indexInRange(weightEntry)) {
             size_t orderedEntry = weightEntry - firstId_;
             if (orderedEntry < idsContained_.size())
-                if (idsContained_.at(orderedEntry).id == wgtId)
+                if (!wgtId.empty() && idsContained_.at(orderedEntry).id == wgtId)
                     return orderedEntry;
         }
         auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 

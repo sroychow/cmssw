@@ -12,6 +12,8 @@ namespace gen {
         WeightHelper() {}
         edm::OwnVector<gen::WeightGroupInfo> weightGroups() {return weightGroups_;}
         std::unique_ptr<GenWeightProduct> weightProduct(std::vector<gen::WeightsInfo>);
+        std::unique_ptr<GenWeightProduct> weightProduct(std::vector<double>);
+        int addWeightToProduct(std::unique_ptr<GenWeightProduct>& product, double weight, std::string name, int weightNum, int groupIndex);
         int findContainingWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);
     protected:
         edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
