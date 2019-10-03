@@ -1,11 +1,12 @@
 from DataFormats.FWLite import Events,Handle,Runs
 import ROOT
-source = "externalLHEProducer"
-#source = "testWeights"
+#source = "externalLHEProducer"
+#source = "testLHEWeights"
+source = "testGenWeights"
 
 #for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"," HIG-RunIIFall18wmLHEGS-00509_ordered.root","HIG-RunIIFall18wmLHEGS-00509_unordered.root"]:
-for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
-#for filename in ["test.root"]:
+#for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
+for filename in ["test.root"]:
     runs = Runs(filename)
     run = runs.__iter__().next()
     weightInfoHandle = Handle("GenWeightInfoProduct")
@@ -17,6 +18,10 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
     weightHandle = Handle("GenWeightProduct")
     event.getByLabel(source, weightHandle)
     weightInfo = weightHandle.product()
+    print weightInfo
+    print len(weightInfo.weights())
+    print weightInfoProd.allWeightGroupsInfo()
+    print len(weightInfoProd.allWeightGroupsInfo())
     print "Content of the weights"
     for j, weights in enumerate(weightInfo.weights()):
         print "-"*10, "Looking at entry", j, "length is", len(weights),"-"*10
@@ -26,7 +31,7 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
             for var in [(x, y) for x in ["05", "1", "2"] for y in ["05", "1", "2"]]:
                 name = "muR%smuF%sIndex" % (var[0], var[1]) if not (var[0] == "1" and var[1] == "1") else "centralIndex"
                 print name, getattr(matching, name)()
-        else:
+        elif matching.weightType() == 0:
             print "uncertaintyType", "Hessian" if matching.uncertaintyType() == ROOT.gen.kHessianUnc else "MC"
         print "Weights length?", len(weights), "Contained ids lenths?", len(matching.containedIds())
         print "-"*80

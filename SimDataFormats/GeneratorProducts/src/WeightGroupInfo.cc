@@ -3,6 +3,8 @@
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
+#include <iostream>
+
 namespace gen {
     void WeightGroupInfo::copy(const WeightGroupInfo &other) {
         isWellFormed_ = true;
@@ -36,26 +38,30 @@ namespace gen {
     }
 
     int WeightGroupInfo::weightVectorEntry(const std::string& wgtId, int weightEntry) const {
-        int entry = -1;
-        if (!indexInRange(weightEntry)) {
+        // First try ordered search
+        if (indexInRange(weightEntry)) {
             size_t orderedEntry = weightEntry - firstId_;
             if (orderedEntry < idsContained_.size())
-                if (!wgtId.empty() && idsContained_.at(orderedEntry).id == wgtId)
+                if (wgtId.empty() || idsContained_.at(orderedEntry).id == wgtId) {
                     return orderedEntry;
+                }
         }
-        auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 
-                        [wgtId] (const WeightMetaInfo& w) { return w.id == wgtId; });
-        if (it != idsContained_.end())
-            return std::distance(idsContained_.begin(), it);
-        return entry;
+        // Fall back to search on ID
+        else if (!wgtId.empty()) {
+            auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 
+                            [wgtId] (const WeightMetaInfo& w) { return w.id == wgtId; });
+            if (it != idsContained_.end())
+                return std::distance(idsContained_.begin(), it);
+        }
+        return -1;
     }
 
     void WeightGroupInfo::addContainedId(int weightEntry, std::string id, std::string label="") {
         if (firstId_ == -1 || weightEntry < firstId_) {
             firstId_ = weightEntry;
             // Reset to reflect that indices will be shifted
-            for (auto& id : idsContained_)
-                id.localIndex = id.globalIndex - firstId_;
+            for (auto& entry : idsContained_)
+                entry.localIndex = entry.globalIndex - firstId_;
         }
         if (weightEntry > lastId_)
             lastId_ = weightEntry;

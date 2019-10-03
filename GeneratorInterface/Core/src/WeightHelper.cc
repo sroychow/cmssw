@@ -6,7 +6,7 @@ namespace gen {
         auto weightProduct = std::make_unique<GenWeightProduct>();
         weightProduct->setNumWeightSets(weightGroups_.size());
         int weightGroupIndex = 0;
-        for (unsigned int i = 0; i < weightGroups_.size(); i++) {
+        for (unsigned int i = 0; i < weights.size(); i++) {
             addWeightToProduct(weightProduct, weights.at(i), "", i, weightGroupIndex);
         }
         return std::move(weightProduct);

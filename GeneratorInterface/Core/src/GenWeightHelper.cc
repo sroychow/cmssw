@@ -17,14 +17,15 @@ namespace gen {
         for (std::string weightName : weightNames) {
             if(weightName.find("LHE") != std::string::npos) {
                 // Parse as usual, this is the SUSY workflow
+                continue;
             }
             // Working on the not-so-nice assumption that all non-LHE gen weights are PS weights
             else if (weightGroups_.size() == 0) {
-                weightGroups_.push_back(new gen::PartonShowerWeightGroupInfo(weightName));
-                auto& group = weightGroups_.back();
-                // No IDs for Gen weights
-                group.addContainedId(index, "", weightName);
+                weightGroups_.push_back(new gen::PartonShowerWeightGroupInfo("shower"));
             }
+            auto& group = weightGroups_.back();
+            // No IDs for Gen weights
+            group.addContainedId(index++, "", weightName);
         }
     }
 }
