@@ -21,7 +21,7 @@ namespace gen {
         kScaleWeights,
         kMatrixElementWeights,
         kUnknownWeights,
-        kShowerWeights,
+        kPartonShowerWeights,
     };
 
 	class WeightGroupInfo {
