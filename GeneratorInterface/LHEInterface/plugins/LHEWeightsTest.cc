@@ -108,6 +108,10 @@ class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
 
       TH1D * h_count_event;
       TH1D * h_count_sumw;
+
+      const unsigned int KEEP_LHAPDFID_ = 23000;
+      int keepPdfSetIndex_ = 0;
+      int keepPdfIndexInSet_ = -1;
 };
 
 //
@@ -413,6 +417,12 @@ LHEWeightsTest::beginRun(edm::Run const& run, edm::EventSetup const& es) {
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF05Index());
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF1Index());
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF2Index());
+
+    //auto pdfSets = lheWeightInfoHandle->weightGroupIndicesByType(gen::kPdfWeights);
+
+    //for (const auto& pdfSet : pdfSets) {
+    //    keepPdfIndex_ = pdfSet.indexOfLhapdfId(KEEP_LHAPDFID_);
+    //    if (keepPdfIdex = -1)
 }
 
 //define this as a plug-in
