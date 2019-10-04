@@ -223,14 +223,6 @@ std::pair<reco::GenParticle,reco::GenParticle> find_z_candidate(std::vector<reco
    }
    return std::make_pair(p1,p2);
 }
-reco::Candidate const * find_first_mother_with_different_id( reco::Candidate const * daughter ){
-   reco::Candidate const * mother = daughter->mother(0);
-   if(abs(mother->pdgId()) != abs(daughter->pdgId())) {
-      return mother;
-   }else{
-      return find_first_mother_with_different_id(mother);
-   }
-}
 
 std::vector<reco::GenJet> clean_jets(const std::vector<reco::GenJet> genJets, const std::vector<reco::GenParticle> leptons){
    std::vector<reco::GenJet> cleaned_jets;
@@ -282,22 +274,6 @@ bool has_v_in_history(reco::GenParticle const & part){
       return false;
    }
 }
-std::vector<reco::GenJet> clean_v_jets(const std::vector<reco::GenJet> & genJets){
-   std::vector<reco::GenJet> cleaned;
-   for( auto const & j : genJets ) {
-      bool found = false;
-      for( auto const & c: j.getGenConstituents() ) {
-         found |= has_v_in_history(*c);
-         if(found) break;
-      }
-      if(not found){
-         cleaned.push_back(j);
-      }
-   }
-
-   return cleaned;
-}
-
 
 void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
    using namespace edm;
@@ -337,7 +313,6 @@ void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
 
    //// Jets
    std::vector<reco::GenJet> jets = clean_jets(select_jets(*genJets),leptons);
-   //std::vector<reco::GenJet> jets = clean_v_jets(clean_jets(select_jets(*genJets),leptons));
    int njets = jets.size();
    variables["n_jets"] = njets;
    variables["pt_jet1"]   = njets > 0 ? jets.at(0).pt() : -999;
