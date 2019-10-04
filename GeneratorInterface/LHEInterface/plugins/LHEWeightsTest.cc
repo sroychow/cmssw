@@ -66,7 +66,7 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
+class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchLuminosityBlocks>  {
    public:
       explicit LHEWeightsTest(const edm::ParameterSet&);
       ~LHEWeightsTest();
@@ -76,8 +76,8 @@ class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchRuns>  {
 
    private:
       virtual void beginJob() override;
-      virtual void endRun(edm::Run const& iRun, edm::EventSetup const&) {}
-      virtual void beginRun(edm::Run const& iRun, edm::EventSetup const&) override;
+      virtual void beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const&) override;
+      virtual void endLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const&) override {}
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
 
@@ -133,7 +133,7 @@ LHEWeightsTest::LHEWeightsTest(const edm::ParameterSet& iConfig) :
   LHEToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("LHESrc"))),
   GenToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenSrc"))),
   lheWeightToken_(consumes<GenWeightProduct>(edm::InputTag("testWeights"))),
-  lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InRun>(edm::InputTag("testWeights")))
+  lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(edm::InputTag("testWeights")))
 
 {
    //now do what ever initialization is needed
@@ -392,14 +392,12 @@ LHEWeightsTest::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 void 
-LHEWeightsTest::beginRun(edm::Run const& run, edm::EventSetup const& es) {
+LHEWeightsTest::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& es) {
     //edm::Handle<GenWeightInfoProduct> lheWeightsInfoHandle;
-    // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
-    //run.getByLabel("testWeights", lheWeightsInfoHandle);
     //edm::Handle<GenRunInfoProduct> lheWeightsInfoHandle;
     //run.getByLabel("generator", lheWeightsInfoHandle);
     edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
-    run.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
+    iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function
     scaleWeightsIndex_ = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights).front();

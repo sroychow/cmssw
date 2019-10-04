@@ -25,8 +25,8 @@
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 
-class LHEWeightProductProducer : public edm::one::EDProducer<edm::BeginRunProducer,
-                                                        edm::EndRunProducer> {
+class LHEWeightProductProducer : public edm::one::EDProducer<edm::BeginLuminosityBlockProducer,
+                                                                edm::one::WatchRuns> {
 public:
   explicit LHEWeightProductProducer(const edm::ParameterSet& iConfig);
   ~LHEWeightProductProducer() override;
@@ -37,8 +37,9 @@ private:
   edm::EDGetTokenT<LHEEventProduct> lheEventToken_;
 
   void produce(edm::Event&, const edm::EventSetup&) override;
-  void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
-  void endRunProduce(edm::Run&, edm::EventSetup const&) override;
+  void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
+  void beginRun(edm::Run const& run, edm::EventSetup const& es) override;
+  void endRun(edm::Run const& run, edm::EventSetup const& es) override;
 
 };
 
@@ -52,7 +53,7 @@ LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iCon
         //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
 {
   produces<GenWeightProduct>();
-  produces<GenWeightInfoProduct, edm::Transition::BeginRun>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
 
@@ -73,7 +74,7 @@ LHEWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
 // ------------ method called when starting to processes a run  ------------
 void 
-LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es) {
+LHEWeightProductProducer::beginRun(edm::Run const& run, edm::EventSetup const& es) {
     edm::Handle<LHERunInfoProduct> lheRunInfoHandle;
     //run.getByToken(lheRunInfoToken_, lheRunInfoHandle);
     // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
@@ -82,23 +83,23 @@ LHEWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
     typedef std::vector<LHERunInfoProduct::Header>::const_iterator header_cit;
     LHERunInfoProduct::Header headerWeightInfo;
     for (header_cit iter=lheRunInfoHandle->headers_begin(); iter!=lheRunInfoHandle->headers_end(); iter++) { 
-    //for (header_cit iter=lheRunInfoProduct.headers_begin(); iter!=lheRunInfoProduct.headers_end(); iter++) { 
         if (iter->tag() == "initrwgt")
             headerWeightInfo = *iter;
     }
 
 	weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
+}
+
+void
+LHEWeightProductProducer::endRun(edm::Run const& run, edm::EventSetup const& es) { }
+
+void
+LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
     auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
     for (auto& weightGroup : weightHelper_.weightGroups()) {
         weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
     }
-    run.put(std::move(weightInfoProduct));
-}
-
-
-// ------------ method called when ending the processing of a run  ------------
-void 
-LHEWeightProductProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es) {
+    lumi.put(std::move(weightInfoProduct));
 }
 
 DEFINE_FWK_MODULE(LHEWeightProductProducer);

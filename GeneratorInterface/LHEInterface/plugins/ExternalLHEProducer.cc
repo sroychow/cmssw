@@ -71,7 +71,8 @@ Implementation:
 //
 
 class ExternalLHEProducer : public edm::one::EDProducer<edm::BeginRunProducer,
-                                                        edm::EndRunProducer> {
+                                                        edm::EndRunProducer,
+                                                        edm::EndLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
   ~ExternalLHEProducer() override;
@@ -83,6 +84,7 @@ private:
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
   void endRunProduce(edm::Run&, edm::EventSetup const&) override;
+  void endLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
   void preallocThreads(unsigned int) override;
 
   int closeDescriptors(int preserve);
@@ -166,7 +168,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
   produces<GenWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
-  produces<GenWeightInfoProduct, edm::Transition::EndRun>();
+  produces<GenWeightInfoProduct, edm::Transition::EndLuminosityBlock>();
 }
 
 
@@ -386,15 +388,18 @@ ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es)
   
   reader_.reset();  
 
+  if (unlink(outputFile_.c_str())) {
+    throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_ << " (errno=" << errno << ", " << strerror(errno) << ").";
+  }  
+}
+
+void 
+ExternalLHEProducer::endLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
   for (auto& weightGroup : weightHelper_.weightGroups()) {
       weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
   }
-  run.put(std::move(weightInfoProduct));
-  
-  if (unlink(outputFile_.c_str())) {
-    throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_ << " (errno=" << errno << ", " << strerror(errno) << ").";
-  }  
+  lumi.put(std::move(weightInfoProduct));
 }
 
 // ------------ Close all the open file descriptors ------------

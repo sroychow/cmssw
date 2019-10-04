@@ -24,9 +24,7 @@
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 
-class GenWeightProductProducer : public edm::one::EDProducer<edm::BeginRunProducer,
-                                            edm::EndRunProducer,
-                                            edm::one::WatchLuminosityBlocks> {
+class GenWeightProductProducer : public edm::one::EDProducer<edm::BeginLuminosityBlockProducer> {
 public:
   explicit GenWeightProductProducer(const edm::ParameterSet& iConfig);
   ~GenWeightProductProducer() override;
@@ -38,11 +36,7 @@ private:
   edm::EDGetTokenT<GenEventInfoProduct> genEventToken_;
 
   void produce(edm::Event&, const edm::EventSetup&) override;
-  void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
-  void endRunProduce(edm::Run&, edm::EventSetup const&) override;
-  void beginLuminosityBlock(const edm::LuminosityBlock& iLumi, const edm::EventSetup& iSetup) override;
-  void endLuminosityBlock(const edm::LuminosityBlock& iLumi, const edm::EventSetup& iSetup) override;
-
+  void beginLuminosityBlockProduce(edm::LuminosityBlock& lb, edm::EventSetup const& c) override;
 };
 
 //
@@ -55,7 +49,7 @@ GenWeightProductProducer::GenWeightProductProducer(const edm::ParameterSet& iCon
         //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
 {
   produces<GenWeightProduct>();
-  produces<GenWeightInfoProduct, edm::Transition::EndRun>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
 
@@ -74,31 +68,23 @@ GenWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   iEvent.put(std::move(weightProduct));
 }
 
-void 
-GenWeightProductProducer::endLuminosityBlock(const edm::LuminosityBlock& iLumi, const edm::EventSetup& iSetup) {}
+//void 
+//GenWeightProductProducer::endLuminosityBlockProduce(edm::LuminosityBlock& iLumi, edm::EventSetup const& iSetup) {}
 
 void
-GenWeightProductProducer::beginLuminosityBlock(const edm::LuminosityBlock& iLumi, const edm::EventSetup& iSetup) {
-    edm::Handle<GenLumiInfoHeader> genLumiInfoHandle;
-    iLumi.getByToken(genLumiInfoToken_, genLumiInfoHandle);
+GenWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& iLumi, edm::EventSetup const& iSetup) {
+    if (weightNames_.size() == 0) {
+        edm::Handle<GenLumiInfoHeader> genLumiInfoHandle;
+        iLumi.getByToken(genLumiInfoToken_, genLumiInfoHandle);
 
-    weightNames_ = genLumiInfoHandle->weightNames();
-	weightHelper_.parseWeightGroupsFromNames(weightNames_);
-}
-
-// ------------ method called when starting to processes a run  ------------
-void 
-GenWeightProductProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es) {
-}
-
-// ------------ method called when ending the processing of a run  ------------
-void 
-GenWeightProductProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es) {
+        weightNames_ = genLumiInfoHandle->weightNames();
+	    weightHelper_.parseWeightGroupsFromNames(weightNames_);
+    }
     auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
     for (auto& weightGroup : weightHelper_.weightGroups()) {
         weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
     }
-    run.put(std::move(weightInfoProduct));
+    iLumi.put(std::move(weightInfoProduct));
 }
 
 DEFINE_FWK_MODULE(GenWeightProductProducer);
