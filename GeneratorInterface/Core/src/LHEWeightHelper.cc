@@ -4,28 +4,11 @@
 using namespace tinyxml2;
 
 namespace gen {
-    std::string
-    LHEWeightHelper::toLowerCase(const char* name) {
-        std::string returnStr;
-        for (size_t i = 0; i < strlen(name); ++i)
-            returnStr.push_back(tolower(name[i]));
-        return returnStr;
-    }
-
-    std::string
-    LHEWeightHelper::toLowerCase(const std::string name) {
-        std::string returnStr = name;
-        transform(name.begin(), name.end(), returnStr.begin(), ::tolower);    
-        return returnStr;
-
-        
-    }
-
     void LHEWeightHelper::loadAttributeNames(std::string baseName, std::vector<std::string> altNames) {
         for(auto altname : altNames) {
-            nameConvMap[altname] = baseName;
+            nameConversionMap_[altname] = baseName;
         }
-        nameConvMap[baseName] = baseName;
+        nameConversionMap_[baseName] = baseName;
     }
 
     std::string
@@ -48,8 +31,6 @@ namespace gen {
         weightGroupStart_ = std::regex(".*<weightgroup.+>.*\n*");
         weightGroupEnd_ = std::regex(".*</weightgroup>.*\n*");
         
-        std::cout << "Init" << "\n";
-        
         /// Might change later, order matters and code doesn't pick choices
 
         // Used for translating different naming convention to a common one
@@ -69,44 +50,35 @@ namespace gen {
         XMLDocument xmlParser;
         int error = xmlParser.Parse(line.c_str());
         if (error) {
-            std::cout << "we have a problem!" << "\n";
-        return std::map<std::string , std::string >();
-        //do something....
+            return std::map<std::string , std::string >();
         }
 
-        std::map<std::string, std::string> attMap;
+        std::map<std::string, std::string> attributeMap;
         XMLElement* element = xmlParser.FirstChildElement();
         
         for( const XMLAttribute* a = element->FirstAttribute(); a; a=a->Next()) {
-            attMap[nameConvMap[toLowerCase(a->Name())]] = a->Value();
+            auto name = boost::algorithm::to_lower_copy(std::string(a->Name()));
+            attributeMap[nameConversionMap_[name]] = a->Value();
         }
         // get stuff from content of tag if it has anything.
         // always assume format is AAAAA=(  )BBBB    (  ) => optional space
         if (element->GetText() == nullptr) {
-            return attMap;
+            return attributeMap;
         }
         // This adds "content: " to the beginning of the content. not sure if its a big deal or?
         std::string content = element->GetText();
-        attMap["content"] = content;
+        attributeMap["content"] = content;
         
-        std::regex reg("(?:(\\S+)=\\s*(\\S+))");
-        std::smatch m;
-        while(std::regex_search(content, m, reg)) {
-        std::string key = nameConvMap[toLowerCase(m.str(1))];
-        if (attMap[key] != std::string()) {
-            if (m[2] != attMap[key]) {
-            std::cout << m.str(2) << " vs " << attMap[key];
-            // might do something if content and attribute don't match?
-            // but need to be careful since some are purposefully different
-            // eg dyn_scale is described in content but just given a number
-            }
+        for (const auto& entry : weightAttributeMapFromHeaderLine(content)) {
+            auto rawLabel = boost::algorithm::to_lower_copy(entry.first);
+            std::string label = nameConversionMap_[rawLabel];
+            if (nameConversionMap_.find(label) != nameConversionMap_.end())
+                attributeMap.at(nameConversionMap_[label]) = entry.second;
+            else 
+                attributeMap[label] = entry.second;
         }
-        else {
-            attMap[key] = m.str(2);
-        }
-        content = m.suffix().str();
-        }
-        return attMap;
+            
+        return attributeMap;
         
     }
 
@@ -122,85 +94,86 @@ namespace gen {
         return element;
     }
 
+    std::map<std::string, std::string> 
+    LHEWeightHelper::weightAttributeMapFromHeaderLine(std::string line) {
+        std::regex reg("(?:(\\S+)=\\s*(\\S+))");
+        std::smatch match;
+        std::map<std::string, std::string> weightAttributeMap;
+        while(std::regex_search(line, match, reg)) {
+            weightAttributeMap[match.str(1)] = match.str(2);
+            line = match.suffix().str();
+        }
+        return weightAttributeMap;
+    }
+
     void
     LHEWeightHelper::parseWeightGroupsFromHeader(std::vector<std::string> lheHeader) {
         // TODO: Not sure the weight indexing is right here, this seems to more or less
         // count the lines which isn't quite the goal. TOCHECK!
         int index = 0;
-        bool foundGroup = false;
+        currGroupAttributeMap_.clear();
+        currWeightAttributeMap_.clear();
         
         for (std::string headerLine : lheHeader) {
-            std::cout << "Header line is:" << headerLine;
             headerLine = sanitizeText(headerLine);
-                std::cout << "Header line is:" << weightGroups_.size() << " "<< headerLine;
-            //TODO: Fine for now, but in general there should also be a check on the PDF weights,
-                // e.g., it could be an unknown weight
             
             if (std::regex_match(headerLine, weightGroupStart_)) {
-                //std::cout << "Adding new group for headerLine" << std::endl;
-                foundGroup = true;
+                if (!currGroupAttributeMap_.empty())
+                    setGroupInfo();
                 std::string fullTag = headerLine + "</weightgroup>";
-                auto groupMap = getAttributeMap(fullTag);
-                std::string name = groupMap["name"];
+                currGroupAttributeMap_ = getAttributeMap(fullTag);
+                auto name = currGroupAttributeMap_["name"];
                     
-                if(name.find("Central scale variation") != std::string::npos ||
-                name.find("scale_variation") != std::string::npos) {
-                    weightGroups_.push_back(new gen::ScaleWeightGroupInfo(name));
+                if (currentGroupIsScale()) 
+                    weightGroups_.push_back(std::make_unique<gen::ScaleWeightGroupInfo>(name));
+                else if (currentGroupIsPdf()) {
+                    weightGroups_.push_back(std::make_unique<gen::PdfWeightGroupInfo>(name));
                 }
-                else
-                    weightGroups_.push_back(new gen::PdfWeightGroupInfo(name));
+                else 
+                    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>(name));
             }
-            /// file weights
-            else if (foundGroup && isAWeight(headerLine)) {
-                //std::cout << "Adding new weight for headerLine" << std::endl;
-                auto tagsMap = getAttributeMap(headerLine);
-                for(auto pair: tagsMap) {
-                    std::cout << pair.first << ": " << pair.second << " | ";
-                }
-                std::cout << "\n";
+            else if (isAWeight(headerLine)) {
+                currWeightAttributeMap_.clear();
+                // This shouldn't really happen, but perhaps we find weights outside of weight groups?
+                if (currGroupAttributeMap_.empty())
+                    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
+                currWeightAttributeMap_ = getAttributeMap(headerLine);
                 
-                std::string content = tagsMap["content"];
-                if (tagsMap["id"].empty()) {
+                std::string content = currWeightAttributeMap_["content"];
+                if (currWeightAttributeMap_["id"].empty()) {
                     std::cout << "error" << "\n";
                     // should do something
                 }
                 
                 auto& group = weightGroups_.back();
                 if (group.weightType() == gen::kScaleWeights) {
-                    if (tagsMap["mur"].empty()  || tagsMap["muf"].empty()) {
-                        std::cout << "error" << "\n";
-                        // something should happen here
-                        continue;
+                    if (currWeightAttributeMap_["mur"].empty()  || currWeightAttributeMap_["muf"].empty())
+                        group.setIsWellFormed(false);
+                    else { 
+                        try {
+                            float muR = std::stof(currWeightAttributeMap_["mur"]);
+                            float muF = std::stof(currWeightAttributeMap_["muf"]);
+                            auto& scaleGroup = dynamic_cast<gen::ScaleWeightGroupInfo&>(group);
+                            scaleGroup.addContainedId(index, currWeightAttributeMap_["id"], headerLine, muR, muF);
+                        }
+                        catch(std::invalid_argument& e) {
+                            group.setIsWellFormed(false);
+                            group.addContainedId(index, currWeightAttributeMap_["id"], headerLine);
+                        }
                     }
-                    float muR = std::stof(tagsMap["mur"]);
-                    float muF = std::stof(tagsMap["muf"]);
-                    std::cout << tagsMap["id"] << " " << muR << " " << muF << " " << content << "\n";
-                    auto& scaleGroup = static_cast<gen::ScaleWeightGroupInfo&>(group);
-                    scaleGroup.addContainedId(index, tagsMap["id"], headerLine, muR, muF);
                 }
                 else
-                    group.addContainedId(index, tagsMap["id"], headerLine);
+                    group.addContainedId(index, currWeightAttributeMap_["id"], headerLine);
                 
                 index++;
             }
-            // commented out since code doesn't work with this in....
-            // else if(isAWeight(headerLine)) {
-            //     // found header. Don't know what to do with it so just shove it into a new weightgroup for now
-            //     // do minimum work for it
-            //     weightGroups_.push_back(new gen::PdfWeightGroupInfo(headerLine));
-            //     auto& group = weightGroups_.back();
-            //     auto tagsMap = getAttributeMap(headerLine);
-            //     group.addContainedId(index, tagsMap["id"], headerLine);
-            //     foundGroup = true;
-            //     index++;
-            // }
-        
-            else if(std::regex_match(headerLine, weightGroupEnd_)) {
-                foundGroup = false;
-            } 
-            else {
-                    std::cout << "problem!!!" << "\n";
+            else if (std::regex_match(headerLine, weightGroupEnd_)) {
+                if (!currGroupAttributeMap_.empty())
+                    setGroupInfo();
+                currGroupAttributeMap_.clear();
+                currWeightAttributeMap_.clear();
             }
+            // Should be fine to ignore all other lines? Tend to be either empty or closing tag
         }
     }
 }

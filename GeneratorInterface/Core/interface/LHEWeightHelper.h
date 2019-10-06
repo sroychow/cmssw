@@ -7,6 +7,7 @@
 #include <regex>
 #include <fstream>
 
+#include "SimDataFormats/GeneratorProducts/interface/UnknownWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
@@ -23,9 +24,8 @@ namespace gen {
         void parseLHEFile(std::string filename);
         void parseWeightGroupsFromHeader(std::vector<std::string> lheHeader);
     private:
+        std::map<std::string, std::string> weightAttributeMapFromHeaderLine(std::string line);
         void loadAttributeNames(std::string baseName, std::vector<std::string> altNames ={});
-        std::string toLowerCase(const char*);
-        std::string toLowerCase(const std::string);
         std::map<std::string, std::string> getAttributeMap(std::string);
         std::string sanitizeText(std::string);
         bool isAWeight(std::string);
@@ -34,7 +34,7 @@ namespace gen {
         std::regex weightGroupEnd_;
         std::regex weightContent_;
         
-        std::map<std::string, std::string> nameConvMap;
+        std::map<std::string, std::string> nameConversionMap_;
     };
 }
 

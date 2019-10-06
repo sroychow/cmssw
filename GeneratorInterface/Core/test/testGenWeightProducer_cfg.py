@@ -19,7 +19,7 @@ process.testLHEWeights = cms.EDProducer("LHEWeightProductProducer")
 process.testGenWeights = cms.EDProducer("GenWeightProductProducer")
 
 process.p = cms.Path(process.testLHEWeights*process.testGenWeights)
-#process.p = cms.Path(process.testGenWeights)
+#process.p = cms.Path(process.testLHEWeights)
 
 process.output = cms.EndPath(process.out)
 process.schedule = cms.Schedule(process.p,process.output)

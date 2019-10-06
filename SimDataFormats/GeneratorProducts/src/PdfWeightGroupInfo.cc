@@ -6,6 +6,7 @@ namespace gen {
         hasAlphasVars_ = other.hasAlphasVariations();
         alphasUpIndex_ = other.alphasDownIndex();
         alphasDownIndex_ = other.alphasDownIndex();
+        lhapdfIdsContained_ = other.lhapdfIdsContained_;
         WeightGroupInfo::copy(other);
     }
 
