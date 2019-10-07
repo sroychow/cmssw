@@ -73,7 +73,7 @@ namespace gen {
             auto rawLabel = boost::algorithm::to_lower_copy(entry.first);
             std::string label = nameConversionMap_[rawLabel];
             if (nameConversionMap_.find(label) != nameConversionMap_.end())
-                attributeMap.at(nameConversionMap_[label]) = entry.second;
+                attributeMap[nameConversionMap_[label]] = entry.second;
             else 
                 attributeMap[label] = entry.second;
         }

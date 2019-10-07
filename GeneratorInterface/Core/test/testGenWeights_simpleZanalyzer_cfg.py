@@ -61,7 +61,7 @@ process.source = cms.Source("PoolSource",
 
 process.testWeights = cms.EDProducer("LHEWeightProductProducer")
 
-process.demo = cms.EDAnalyzer('LHEWeightsTest',
+process.demo = cms.EDAnalyzer('GenWeightsTestAnalyzer',
     tag = cms.string(options.tag),
     miniaod = cms.bool(options.isMiniAOD),
     genParticleSrc = cms.InputTag("prunedGenParticles" if options.isMiniAOD  else "genParticles"),

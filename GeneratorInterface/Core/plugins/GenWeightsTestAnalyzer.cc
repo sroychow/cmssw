@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    GenAnalysis/LHEWeightsTest
-// Class:      LHEWeightsTest
+// Package:    GenAnalysis/GenWeightsTestAnalyzer
+// Class:      GenWeightsTestAnalyzer
 //
-/**\class LHEWeightsTest LHEWeightsTest.cc GenAnalysis/LHEWeightsTest/plugins/LHEWeightsTest.cc
+/**\class GenWeightsTestAnalyzer GenWeightsTestAnalyzer.cc GenAnalysis/GenWeightsTestAnalyzer/plugins/GenWeightsTestAnalyzer.cc
 
  Description: [one line class summary]
 
@@ -66,10 +66,10 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchLuminosityBlocks>  {
+class GenWeightsTestAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchLuminosityBlocks>  {
    public:
-      explicit LHEWeightsTest(const edm::ParameterSet&);
-      ~LHEWeightsTest();
+      explicit GenWeightsTestAnalyzer(const edm::ParameterSet&);
+      ~GenWeightsTestAnalyzer();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -125,7 +125,7 @@ class LHEWeightsTest : public edm::one::EDAnalyzer<edm::one::WatchLuminosityBloc
 //
 // constructors and destructor
 //
-LHEWeightsTest::LHEWeightsTest(const edm::ParameterSet& iConfig) :
+GenWeightsTestAnalyzer::GenWeightsTestAnalyzer(const edm::ParameterSet& iConfig) :
   tag_(iConfig.getParameter<std::string>("tag")),
   isMiniaod_(iConfig.getParameter<bool>("miniaod")),
   genParticleToken_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleSrc"))),
@@ -160,7 +160,7 @@ LHEWeightsTest::LHEWeightsTest(const edm::ParameterSet& iConfig) :
 }
 
 
-LHEWeightsTest::~LHEWeightsTest()
+GenWeightsTestAnalyzer::~GenWeightsTestAnalyzer()
 {
 
    // do anything here that needs to be done at desctruction time
@@ -279,7 +279,7 @@ bool has_v_in_history(reco::GenParticle const & part){
    }
 }
 
-void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
+void GenWeightsTestAnalyzer::setup_variables(const edm::Event& iEvent) {
    using namespace edm;
 
    //// Initialize with dummy values
@@ -331,7 +331,7 @@ void LHEWeightsTest::setup_variables(const edm::Event& iEvent) {
    variables["ht"] = ht;
 
 }
-std::vector<double> LHEWeightsTest::setup_weights(const edm::Event& iEvent) {
+std::vector<double> GenWeightsTestAnalyzer::setup_weights(const edm::Event& iEvent) {
    edm::Handle<GenWeightProduct> lheWeightHandle;
    iEvent.getByToken(lheWeightToken_, lheWeightHandle);
    const GenWeightProduct * lheWeights = lheWeightHandle.product();
@@ -348,7 +348,7 @@ std::vector<double> LHEWeightsTest::setup_weights(const edm::Event& iEvent) {
 
 // ------------ method called for each event  ------------
 void
-LHEWeightsTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+GenWeightsTestAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
@@ -371,19 +371,19 @@ LHEWeightsTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-LHEWeightsTest::beginJob()
+GenWeightsTestAnalyzer::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-LHEWeightsTest::endJob()
+GenWeightsTestAnalyzer::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-LHEWeightsTest::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+GenWeightsTestAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -392,7 +392,7 @@ LHEWeightsTest::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 void 
-LHEWeightsTest::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& es) {
+GenWeightsTestAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::EventSetup const& es) {
     //edm::Handle<GenWeightInfoProduct> lheWeightsInfoHandle;
     //edm::Handle<GenRunInfoProduct> lheWeightsInfoHandle;
     //run.getByLabel("generator", lheWeightsInfoHandle);
@@ -424,5 +424,5 @@ LHEWeightsTest::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, edm::Eve
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(LHEWeightsTest);
+DEFINE_FWK_MODULE(GenWeightsTestAnalyzer);
 
