@@ -88,13 +88,15 @@ class GenWeightsTestAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchLumino
       std::string tag_;
       bool isMiniaod_;
       std::vector<int> scaleWeightsOrder_;
-      unsigned int scaleWeightsIndex_;
+      int scaleWeightsIndex_;
+      int pdfWeightsIndex_;
 
       edm::EDGetTokenT<reco::GenParticleCollection> genParticleToken_;
       edm::EDGetTokenT<reco::GenJetCollection> genJetToken_;
       edm::EDGetTokenT<LHEEventProduct> LHEToken_;
       edm::EDGetTokenT<GenEventInfoProduct> GenToken_;
       edm::EDGetTokenT<GenWeightProduct> lheWeightToken_;
+      edm::EDGetTokenT<GenWeightProduct> genWeightToken_;
       edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
       edm::Service<TFileService> fileservice;
 
@@ -128,12 +130,15 @@ class GenWeightsTestAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchLumino
 GenWeightsTestAnalyzer::GenWeightsTestAnalyzer(const edm::ParameterSet& iConfig) :
   tag_(iConfig.getParameter<std::string>("tag")),
   isMiniaod_(iConfig.getParameter<bool>("miniaod")),
+  scaleWeightsIndex_(-1),
+  pdfWeightsIndex_(-1),
   genParticleToken_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticleSrc"))),
   genJetToken_(consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genJetSrc"))),
   LHEToken_(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("LHESrc"))),
   GenToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("GenSrc"))),
-  lheWeightToken_(consumes<GenWeightProduct>(edm::InputTag("testWeights"))),
-  lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(edm::InputTag("testWeights")))
+  lheWeightToken_(consumes<GenWeightProduct>(edm::InputTag("testLheWeights"))),
+  genWeightToken_(consumes<GenWeightProduct>(edm::InputTag("testGenWeights"))),
+  lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(edm::InputTag("testLheWeights")))
 
 {
    //now do what ever initialization is needed
@@ -333,15 +338,32 @@ void GenWeightsTestAnalyzer::setup_variables(const edm::Event& iEvent) {
 }
 std::vector<double> GenWeightsTestAnalyzer::setup_weights(const edm::Event& iEvent) {
    edm::Handle<GenWeightProduct> lheWeightHandle;
+   edm::Handle<GenWeightProduct> genWeightHandle;
    iEvent.getByToken(lheWeightToken_, lheWeightHandle);
-   const GenWeightProduct * lheWeights = lheWeightHandle.product();
-   WeightsContainer weights = lheWeights->weights();
-   auto scaleWeights = weights.at(scaleWeightsIndex_);
+   iEvent.getByToken(genWeightToken_, genWeightHandle);
+   const GenWeightProduct * lheWeightProduct = lheWeightHandle.product();
+   const GenWeightProduct * genWeightProduct = genWeightHandle.product();
+   WeightsContainer lheWeights = lheWeightProduct->weights();
+   WeightsContainer genWeights = genWeightProduct->weights();
+
+   auto scaleWeights = scaleWeightsIndex_ >= 0 ? lheWeights.at(scaleWeightsIndex_) : std::vector<double>();
+   auto pdfWeights = pdfWeightsIndex_ > 0 ? lheWeights.at(pdfWeightsIndex_) : std::vector<double>();
    std::vector<double> keepWeights;
 
    for(auto i : scaleWeightsOrder_){
-      keepWeights.push_back(scaleWeights[i]);
+      keepWeights.push_back(scaleWeights.at(i));
    }
+
+   for(auto& weight : pdfWeights){
+      keepWeights.push_back(weight);
+   }
+
+   if (genWeights.size() > 0) {
+       for(auto& weight : genWeights.front()){
+           keepWeights.push_back(weight);
+       }
+   }
+
    return keepWeights;
 }
 
@@ -400,7 +422,10 @@ GenWeightsTestAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, 
     iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function
-    scaleWeightsIndex_ = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights).front();
+    auto allScaleWeights = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights);
+    if (allScaleWeights.size() > 0)
+        scaleWeightsIndex_ = allScaleWeights.front();
+
     auto scaleWeights = static_cast<const gen::ScaleWeightGroupInfo*>(
             lheWeightInfoHandle->orderedWeightGroupInfo(scaleWeightsIndex_));
     // nano ordering of mur=0.5 muf=0.5 ; [1] is mur=0.5 muf=1 ; [2] is mur=0.5 muf=2 ; [3] is mur=1 muf=0.5 ; 
@@ -416,11 +441,14 @@ GenWeightsTestAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, 
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF1Index());
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF2Index());
 
-    //auto pdfSets = lheWeightInfoHandle->weightGroupIndicesByType(gen::kPdfWeights);
-
-    //for (const auto& pdfSet : pdfSets) {
-    //    keepPdfIndex_ = pdfSet.indexOfLhapdfId(KEEP_LHAPDFID_);
-    //    if (keepPdfIdex = -1)
+    auto pdfGroups = lheWeightInfoHandle->weightGroupsByType(gen::kPdfWeights);
+    auto ct14Set = std::find_if(pdfGroups.begin(), pdfGroups.end(), 
+            [] (gen::WeightGroupInfo* group) { 
+                    auto pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo*>(group); 
+                    return pdfGroup->containsLhapdfId(1300); 
+    });
+    if (ct14Set != pdfGroups.end())
+        pdfWeightsIndex_ = std::distance(pdfGroups.begin(), ct14Set);
 }
 
 //define this as a plug-in

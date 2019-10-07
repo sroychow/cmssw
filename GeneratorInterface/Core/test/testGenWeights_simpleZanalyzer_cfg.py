@@ -59,7 +59,8 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring( options.inputFiles )
 )
 
-process.testWeights = cms.EDProducer("LHEWeightProductProducer")
+process.testLheWeights = cms.EDProducer("LHEWeightProductProducer")
+process.testGenWeights = cms.EDProducer("GenWeightProductProducer")
 
 process.demo = cms.EDAnalyzer('GenWeightsTestAnalyzer',
     tag = cms.string(options.tag),
@@ -73,5 +74,5 @@ process.demo = cms.EDAnalyzer('GenWeightsTestAnalyzer',
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string("analysis_{TAG}.root".format(TAG=options.tag)) )
 
-process.p = cms.Path(process.testWeights*process.demo)
+process.p = cms.Path(process.testLheWeights*process.testGenWeights*process.demo)
 

@@ -135,8 +135,8 @@ namespace gen {
             else if (isAWeight(headerLine)) {
                 currWeightAttributeMap_.clear();
                 // This shouldn't really happen, but perhaps we find weights outside of weight groups?
-                if (currGroupAttributeMap_.empty())
-                    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
+                //if (weightGroups_.empty())
+                //    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
                 currWeightAttributeMap_ = getAttributeMap(headerLine);
                 
                 std::string content = currWeightAttributeMap_["content"];
