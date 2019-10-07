@@ -5,6 +5,7 @@ namespace gen {
         pdfSetsInfo({
             // In principle this can be parsed from $LHAPDF_DATA_PATH/pdfsets.index,
             // but do we really want to do that? Can also just hardcode a subset...
+            // TODO: Actually we can just take this from LHAPDF
             {"NNPDF31_nnlo_hessian_pdfas", 306000, kHessianUnc},
             {"NNPDF31_nnlo_as_0118", 303600, kMonteCarloUnc},
             {"NNPDF31_nlo_as_0118", 303400, kMonteCarloUnc},
