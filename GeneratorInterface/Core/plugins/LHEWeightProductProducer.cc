@@ -33,6 +33,7 @@ public:
   
 private:
   gen::LHEWeightHelper weightHelper_;
+  std::string lheLabel_;
   edm::EDGetTokenT<LHERunInfoProduct> lheRunInfoToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEventToken_;
 
@@ -47,10 +48,11 @@ private:
 // constructors and destructor
 //
 LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iConfig) :
-    lheRunInfoToken_(consumes<LHERunInfoProduct, edm::InRun>(edm::InputTag("externalLHEProducer"))),
-        //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer")))),
-    lheEventToken_(consumes<LHEEventProduct>(edm::InputTag("externalLHEProducer")))
-        //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
+    lheLabel_(iConfig.getUntrackedParameter<std::string>("lheSourceLabel")),
+    lheRunInfoToken_(consumes<LHERunInfoProduct, edm::InRun>(
+        iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer")))),
+    lheEventToken_(consumes<LHEEventProduct>(
+        iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
 {
   produces<GenWeightProduct>();
   produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
@@ -78,7 +80,7 @@ LHEWeightProductProducer::beginRun(edm::Run const& run, edm::EventSetup const& e
     edm::Handle<LHERunInfoProduct> lheRunInfoHandle;
     //run.getByToken(lheRunInfoToken_, lheRunInfoHandle);
     // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
-    run.getByLabel("externalLHEProducer", lheRunInfoHandle);
+    run.getByLabel(lheLabel_, lheRunInfoHandle);
 
     typedef std::vector<LHERunInfoProduct::Header>::const_iterator header_cit;
     LHERunInfoProduct::Header headerWeightInfo;
