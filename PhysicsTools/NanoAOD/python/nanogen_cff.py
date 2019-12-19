@@ -90,6 +90,7 @@ NANOAODGENoutput = cms.OutputModule("NanoAODOutputModule",
     fileName = cms.untracked.string('nanogen.root'),
     outputCommands = cms.untracked.vstring(
         'drop *',
+        "keep *_lheWeightsTable_*_*",     # event data
         "keep nanoaodFlatTable_*Table_*_*",     # event data
         "keep String_*_genModel_*",  # generator model data
         "keep nanoaodMergeableCounterTable_*Table_*_*", # accumulated per/run or per/lumi data
