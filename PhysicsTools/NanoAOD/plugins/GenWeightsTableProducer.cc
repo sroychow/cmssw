@@ -233,10 +233,6 @@ public:
         hasIssuedWarning_(false) {
     produces<nanoaod::FlatTable>();
     produces<std::string>("genModel");
-    produces<nanoaod::FlatTable>("LHEScale");
-    produces<nanoaod::FlatTable>("LHEPdf");
-    produces<nanoaod::FlatTable>("LHEReweighting");
-    produces<nanoaod::FlatTable>("LHENamed");
     produces<nanoaod::FlatTable>("PS");
     produces<nanoaod::MergeableCounterTable, edm::Transition::EndRun>();
     if (namedWeightIDs_.size() != namedWeightLabels_.size()) {
@@ -273,7 +269,6 @@ public:
     iEvent.put(std::move(outM), "genModel");
 
     // tables for LHE weights, may not be filled
-    std::unique_ptr<nanoaod::FlatTable> lheScaleTab, lhePdfTab, lheRwgtTab, lheNamedTab;
     std::unique_ptr<nanoaod::FlatTable> genPSTab;
 
     edm::Handle<LHEEventProduct> lheInfo;
@@ -287,25 +282,16 @@ public:
       // get the dynamic choice of weights
       const DynamicWeightChoice* weightChoice = runCache(iEvent.getRun().index());
       // go fill tables
-      fillLHEWeightTables(
-          counter, weightChoice, weight, *lheInfo, *genInfo, lheScaleTab, lhePdfTab, lheRwgtTab, lheNamedTab, genPSTab);
+      fillLHEWeightTables(counter, weightChoice, weight, *lheInfo, *genInfo, genPSTab);
     } else {
       // Still try to add the PS weights
       fillOnlyPSWeightTable(counter, weight, *genInfo, genPSTab);
       // make dummy values
-      lheScaleTab.reset(new nanoaod::FlatTable(1, "LHEScaleWeights", true));
-      lhePdfTab.reset(new nanoaod::FlatTable(1, "LHEPdfWeights", true));
-      lheRwgtTab.reset(new nanoaod::FlatTable(1, "LHEReweightingWeights", true));
-      lheNamedTab.reset(new nanoaod::FlatTable(1, "LHENamedWeights", true));
       if (!hasIssuedWarning_.exchange(true)) {
         edm::LogWarning("LHETablesProducer") << "No LHEEventProduct, so there will be no LHE Tables\n";
       }
     }
 
-    iEvent.put(std::move(lheScaleTab), "LHEScale");
-    iEvent.put(std::move(lhePdfTab), "LHEPdf");
-    iEvent.put(std::move(lheRwgtTab), "LHEReweighting");
-    iEvent.put(std::move(lheNamedTab), "LHENamed");
     iEvent.put(std::move(genPSTab), "PS");
   }
 
@@ -314,10 +300,6 @@ public:
                            double genWeight,
                            const LHEEventProduct& lheProd,
                            const GenEventInfoProduct& genProd,
-                           std::unique_ptr<nanoaod::FlatTable>& outScale,
-                           std::unique_ptr<nanoaod::FlatTable>& outPdf,
-                           std::unique_ptr<nanoaod::FlatTable>& outRwgt,
-                           std::unique_ptr<nanoaod::FlatTable>& outNamed,
                            std::unique_ptr<nanoaod::FlatTable>& outPS) const {
     bool lheDebug = debug_.exchange(
         false);  // make sure only the first thread dumps out this (even if may still be mixed up with other output, but nevermind)
@@ -366,31 +348,6 @@ public:
                                            : "dummy PS weight (1.0) ",
                             nanoaod::FlatTable::FloatColumn,
                             lheWeightPrecision_);
-
-    outScale.reset(new nanoaod::FlatTable(wScale.size(), "LHEScaleWeight", false));
-    outScale->addColumn<float>(
-        "", wScale, weightChoice->scaleWeightsDoc, nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
-
-    outPdf.reset(new nanoaod::FlatTable(wPDF.size(), "LHEPdfWeight", false));
-    outPdf->addColumn<float>(
-        "", wPDF, weightChoice->pdfWeightsDoc, nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
-
-    outRwgt.reset(new nanoaod::FlatTable(wRwgt.size(), "LHEReweightingWeight", false));
-    outRwgt->addColumn<float>(
-        "", wRwgt, weightChoice->rwgtWeightDoc, nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
-
-    outNamed.reset(new nanoaod::FlatTable(1, "LHEWeight", true));
-    outNamed->addColumnValue<float>("originalXWGTUP",
-                                    lheProd.originalXWGTUP(),
-                                    "Nominal event weight in the LHE file",
-                                    nanoaod::FlatTable::FloatColumn);
-    for (unsigned int i = 0, n = wNamed.size(); i < n; ++i) {
-      outNamed->addColumnValue<float>(namedWeightLabels_[i],
-                                      wNamed[i],
-                                      "LHE weight for id " + namedWeightIDs_[i] + ", relative to nominal",
-                                      nanoaod::FlatTable::FloatColumn,
-                                      lheWeightPrecision_);
-    }
 
     counter->incLHE(genWeight, wScale, wPDF, wRwgt, wNamed, wPS);
   }
