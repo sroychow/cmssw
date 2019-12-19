@@ -34,6 +34,7 @@ genWeightsTable = cms.EDProducer(
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
     lheInfo = cms.InputTag("externalLHEProducer"),
+    weightgroups = cms.vstring(["mg_reweighting"]),
     lheWeightPrecision = cms.int32(14),
 )
 

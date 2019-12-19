@@ -72,6 +72,7 @@ public:
   LHEWeightsTableProducer(edm::ParameterSet const& params)
       : lheInputTag_(params.getParameter<edm::InputTag>("lheInfo")),
         lheToken_(consumes<LHEEventProduct>(params.getParameter<edm::InputTag>("lheInfo"))),
+        weightgroups_(params.getParameter<std::vector<std::string>>("weightgroups")),
         lheWeightPrecision_(params.getParameter<int32_t>("lheWeightPrecision")) {
     consumes<LHERunInfoProduct, edm::InRun>(lheInputTag_);
     produces<std::vector<nanoaod::FlatTable>>();
@@ -90,20 +91,26 @@ public:
     if (lheInfo.weights().size() != weightInfos.size()) {
       throw cms::Exception("LogicError", "Weight labels don't have the same size as weights!\n");
     }
-    std::unordered_map<std::string, std::vector<float>> groupsWithWeights;
+    std::unordered_map<std::string, std::pair<std::string, std::vector<float>>> groupsWithWeights;
     for (auto const& weight : lheInfo.weights()) {
-      if (!weightInfos[i].group) {
-        groupsWithWeights["ungrouped"].push_back(weight.wgt / w0);
+      auto& val = weightInfos[i].group ? groupsWithWeights[*weightInfos[i].group] : groupsWithWeights["ungrouped"];
+      if(val.first.empty()) {
+          val.first += ";id,text";
       }
-      groupsWithWeights[*weightInfos[i].group].push_back(weight.wgt / w0);
+      val.first += ";" + weightInfos[i].id + "," + weightInfos[i].text;
+      val.second.push_back(weight.wgt / w0);
       ++i;
     }
     for (auto const& group : groupsWithWeights) {
+      if(std::find(weightgroups_.begin(), weightgroups_.end(), group.first) == weightgroups_.end()) {
+          continue;
+      }
       std::string name = std::string("LHEWeight_") + group.first;
       std::transform(name.begin(), name.end(), name.begin(), [](char ch) { return ch == ' ' ? '_' : ch; });
-      lheWeightTables->emplace_back(group.second.size(), name, false);
+      std::string doc = group.first + " (w_var / w_nominal)" + group.second.first;
+      lheWeightTables->emplace_back(group.second.second.size(), name, false);
       lheWeightTables->back().addColumn<float>(
-          "", group.second, group.first + " (w_var / w_nominal)", nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+          "", group.second.second, doc, nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
     }
 
     iEvent.put(std::move(lheWeightTables));
@@ -131,6 +138,7 @@ public:
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("lheInfo", {"externalLHEProducer"})
         ->setComment("tag(s) for the LHE information (LHEEventProduct and LHERunInfoProduct)");
+    desc.add<std::vector<std::string>>("weightgroups");
     desc.add<int32_t>("lheWeightPrecision", -1)->setComment("Number of bits in the mantissa for LHE weights");
     descriptions.addDefault(desc);
   }
@@ -138,6 +146,7 @@ public:
 protected:
   const edm::InputTag lheInputTag_;
   const edm::EDGetTokenT<LHEEventProduct> lheToken_;
+  const std::vector<std::string> weightgroups_;
   int lheWeightPrecision_;
 };
 
