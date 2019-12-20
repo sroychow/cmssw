@@ -94,16 +94,16 @@ public:
     std::unordered_map<std::string, std::pair<std::string, std::vector<float>>> groupsWithWeights;
     for (auto const& weight : lheInfo.weights()) {
       auto& val = weightInfos[i].group ? groupsWithWeights[*weightInfos[i].group] : groupsWithWeights["ungrouped"];
-      if(val.first.empty()) {
-          val.first += ";id,text";
+      if (val.first.empty()) {
+        val.first += ";id,text";
       }
       val.first += ";" + weightInfos[i].id + "," + weightInfos[i].text;
       val.second.push_back(weight.wgt / w0);
       ++i;
     }
     for (auto const& group : groupsWithWeights) {
-      if(std::find(weightgroups_.begin(), weightgroups_.end(), group.first) == weightgroups_.end()) {
-          continue;
+      if (std::find(weightgroups_.begin(), weightgroups_.end(), group.first) == weightgroups_.end()) {
+        continue;
       }
       std::string name = std::string("LHEWeight_") + group.first;
       std::transform(name.begin(), name.end(), name.begin(), [](char ch) { return ch == ' ' ? '_' : ch; });
