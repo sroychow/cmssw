@@ -1,0 +1,94 @@
+#include <string>
+#include <algorithm>
+#include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
+#include "FWCore/Utilities/interface/Exception.h"
+
+#include <iostream>
+
+namespace gen {
+    void WeightGroupInfo::copy(const WeightGroupInfo &other) {
+        isWellFormed_ = true;
+        headerEntry_ = other.headerEntry();
+        name_ = other.name();
+        weightType_ = other.weightType();
+        idsContained_ = other.idsContained();
+        firstId_ = other.firstId();
+        lastId_ = other.lastId();
+    }
+
+    WeightGroupInfo* WeightGroupInfo::clone() const {
+        throw cms::Exception("LogicError", "WeightGroupInfo is abstract, so it's clone() method can't be implemented.\n");
+    }
+
+    WeightMetaInfo WeightGroupInfo::weightMetaInfo(int weightEntry) const {
+        return idsContained_.at(weightEntry);
+    }
+
+    WeightMetaInfo WeightGroupInfo::weightMetaInfo(std::string wgtId) const {
+        int weightEntry = weightVectorEntry(wgtId);
+        return idsContained_.at(weightEntry);
+    }
+
+    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId) const {
+        return weightVectorEntry(wgtId, 0);
+    }
+
+    int WeightGroupInfo::containsWeight(const std::string& wgtId, int weightEntry) const {
+        return weightVectorEntry(wgtId, weightEntry) != -1;
+    }
+
+    int WeightGroupInfo::weightVectorEntry(const std::string& wgtId, int weightEntry) const {
+        // First try ordered search
+        if (indexInRange(weightEntry)) {
+            size_t orderedEntry = weightEntry - firstId_;
+            if (orderedEntry < idsContained_.size())
+                if (wgtId.empty() || idsContained_.at(orderedEntry).id == wgtId) {
+                    return orderedEntry;
+                }
+        }
+        // Fall back to search on ID
+        else if (!wgtId.empty()) {
+            auto it = std::find_if(idsContained_.begin(), idsContained_.end(), 
+                            [wgtId] (const WeightMetaInfo& w) { return w.id == wgtId; });
+            if (it != idsContained_.end())
+                return std::distance(idsContained_.begin(), it);
+        }
+        return -1;
+    }
+
+    void WeightGroupInfo::addContainedId(int weightEntry, std::string id, std::string label="") {
+        if (firstId_ == -1 || weightEntry < firstId_) {
+            firstId_ = weightEntry;
+            // Reset to reflect that indices will be shifted
+            for (auto& entry : idsContained_)
+                entry.localIndex = entry.globalIndex - firstId_;
+        }
+        if (weightEntry > lastId_)
+            lastId_ = weightEntry;
+        
+        WeightMetaInfo info;
+        info.globalIndex = weightEntry;
+        info.localIndex = weightEntry - firstId_;
+        info.id = id;
+        info.label = label;
+
+        if (idsContained_.size() < info.localIndex) {
+            idsContained_.resize(info.localIndex);
+            idsContained_.insert(idsContained_.begin()+info.localIndex, info);
+        }
+        else if (idsContained_.size() == info.localIndex) {
+            idsContained_.push_back(info);
+        }
+        else {
+            idsContained_.resize(info.localIndex+1);
+            idsContained_[info.localIndex] = info;
+        }
+    }
+
+    std::vector<WeightMetaInfo> WeightGroupInfo::containedIds() const { return idsContained_; }
+
+
+    bool WeightGroupInfo::indexInRange(int index) const {
+        return (index <= lastId_ && index >= firstId_);
+    }
+}

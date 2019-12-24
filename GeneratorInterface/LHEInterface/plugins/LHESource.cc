@@ -23,6 +23,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
@@ -32,12 +33,13 @@
 
 using namespace lhef;
 
-LHESource::LHESource(const edm::ParameterSet& params, const edm::InputSourceDescription& desc)
-    : ProducerSourceFromFiles(params, desc, false),
-      reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
-      lheProvenanceHelper_(
-          edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), productRegistryUpdate()),
-      phid_() {
+LHESource::LHESource(const edm::ParameterSet &params,
+                     const edm::InputSourceDescription &desc) :
+  ProducerSourceFromFiles(params, desc, false),
+  reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
+  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), edm::TypeID(typeid(GenWeightInfoProduct)), productRegistryUpdate()),
+  phid_()
+{
   nextEvent();
   lheProvenanceHelper_.lheAugment(nullptr);
   // Initialize metadata, and save the process history ID for use every event.
@@ -105,6 +107,7 @@ void LHESource::readRun_(edm::RunPrincipal& runPrincipal) {
   runPrincipal.fillRunPrincipal(processHistoryRegistryForUpdate());
 
   putRunInfoProduct(runPrincipal);
+  putWeightInfoProduct(runPrincipal);
 }
 
 void LHESource::readLuminosityBlock_(edm::LuminosityBlockPrincipal& lumiPrincipal) {
@@ -120,7 +123,28 @@ void LHESource::putRunInfoProduct(edm::RunPrincipal& iRunPrincipal) {
   }
 }
 
-bool LHESource::setRunAndEventInfo(edm::EventID&, edm::TimeValue_t&, edm::EventAuxiliary::ExperimentType&) {
+void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
+  if (runInfoProductLast_) {
+    auto product = std::make_unique<GenWeightInfoProduct>();
+    gen::WeightGroupInfo scaleInfo(
+        "<weightgroup name=\"Central scale variation\" combine=\"envelope\">"
+    );
+    scaleInfo.setWeightType(gen::kScaleWeights);
+
+    gen::WeightGroupInfo cenPdfInfo(
+        "<weightgroup name=\"NNPDF31_nnlo_hessian_pdfas\" combine=\"hessian\">"
+    );
+    cenPdfInfo.setWeightType(gen::kPdfWeights);
+
+    product->addWeightGroupInfo(&scaleInfo);
+    product->addWeightGroupInfo(&cenPdfInfo);
+    std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<GenWeightInfoProduct>(std::move(product)));
+    iRunPrincipal.put(lheProvenanceHelper_.weightProductBranchDescription_, std::move(rdp));
+  }
+}
+
+bool LHESource::setRunAndEventInfo(edm::EventID&, edm::TimeValue_t&, edm::EventAuxiliary::ExperimentType&)
+{
   nextEvent();
   if (!partonLevel_) {
     // We just finished an input file. See if there is another.

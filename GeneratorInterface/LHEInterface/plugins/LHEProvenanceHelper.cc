@@ -2,6 +2,7 @@
 #include <vector>
 #include "GeneratorInterface/LHEInterface/plugins/LHEProvenanceHelper.h"
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
+#include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 
 #include "DataFormats/Provenance/interface/ProcessHistory.h"
 #include "DataFormats/Provenance/interface/ProcessHistoryRegistry.h"
@@ -47,6 +48,7 @@ namespace edm {
         processParameterSet_() {
     // Add the products to the product registry
     productRegistry.copyProduct(eventProductBranchDescription_);
+    productRegistry.copyProduct(weightProductBranchDescription_);
     productRegistry.copyProduct(runProductBranchDescription_);
   }
 
