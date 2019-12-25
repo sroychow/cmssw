@@ -311,28 +311,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
     p->fillCompressedContent(instream, 0.25 * insize);
     instream.close();
   }
-  run.put(std::move(p), "LHEScriptOutput");
-    for ( unsigned int iArg = 0; iArg < args_.size() ; iArg++ ) {
-	LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args_[iArg];
-    }
-
-    executeScript();
-  
-    //fill LHEXMLProduct (streaming read directly into compressed buffer to save memory)
-    std::unique_ptr<LHEXMLStringProduct> p(new LHEXMLStringProduct);
-
-    //store the XML file only if explictly requested
-    if (storeXML_) {
-	std::ifstream instream(outputFile_);
-	if (!instream) {
-	    throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_ << ".";
-	}  
-	instream.seekg (0, instream.end);
-	int insize = instream.tellg();
-	instream.seekg (0, instream.beg);  
-	p->fillCompressedContent(instream, 0.25*insize);
-	instream.close();
-    }
     run.put(std::move(p), "LHEScriptOutput");
 
     // LHE C++ classes translation

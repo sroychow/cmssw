@@ -17,14 +17,12 @@ namespace edm {
   struct LHEProvenanceHelper {
     explicit LHEProvenanceHelper(TypeID const& eventProductType,
                                  TypeID const& runProductType,
-                                 TypeID const& weightProductType,
                                  ProductRegistry& productRegistry);
     ParameterSet fillCommonProcessParameterSet();
     void lheAugment(lhef::LHERunInfo const* runInfo);
     ProcessHistoryID lheInit(ProcessHistoryRegistry& processHistoryRegistry);
     BranchDescription const eventProductBranchDescription_;
     BranchDescription const runProductBranchDescription_;
-    BranchDescription const weightProductBranchDescription_;
     ProductProvenance eventProductProvenance_;
     ParameterSet const commonProcessParameterSet_;
     ParameterSet processParameterSet_;

@@ -33,13 +33,12 @@
 
 using namespace lhef;
 
-LHESource::LHESource(const edm::ParameterSet &params,
-                     const edm::InputSourceDescription &desc) :
-  ProducerSourceFromFiles(params, desc, false),
-  reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
-  lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), edm::TypeID(typeid(GenWeightInfoProduct)), productRegistryUpdate()),
-  phid_()
-{
+LHESource::LHESource(const edm::ParameterSet& params, const edm::InputSourceDescription& desc)
+    : ProducerSourceFromFiles(params, desc, false),
+      reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
+      lheProvenanceHelper_(
+          edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), productRegistryUpdate()),
+      phid_() {
   nextEvent();
   lheProvenanceHelper_.lheAugment(nullptr);
   // Initialize metadata, and save the process history ID for use every event.
@@ -139,7 +138,7 @@ void LHESource::putWeightInfoProduct(edm::RunPrincipal& iRunPrincipal) {
     product->addWeightGroupInfo(&scaleInfo);
     product->addWeightGroupInfo(&cenPdfInfo);
     std::unique_ptr<edm::WrapperBase> rdp(new edm::Wrapper<GenWeightInfoProduct>(std::move(product)));
-    iRunPrincipal.put(lheProvenanceHelper_.weightProductBranchDescription_, std::move(rdp));
+    //iRunPrincipal.put(lheProvenanceHelper_.weightProductBranchDescription_, std::move(rdp));
   }
 }
 
