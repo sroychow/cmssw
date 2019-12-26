@@ -50,7 +50,7 @@ process.LHEoutput = cms.OutputModule("PoolOutputModule",
 
 process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
                                              #args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/WLLJJ_WToLNu_EWK_4F_MLL-60_slc6_amd64_gcc481_CMSSW_7_1_30_tarball_Dummy.tgz'),
-                                             args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/ZZ_4L_NNPDF30_13TeV_tarballDummy.tar.gz'),
+                                             args = cms.vstring('/afs/cern.ch/user/k/kelong/work/public/DummyGridpacks/VVV_aQGCfs_dummy.tgz'),
                                              nEvents = cms.untracked.uint32(10),
     numberOfParameters = cms.uint32(1),
     outputFile = cms.string('cmsgrid_final.lhe'),

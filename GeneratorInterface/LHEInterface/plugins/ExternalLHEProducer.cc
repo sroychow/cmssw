@@ -377,21 +377,6 @@ void ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es
 
   nextEvent();
   if (partonLevel) {
-    throw edm::Exception(edm::errors::EventGenerationFailure)
-        << "Error in ExternalLHEProducer::endRunProduce().  "
-        << "Event loop is over, but there are still lhe events to process."
-        << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
-  }
-
-  reader_.reset();
-
-  if (unlink(outputFile_.c_str())) {
-    throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_
-                                              << " (errno=" << errno << ", " << strerror(errno) << ").";
-  }
- 
-  nextEvent();
-  if (partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure) << "Error in ExternalLHEProducer::endRunProduce().  "
     << "Event loop is over, but there are still lhe events to process."
     << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
