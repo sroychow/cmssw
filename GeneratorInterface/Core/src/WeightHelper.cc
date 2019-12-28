@@ -129,7 +129,7 @@ namespace gen {
             counter++;
         }
         // Needs to be properly handled
-        throw std::range_error("Unmatched weight");
+        throw std::range_error("Unmatched Generator weight! ID was " + wgtId + " index was " + std::to_string(weightIndex));
     }
 }
 

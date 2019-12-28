@@ -88,7 +88,7 @@ namespace gen {
         int error = xmlParser.Parse(line.c_str());
         if (error) {
             return false;
-            //do something....
+            //throw std::invalid_argument("Failed to parse weight info from header! Line was " + line);
         }
         XMLElement* element = xmlParser.FirstChildElement();
         return element;
@@ -124,20 +124,23 @@ namespace gen {
                 currGroupAttributeMap_ = getAttributeMap(fullTag);
                 auto name = currGroupAttributeMap_["name"];
                     
-                if (currentGroupIsScale()) 
+                if (currentGroupIsScale()) {
                     weightGroups_.push_back(std::make_unique<gen::ScaleWeightGroupInfo>(name));
+                }
                 else if (currentGroupIsPdf()) {
                     weightGroups_.push_back(std::make_unique<gen::PdfWeightGroupInfo>(name));
                 }
-                else 
+                else {
                     weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>(name));
+                }
             }
-            else if (isAWeight(headerLine)) {
+            else if (std::regex_match(headerLine, std::regex(".*<weight.*>.*\n*"))) {
+                std::string fullTag = headerLine;
+                if (!std::regex_match(headerLine, std::regex(".*</weight.*>.*\n*")))
+                    fullTag = headerLine + "</weight>";
                 currWeightAttributeMap_.clear();
                 // This shouldn't really happen, but perhaps we find weights outside of weight groups?
-                //if (weightGroups_.empty())
-                //    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
-                currWeightAttributeMap_ = getAttributeMap(headerLine);
+                currWeightAttributeMap_ = getAttributeMap(fullTag);
                 
                 std::string content = currWeightAttributeMap_["content"];
                 if (currWeightAttributeMap_["id"].empty()) {
@@ -145,10 +148,14 @@ namespace gen {
                     // should do something
                 }
                 
+                if (weightGroups_.empty()) {
+                    weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
+                }
                 auto& group = weightGroups_.back();
                 if (group.weightType() == gen::kScaleWeights) {
-                    if (currWeightAttributeMap_["mur"].empty()  || currWeightAttributeMap_["muf"].empty())
+                    if (currWeightAttributeMap_["mur"].empty()  || currWeightAttributeMap_["muf"].empty()) {
                         group.setIsWellFormed(false);
+                    }
                     else { 
                         try {
                             float muR = std::stof(currWeightAttributeMap_["mur"]);

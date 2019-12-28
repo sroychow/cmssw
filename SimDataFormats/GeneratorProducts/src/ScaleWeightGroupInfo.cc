@@ -22,7 +22,7 @@ namespace gen {
 
     void ScaleWeightGroupInfo::addContainedId(int weightEntry, std::string id, std::string label, float muR, float muF) {
         WeightGroupInfo::addContainedId(weightEntry, id, label);
-        auto metaInfo = weightMetaInfo(weightEntry);
+        auto metaInfo = weightMetaInfoByGlobalIndex(id, weightEntry);
         setMuRMuFIndex(metaInfo, muR, muF);
     }
 

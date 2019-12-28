@@ -42,7 +42,7 @@ namespace gen {
             void copy(const WeightGroupInfo &other);
             virtual WeightGroupInfo* clone() const;
             WeightMetaInfo weightMetaInfo(int weightEntry) const;
-            WeightMetaInfo weightMetaInfo(std::string wgtId) const;
+            WeightMetaInfo weightMetaInfoByGlobalIndex(std::string wgtId, int weightEntry) const;
             int weightVectorEntry(const std::string& wgtId) const;
             int containsWeight(const std::string& wgtId, int weightEntry) const;
             int weightVectorEntry(const std::string& wgtId, int weightEntry) const;

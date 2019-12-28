@@ -1,7 +1,7 @@
 from DataFormats.FWLite import Events,Handle,Runs,Lumis
 import ROOT
-#source = "externalLHEProducer"
-sources = ["testLHEWeights", "testGenWeights"]
+sources = ["externalLHEProducer"]
+#sources = ["testLHEWeights", "testGenWeights"]
 #source = "testGenWeights"
 
 #for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"," HIG-RunIIFall18wmLHEGS-00509_ordered.root","HIG-RunIIFall18wmLHEGS-00509_unordered.root"]:

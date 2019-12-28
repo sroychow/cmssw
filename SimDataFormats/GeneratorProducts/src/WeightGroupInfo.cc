@@ -24,9 +24,13 @@ namespace gen {
         return idsContained_.at(weightEntry);
     }
 
-    WeightMetaInfo WeightGroupInfo::weightMetaInfo(std::string wgtId) const {
-        int weightEntry = weightVectorEntry(wgtId);
-        return idsContained_.at(weightEntry);
+    WeightMetaInfo WeightGroupInfo::weightMetaInfoByGlobalIndex(std::string wgtId, int weightEntry) const {
+        int entry = weightVectorEntry(wgtId, weightEntry);
+        if (entry < 0 || entry >= static_cast<int>(idsContained_.size()))
+            throw std::range_error("Weight entry " + std::to_string(weightEntry) + 
+                    " is not a member of group " + name_ + 
+                    ". \n    firstID = " + std::to_string(firstId_) + " lastId = " + std::to_string(lastId_));
+        return idsContained_.at(entry);
     }
 
     int WeightGroupInfo::weightVectorEntry(const std::string& wgtId) const {
