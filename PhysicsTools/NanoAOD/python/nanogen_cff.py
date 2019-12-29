@@ -1,4 +1,3 @@
-from PhysicsTools.NanoAOD.common_cff import *
 from PhysicsTools.NanoAOD.taus_cff import *
 from PhysicsTools.NanoAOD.jets_cff import *
 from PhysicsTools.NanoAOD.globals_cff import *
@@ -90,3 +89,4 @@ def customizeNanoGEN(process):
     process.genJetAK8FlavourTable.src = process.genJetAK8Table.src
     process.tauGenJets.GenParticles = "genParticles"
     process.genVisTaus.srcGenParticles = "genParticles"
+    return process
