@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "SimDataFormats/GeneratorProducts/interface/UnknownWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/MEParamWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"

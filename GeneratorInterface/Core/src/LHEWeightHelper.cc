@@ -130,6 +130,9 @@ namespace gen {
                 else if (currentGroupIsPdf()) {
                     weightGroups_.push_back(std::make_unique<gen::PdfWeightGroupInfo>(name));
                 }
+                else if (currentGroupIsMEParam()) {
+                    weightGroups_.push_back(std::make_unique<gen::MEParamWeightGroupInfo>(name));
+                }
                 else {
                     weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>(name));
                 }

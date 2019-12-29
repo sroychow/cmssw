@@ -79,6 +79,11 @@ namespace gen {
                 [name] (const PdfSetInfo& setInfo) { return setInfo.name == name; }) != pdfSetsInfo.end();
     }
 
+    bool WeightHelper::currentGroupIsMEParam() {
+        std::string name = boost::algorithm::to_lower_copy(currGroupAttributeMap_["name"]);
+        return (name.find("mg_reweighting") != std::string::npos);
+    }
+
     // TODO: Could probably recycle this code better
     std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<double> weights) {
         auto weightProduct = std::make_unique<GenWeightProduct>();

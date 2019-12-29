@@ -25,6 +25,7 @@ namespace gen {
         std::unique_ptr<GenWeightProduct> weightProduct(std::vector<double>);
         void setGroupInfo();
         bool currentGroupIsScale();
+        bool currentGroupIsMEParam();
         bool currentGroupIsPdf();
         int addWeightToProduct(std::unique_ptr<GenWeightProduct>& product, double weight, std::string name, int weightNum, int groupIndex);
         int findContainingWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);

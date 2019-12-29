@@ -19,7 +19,7 @@ namespace gen {
     enum WeightType {
         kPdfWeights,
         kScaleWeights,
-        kMatrixElementWeights,
+        kMEParamWeights,
         kUnknownWeights,
         kPartonShowerWeights,
     };

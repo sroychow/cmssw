@@ -5,8 +5,8 @@ sources = ["externalLHEProducer"]
 #source = "testGenWeights"
 
 #for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"," HIG-RunIIFall18wmLHEGS-00509_ordered.root","HIG-RunIIFall18wmLHEGS-00509_unordered.root"]:
-#for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
-for filename in ["test.root"]:
+for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
+#for filename in ["test.root"]:
     for source in sources:
         lumis = Lumis(filename)
         lumi = lumis.__iter__().next()
