@@ -9,6 +9,7 @@ from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
     lheInfo = cms.InputTag("externalLHEProducer"),
+    #lheWeights = cms.InputTag("externalLHEProducer"),
     weightgroups = cms.vstring(["mg_reweighting"]),
     lheWeightPrecision = cms.int32(14),
 )
