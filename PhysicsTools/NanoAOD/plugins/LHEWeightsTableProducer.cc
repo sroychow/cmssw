@@ -28,16 +28,16 @@ namespace {
   typedef std::unordered_map<std::string, const WeightGroupData> WeightGroupsToStore;
 }  // namespace
 
-class LHEWeightsTableProducer : public edm::global::EDProducer<edm::RunCache<WeightGroupsToStore>> {
+class LHEWeightsTableProducer : public edm::global::EDProducer<edm::LuminosityBlockCache<WeightGroupsToStore>> {
 public:
   LHEWeightsTableProducer(edm::ParameterSet const& params)
       : lheInputTag_(params.getParameter<edm::InputTag>("lheInfo")),
         lheToken_(consumes<LHEEventProduct>(params.getParameter<edm::InputTag>("lheInfo"))),
         lheWeightToken_(consumes<GenWeightProduct>(params.getParameter<edm::InputTag>("lheInfo"))),
-        //lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InRun>(params.getParameter<edm::InputTag>("lheWeightInfo"))),
+        lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(params.getParameter<edm::InputTag>("lheInfo"))),
         weightgroups_(params.getParameter<std::vector<std::string>>("weightgroups")),
         lheWeightPrecision_(params.getParameter<int32_t>("lheWeightPrecision")) {
-    consumes<LHERunInfoProduct, edm::InRun>(lheInputTag_);
+    //consumes<LHERunInfoProduct, edm::InRun>(lheInputTag_);
     produces<std::vector<nanoaod::FlatTable>>();
   }
 
@@ -51,47 +51,25 @@ public:
     WeightsContainer lheWeights = lheWeightProduct->weights();
 
     auto lheWeightTables = std::make_unique<std::vector<nanoaod::FlatTable>>();
-    auto const& weightInfos = *runCache(iEvent.getRun().index());
+    auto const& weightInfos = *luminosityBlockCache(iEvent.getLuminosityBlock().index());
 
     double w0 = lheInfo.originalXWGTUP();
 
-    size_t scaleGroupIndex = weightInfos.at("Scale").index;
-    const gen::ScaleWeightGroupInfo* scaleGroupInfo_ = static_cast<const gen::ScaleWeightGroupInfo*>(weightInfos.at("Scale").group);
-
-    std::vector<float> normalizedWeights;
-    std::vector<double>& scaleWeights = lheWeights.at(scaleGroupIndex);
-
-    // nano ordering of mur=0.5 muf=0.5 ; [1] is mur=0.5 muf=1 ; [2] is mur=0.5 muf=2 ; [3] is mur=1 muf=0.5 ; 
-    // [4] is mur=1 muf=1 ; [5] is mur=1 muf=2 ; [6] is mur=2 muf=0.5 ; [7] is mur=2 muf=1 ; [8] is mur=2 muf=2 *
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR05muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR05muF1Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR05muF2Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR1muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->centralIndex())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR1muF2Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR2muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR2muF1Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroupInfo_->muR2muF2Index())/w0);
-
-    lheWeightTables->emplace_back(normalizedWeights.size(), "LHEScaleWeight", false);
+    auto scaleWeights = orderedScaleWeights(lheWeights, weightInfos.at("Scale"), w0);
+    lheWeightTables->emplace_back(scaleWeights.size(), "LHEScaleWeight", false);
     lheWeightTables->back().addColumn<float>(
-          "", normalizedWeights, scaleGroupInfo_->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+          "", scaleWeights, weightInfos.at("Scale").group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
 
     iEvent.put(std::move(lheWeightTables));
   }
 
-  std::shared_ptr<WeightGroupsToStore> globalBeginRun(edm::Run const& iRun,
+  
+
+  std::shared_ptr<WeightGroupsToStore> globalBeginLuminosityBlock(edm::LuminosityBlock const& iLumi,
                                                              edm::EventSetup const&) const override {
-    edm::Handle<LHERunInfoProduct> lheInfo;
 
-
-    // getByToken throws since we're not in the endRun (see https://github.com/cms-sw/cmssw/pull/18499)
-    iRun.getByLabel(lheInputTag_, lheInfo);
-    //if (lheInfo.isValid()) {
-    //}
-    //iRun.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
     edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
-    iRun.getByLabel(lheInputTag_, lheWeightInfoHandle);
+    iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function
     auto scaleGroupIndices = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights);
@@ -102,8 +80,30 @@ public:
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
 
+  std::vector<float> orderedScaleWeights(WeightsContainer& lheWeights, const WeightGroupData& scaleGroupInfo, double w0) const {
+    const gen::ScaleWeightGroupInfo* scaleGroup = static_cast<const gen::ScaleWeightGroupInfo*>(scaleGroupInfo.group);
+    size_t scaleGroupIndex = scaleGroupInfo.index;
+
+    std::vector<float> normalizedWeights;
+    std::vector<double>& scaleWeights = lheWeights.at(scaleGroupIndex);
+
+    // nano ordering of mur=0.5 muf=0.5 ; [1] is mur=0.5 muf=1 ; [2] is mur=0.5 muf=2 ; [3] is mur=1 muf=0.5 ; 
+    // [4] is mur=1 muf=1 ; [5] is mur=1 muf=2 ; [6] is mur=2 muf=0.5 ; [7] is mur=2 muf=1 ; [8] is mur=2 muf=2 *
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF05Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF1Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF2Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR1muF05Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->centralIndex())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR1muF2Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF05Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF1Index())/w0);
+    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF2Index())/w0);
+
+    return normalizedWeights;
+  }
+
   // nothing to do here
-  void globalEndRun(edm::Run const&, edm::EventSetup const&) const override {}
+  virtual void globalEndLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) const override {}
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;

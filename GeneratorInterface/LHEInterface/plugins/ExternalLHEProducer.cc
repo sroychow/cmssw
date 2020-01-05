@@ -70,7 +70,7 @@ Implementation:
 
 class ExternalLHEProducer : public edm::one::EDProducer<edm::BeginRunProducer,
                                                         edm::EndRunProducer,
-                                                        edm::EndLuminosityBlockProducer> {
+                                                        edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
   ~ExternalLHEProducer() override;
@@ -81,7 +81,7 @@ private:
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
   void endRunProduce(edm::Run&, edm::EventSetup const&) override;
-  void endLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
+  void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
   void preallocThreads(unsigned int) override;
 
   int closeDescriptors(int preserve);
@@ -164,7 +164,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
   produces<GenWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
-  produces<GenWeightInfoProduct, edm::Transition::EndLuminosityBlock>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
 ExternalLHEProducer::~ExternalLHEProducer() {}
@@ -390,7 +390,7 @@ void ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es
 }
 
 void 
-ExternalLHEProducer::endLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
+ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
   for (auto& weightGroup : weightHelper_.weightGroups()) {
       weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
