@@ -20,12 +20,7 @@
 #include <tinyxml2.h>
 
 namespace {
-  struct WeightGroupData {
-    size_t index;
-    const gen::WeightGroupInfo* group;
-  };
-
-  typedef std::unordered_map<std::string, const WeightGroupData> WeightGroupsToStore;
+  typedef std::unordered_map<std::string, gen::WeightGroupData> WeightGroupsToStore;
 }  // namespace
 
 class LHEWeightsTableProducer : public edm::global::EDProducer<edm::LuminosityBlockCache<WeightGroupsToStore>> {
@@ -60,6 +55,12 @@ public:
     lheWeightTables->back().addColumn<float>(
           "", scaleWeights, weightInfos.at("Scale").group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
 
+    auto meWeights = meReweightWeights(lheWeights, weightInfos.at("MEReweight"), w0);
+    lheWeightTables->emplace_back(meWeights.size(), "LHEMEReweightWeight", false);
+    lheWeightTables->back().addColumn<float>(
+          "", meWeights, weightInfos.at("MEReweight").group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+
+
     iEvent.put(std::move(lheWeightTables));
   }
 
@@ -71,16 +72,32 @@ public:
     edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
     iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
-    // Should add a search by name function
-    auto scaleGroupIndices = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights);
-    size_t scaleGroupIndex = scaleGroupIndices.front();
-    const gen::WeightGroupInfo* scaleGroupInfo = lheWeightInfoHandle->orderedWeightGroupInfo(scaleGroupIndex);
-    WeightGroupsToStore weightsToStore = { {"Scale", {scaleGroupIndex, scaleGroupInfo}} };
+    std::vector<gen::WeightGroupData> scaleGroups = lheWeightInfoHandle->weightGroupsAndIndicesByType(gen::kScaleWeights);
+    auto meGroups = lheWeightInfoHandle->weightGroupsAndIndicesByType(gen::kMEParamWeights);
+
+    WeightGroupsToStore weightsToStore;
+    weightsToStore.insert({"Scale", scaleGroups.front()});
+    weightsToStore.insert({"MEReweight", meGroups.front()});
+    //    {"MEReweight", meGroups.at(0)},
+    //};
+    //i = 0;
+    //for (const auto& meGroup : meGroups) {
+    //    std::string label = "MEReweight";
+    //    label = scaleGroups.size() > 1 ? label + i : label;
+    //    weightsToStore[label] = meGroup;
+    //}
 
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
 
-  std::vector<float> orderedScaleWeights(WeightsContainer& lheWeights, const WeightGroupData& scaleGroupInfo, double w0) const {
+  std::vector<float> meReweightWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& meGroupInfo, double w0) const {
+    std::vector<float> normalizedWeights;
+    for (const auto& weight : lheWeights.at(meGroupInfo.index))
+        normalizedWeights.push_back(weight/w0);
+    return normalizedWeights;
+  }
+
+  std::vector<float> orderedScaleWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& scaleGroupInfo, double w0) const {
     const gen::ScaleWeightGroupInfo* scaleGroup = static_cast<const gen::ScaleWeightGroupInfo*>(scaleGroupInfo.group);
     size_t scaleGroupIndex = scaleGroupInfo.index;
 

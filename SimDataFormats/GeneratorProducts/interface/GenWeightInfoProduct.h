@@ -12,6 +12,13 @@
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 
+namespace gen {
+  struct WeightGroupData {
+    size_t index;
+    const gen::WeightGroupInfo* group;
+  };
+}  // namespace
+
 class GenWeightInfoProduct {
     public:
         GenWeightInfoProduct() {}
@@ -27,6 +34,7 @@ class GenWeightInfoProduct {
         const gen::WeightGroupInfo* orderedWeightGroupInfo(int index) const;
         std::vector<gen::WeightGroupInfo*> weightGroupsByType(gen::WeightType type) const;
         std::vector<int> weightGroupIndicesByType(gen::WeightType type) const;
+        std::vector<gen::WeightGroupData> weightGroupsAndIndicesByType(gen::WeightType type) const;
         void addWeightGroupInfo(gen::WeightGroupInfo* info);
         const int numberOfGroups() const { return weightGroupsInfo_.size(); }
 
