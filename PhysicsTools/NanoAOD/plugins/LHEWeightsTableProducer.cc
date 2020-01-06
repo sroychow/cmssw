@@ -50,21 +50,29 @@ public:
 
     double w0 = lheInfo.originalXWGTUP();
 
-    auto scaleWeights = orderedScaleWeights(lheWeights, weightInfos.at("Scale"), w0);
-    lheWeightTables->emplace_back(scaleWeights.size(), "LHEScaleWeight", false);
-    lheWeightTables->back().addColumn<float>(
-          "", scaleWeights, weightInfos.at("Scale").group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
-
-    auto meWeights = meReweightWeights(lheWeights, weightInfos.at("MEReweight"), w0);
-    lheWeightTables->emplace_back(meWeights.size(), "LHEMEReweightWeight", false);
-    lheWeightTables->back().addColumn<float>(
-          "", meWeights, weightInfos.at("MEReweight").group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+    addWeightGroupToTable("Scale", lheWeightTables, weightInfos, lheWeights, w0);
+    addWeightGroupToTable("MEParam", lheWeightTables, weightInfos, lheWeights, w0);
+    addWeightGroupToTable("Pdf", lheWeightTables, weightInfos, lheWeights, w0);
 
 
     iEvent.put(std::move(lheWeightTables));
   }
 
-  
+  void addWeightGroupToTable(std::string name, std::unique_ptr<std::vector<nanoaod::FlatTable>>& lheWeightTables, 
+          const WeightGroupsToStore& weightInfos, WeightsContainer& lheWeights, double w0) const {
+    if (weightInfos.count(name)) {
+        const auto& groupInfo = weightInfos.at(name);
+        auto weights = groupInfo.group->weightType() != gen::kScaleWeights ? normalizedWeights(lheWeights, groupInfo, w0) :
+                            orderedScaleWeights(lheWeights, groupInfo, w0);
+        std::string entryName = "LHE";
+        entryName.append(name);
+        entryName.append("Weight");
+        lheWeightTables->emplace_back(weights.size(), entryName, false);
+        lheWeightTables->back().addColumn<float>(
+            "", weights, weightInfos.at(name).group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+    }
+  }
+
 
   std::shared_ptr<WeightGroupsToStore> globalBeginLuminosityBlock(edm::LuminosityBlock const& iLumi,
                                                              edm::EventSetup const&) const override {
@@ -72,25 +80,26 @@ public:
     edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
     iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
-    std::vector<gen::WeightGroupData> scaleGroups = lheWeightInfoHandle->weightGroupsAndIndicesByType(gen::kScaleWeights);
+    auto scaleGroups = lheWeightInfoHandle->weightGroupsAndIndicesByType(gen::kScaleWeights);
     auto meGroups = lheWeightInfoHandle->weightGroupsAndIndicesByType(gen::kMEParamWeights);
 
     WeightGroupsToStore weightsToStore;
     weightsToStore.insert({"Scale", scaleGroups.front()});
-    weightsToStore.insert({"MEReweight", meGroups.front()});
-    //    {"MEReweight", meGroups.at(0)},
-    //};
-    //i = 0;
-    //for (const auto& meGroup : meGroups) {
-    //    std::string label = "MEReweight";
-    //    label = scaleGroups.size() > 1 ? label + i : label;
-    //    weightsToStore[label] = meGroup;
-    //}
+
+    for (auto lhaid : {306000, 29000}) {
+        if (auto pdfGroup = lheWeightInfoHandle->pdfGroupWithIndexByLHAID(lhaid)) {
+            weightsToStore.insert({"Pdf", pdfGroup.value()});
+            break;
+        }
+    }
+
+    if (meGroups.size() > 0)
+        weightsToStore.insert({"MEParam", meGroups.front()});
 
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
 
-  std::vector<float> meReweightWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& meGroupInfo, double w0) const {
+  std::vector<float> normalizedWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& meGroupInfo, double w0) const {
     std::vector<float> normalizedWeights;
     for (const auto& weight : lheWeights.at(meGroupInfo.index))
         normalizedWeights.push_back(weight/w0);

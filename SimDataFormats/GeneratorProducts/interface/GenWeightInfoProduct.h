@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <optional>
 
 //#include <hepml.hpp>
 
@@ -35,6 +36,7 @@ class GenWeightInfoProduct {
         std::vector<gen::WeightGroupInfo*> weightGroupsByType(gen::WeightType type) const;
         std::vector<int> weightGroupIndicesByType(gen::WeightType type) const;
         std::vector<gen::WeightGroupData> weightGroupsAndIndicesByType(gen::WeightType type) const;
+        std::optional<gen::WeightGroupData> pdfGroupWithIndexByLHAID(size_t lhaid) const;
         void addWeightGroupInfo(gen::WeightGroupInfo* info);
         const int numberOfGroups() const { return weightGroupsInfo_.size(); }
 

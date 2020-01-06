@@ -2,6 +2,7 @@
 #include <string>
 
 #include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 
 GenWeightInfoProduct::GenWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups) {
     weightGroupsInfo_ = weightGroups;
@@ -52,6 +53,18 @@ std::vector<gen::WeightGroupInfo*> GenWeightInfoProduct::weightGroupsByType(gen:
     }
     return matchingGroups;
 }
+
+std::optional<gen::WeightGroupData> GenWeightInfoProduct::pdfGroupWithIndexByLHAID(size_t lhaid) const {
+    auto pdfGroups = weightGroupsAndIndicesByType(gen::kPdfWeights);
+
+    auto matchingPdfSet = std::find_if(pdfGroups.begin(), pdfGroups.end(), 
+            [lhaid] (gen::WeightGroupData& data) { 
+                    auto pdfGroup = dynamic_cast<const gen::PdfWeightGroupInfo*>(data.group); 
+                    return pdfGroup->containsLhapdfId(lhaid); 
+    });
+    return matchingPdfSet != pdfGroups.end() ? std::optional<gen::WeightGroupData>(*matchingPdfSet) : std::nullopt;
+}
+
 
 std::vector<int> GenWeightInfoProduct::weightGroupIndicesByType(gen::WeightType type) const {
     std::vector<int> matchingGroupIndices;
