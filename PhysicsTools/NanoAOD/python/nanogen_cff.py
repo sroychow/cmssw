@@ -5,12 +5,19 @@ from PhysicsTools.NanoAOD.genparticles_cff import *
 from PhysicsTools.NanoAOD.particlelevel_cff import *
 from PhysicsTools.NanoAOD.lheInfoTable_cfi import *
 from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
+import ROOT
+
+genWeights = cms.EDProducer("GenWeightProductProducer")
 
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
     lheInfo = cms.InputTag("externalLHEProducer"),
-    #lheWeights = cms.InputTag("externalLHEProducer"),
-    weightgroups = cms.vstring(["mg_reweighting"]),
+    lheWeights = cms.InputTag("externalLHEProducer"),
+    genWeights = cms.InputTag("genWeights"),
+    #weightgroups = cms.vint32([ROOT.gen.kScaleWeights, ROOT.gen.kMEParamWeights, ROOT.gen.kPdfWeights, ROOT.UnknownWeights]),
+    #weightgroups = cms.vint32([0,1,2,3,4]),
+    #numWeightgroups = cms.vint([1, -1, 1, 2, 1]),
+    #pdfs = cms.vint([91400, 306000, 260000]),
     lheWeightPrecision = cms.int32(14),
 )
 
@@ -33,6 +40,7 @@ metGenTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
 )
 
 nanogenSequence = cms.Sequence(
+    genWeights+
     nanoMetadata+
     particleLevel+
     genJetTable+

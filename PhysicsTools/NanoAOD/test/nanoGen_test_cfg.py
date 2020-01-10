@@ -143,7 +143,7 @@ process.generation_step = cms.Path(process.pgen)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 
 # Path and EndPath definitions
-process.nanoGEN_step = cms.Path(process.nanogenSequence)
+process.nanoGEN_step = cms.Path(process.genWeights*process.nanogenSequence)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.NANOAODGENoutput_step = cms.EndPath(process.NANOAODGENoutput)
 

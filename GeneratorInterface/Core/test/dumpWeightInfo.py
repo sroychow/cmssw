@@ -25,6 +25,7 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
             print "-"*10, "Looking at entry", j, "length is", len(weights),"-"*10
             matching = weightInfoProd.orderedWeightGroupInfo(j)
             print "Group is", matching, "name is", matching.name(), "well formed?", matching.isWellFormed()
+            print type(matching.weightType()), matching.weightType()
             if matching.weightType() == 1:
                 for var in [(x, y) for x in ["05", "1", "2"] for y in ["05", "1", "2"]]:
                     name = "muR%smuF%sIndex" % (var[0], var[1]) if not (var[0] == "1" and var[1] == "1") else "centralIndex"
