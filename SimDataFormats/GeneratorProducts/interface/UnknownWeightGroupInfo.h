@@ -6,11 +6,11 @@
 namespace gen {
     class UnknownWeightGroupInfo : public WeightGroupInfo {
         public:
-            UnknownWeightGroupInfo() : WeightGroupInfo() { weightType_ = kUnknownWeights; }
+            UnknownWeightGroupInfo() : WeightGroupInfo() { weightType_ = WeightType::kUnknownWeights; }
 	        UnknownWeightGroupInfo(std::string header, std::string name) : 
-                WeightGroupInfo(header, name) { weightType_ = kUnknownWeights; isWellFormed_ = false;} 
+                WeightGroupInfo(header, name) { weightType_ = WeightType::kUnknownWeights; isWellFormed_ = false;} 
 	        UnknownWeightGroupInfo(std::string header) : 
-                WeightGroupInfo(header) { weightType_ = kUnknownWeights; isWellFormed_ = false;} 
+                WeightGroupInfo(header) { weightType_ = WeightType::kUnknownWeights; isWellFormed_ = false;} 
             virtual ~UnknownWeightGroupInfo() override {}
             void copy(const UnknownWeightGroupInfo &other);
             virtual UnknownWeightGroupInfo* clone() const override;

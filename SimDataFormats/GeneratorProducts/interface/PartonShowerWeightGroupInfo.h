@@ -9,7 +9,7 @@ namespace gen {
             PartonShowerWeightGroupInfo() : PartonShowerWeightGroupInfo("") {}
 	        PartonShowerWeightGroupInfo(std::string header, std::string name) : 
                 WeightGroupInfo(header, name) { 
-                weightType_ = kPartonShowerWeights;
+                weightType_ = WeightType::kPartonShowerWeights;
             }
 	        PartonShowerWeightGroupInfo(std::string header) : 
                 PartonShowerWeightGroupInfo(header, header) { } 

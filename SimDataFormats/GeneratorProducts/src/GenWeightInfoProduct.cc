@@ -55,7 +55,7 @@ std::vector<gen::WeightGroupInfo*> GenWeightInfoProduct::weightGroupsByType(gen:
 }
 
 std::optional<gen::WeightGroupData> GenWeightInfoProduct::pdfGroupWithIndexByLHAID(size_t lhaid) const {
-    auto pdfGroups = weightGroupsAndIndicesByType(gen::kPdfWeights);
+    auto pdfGroups = weightGroupsAndIndicesByType(gen::WeightType::kPdfWeights);
 
     auto matchingPdfSet = std::find_if(pdfGroups.begin(), pdfGroups.end(), 
             [lhaid] (gen::WeightGroupData& data) { 

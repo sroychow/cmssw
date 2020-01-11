@@ -422,7 +422,7 @@ GenWeightsTestAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, 
     iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
 
     // Should add a search by name function
-    auto allScaleWeights = lheWeightInfoHandle->weightGroupIndicesByType(gen::kScaleWeights);
+    auto allScaleWeights = lheWeightInfoHandle->weightGroupIndicesByType(gen::WeightType::kScaleWeights);
     if (allScaleWeights.size() > 0)
         scaleWeightsIndex_ = allScaleWeights.front();
 
@@ -441,7 +441,7 @@ GenWeightsTestAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const& iLumi, 
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF1Index());
     scaleWeightsOrder_.push_back(scaleWeights->muR2muF2Index());
 
-    auto pdfGroups = lheWeightInfoHandle->weightGroupsByType(gen::kPdfWeights);
+    auto pdfGroups = lheWeightInfoHandle->weightGroupsByType(gen::WeightType::kPdfWeights);
     auto ct14Set = std::find_if(pdfGroups.begin(), pdfGroups.end(), 
             [] (gen::WeightGroupInfo* group) { 
                     auto pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo*>(group); 

@@ -25,7 +25,7 @@ gen::WeightGroupInfo getExampleScaleWeights() {
         R"(<weight MUF="2" MUR="0.5" PDF="263400" id="8"> mur=0.5 muf=2 </weight>)",
         R"(<weight MUF="0.5" MUR="0.5" PDF="263400" id="9"> mur=0.5 muf=0.5 </weight>)",
     };
-    scaleInfo.setWeightType(gen::kScaleWeights);
+    scaleInfo.setWeightType(gen::WeightType::kScaleWeights);
 
     for (size_t i = 0; i < entries.size(); i++) {
         scaleInfo.addContainedId(i, parseId(entries[i]), entries[i]); 
@@ -49,7 +49,7 @@ gen::WeightGroupInfo getExampleScaleWeightsOutOfOrder() {
         R"(<weight MUF="1" MUR="0.5" PDF="263400" id="7"> mur=0.5 muf=1 </weight>)",
         R"(<weight MUF="0.5" MUR="0.5" PDF="263400" id="9"> mur=0.5 muf=0.5 </weight>)",
     };
-    scaleInfo.setWeightType(gen::kScaleWeights);
+    scaleInfo.setWeightType(gen::WeightType::kScaleWeights);
 
     for (size_t i = 0; i < entries.size(); i++) {
         scaleInfo.addContainedId(i, parseId(entries[i]), entries[i]); 

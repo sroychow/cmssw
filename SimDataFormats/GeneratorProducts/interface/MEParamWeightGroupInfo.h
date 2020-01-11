@@ -6,9 +6,9 @@
 namespace gen {
     class MEParamWeightGroupInfo : public WeightGroupInfo {
         public:
-            MEParamWeightGroupInfo() : WeightGroupInfo() { weightType_ = kMEParamWeights; }
+            MEParamWeightGroupInfo() : WeightGroupInfo() { weightType_ = WeightType::kMEParamWeights; }
 	        MEParamWeightGroupInfo(std::string header, std::string name) : 
-                WeightGroupInfo(header, name) { weightType_ = kMEParamWeights; } 
+                WeightGroupInfo(header, name) { weightType_ = WeightType::kMEParamWeights; } 
 	        MEParamWeightGroupInfo(std::string header) : 
                 MEParamWeightGroupInfo(header, header) {} 
             virtual ~MEParamWeightGroupInfo() override {}

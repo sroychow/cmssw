@@ -155,7 +155,7 @@ namespace gen {
                     weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>("Unknown"));
                 }
                 auto& group = weightGroups_.back();
-                if (group.weightType() == gen::kScaleWeights) {
+                if (group.weightType() == gen::WeightType::kScaleWeights) {
                     if (currWeightAttributeMap_["mur"].empty()  || currWeightAttributeMap_["muf"].empty()) {
                         group.setIsWellFormed(false);
                     }

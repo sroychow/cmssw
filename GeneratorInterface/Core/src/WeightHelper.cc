@@ -53,7 +53,7 @@ namespace gen {
     void WeightHelper::setGroupInfo() {
         auto& group = weightGroups_.back();
         const std::string& name = group.name();
-        if (group.weightType() == kPdfWeights) {
+        if (group.weightType() == WeightType::kPdfWeights) {
             PdfWeightGroupInfo* pdfGroup = dynamic_cast<PdfWeightGroupInfo*>(&group);
             auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(),
                 [name] (const PdfSetInfo& setInfo) { return setInfo.name == name; });

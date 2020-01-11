@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <array>
 
 namespace gen {
     struct WeightMetaInfo {
@@ -16,13 +17,18 @@ namespace gen {
         std::string label;
     };
 
-    enum WeightType {
-        kPdfWeights,
-        kScaleWeights,
-        kMEParamWeights,
-        kUnknownWeights,
-        kPartonShowerWeights,
+    enum class WeightType : char {
+        kPdfWeights = 'P',
+        kScaleWeights = 's',
+        kMEParamWeights = 'm',
+        kPartonShowerWeights = 'p',
+        kUnknownWeights = 'u',
     };
+
+    const std::array<WeightType, 5> allGenWeightTypes = {{WeightType::kPdfWeights, 
+        WeightType::kScaleWeights, WeightType::kMEParamWeights, 
+        WeightType::kPartonShowerWeights, WeightType::kUnknownWeights, 
+    }};
 
 	class WeightGroupInfo {
         public:

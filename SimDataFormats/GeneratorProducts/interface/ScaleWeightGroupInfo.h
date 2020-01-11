@@ -20,7 +20,7 @@ namespace gen {
             ScaleWeightGroupInfo() : ScaleWeightGroupInfo("") {}
 	        ScaleWeightGroupInfo(std::string header, std::string name) : 
                 WeightGroupInfo(header, name) { 
-                weightType_ = kScaleWeights;
+                weightType_ = WeightType::kScaleWeights;
                 isFunctionalFormVar_ = false;
                 centralIndex_ = 0;
                 muR1muF2Index_ = 0;

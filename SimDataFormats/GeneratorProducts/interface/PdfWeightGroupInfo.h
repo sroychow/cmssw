@@ -20,11 +20,11 @@ namespace gen {
             int alphasDownIndex_;
             std::vector<std::pair<int, int>> lhapdfIdsContained_;
         public:
-            PdfWeightGroupInfo() : WeightGroupInfo() { weightType_ = kPdfWeights; }
+            PdfWeightGroupInfo() : WeightGroupInfo() { weightType_ = WeightType::kPdfWeights; }
 	        PdfWeightGroupInfo(std::string header, std::string name) : 
-                WeightGroupInfo(header, name) { weightType_ = kPdfWeights; } 
+                WeightGroupInfo(header, name) { weightType_ = WeightType::kPdfWeights; } 
 	        PdfWeightGroupInfo(std::string header) : 
-                WeightGroupInfo(header) { weightType_ = kPdfWeights; } 
+                WeightGroupInfo(header) { weightType_ = WeightType::kPdfWeights; } 
             PdfWeightGroupInfo(const PdfWeightGroupInfo &other) {
                 copy(other);
             }

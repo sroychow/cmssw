@@ -5,7 +5,6 @@ from PhysicsTools.NanoAOD.genparticles_cff import *
 from PhysicsTools.NanoAOD.particlelevel_cff import *
 from PhysicsTools.NanoAOD.lheInfoTable_cfi import *
 from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
-import ROOT
 
 genWeights = cms.EDProducer("GenWeightProductProducer")
 
@@ -14,10 +13,12 @@ lheWeightsTable = cms.EDProducer(
     lheInfo = cms.InputTag("externalLHEProducer"),
     lheWeights = cms.InputTag("externalLHEProducer"),
     genWeights = cms.InputTag("genWeights"),
-    #weightgroups = cms.vint32([ROOT.gen.kScaleWeights, ROOT.gen.kMEParamWeights, ROOT.gen.kPdfWeights, ROOT.UnknownWeights]),
-    #weightgroups = cms.vint32([0,1,2,3,4]),
-    #numWeightgroups = cms.vint([1, -1, 1, 2, 1]),
-    #pdfs = cms.vint([91400, 306000, 260000]),
+    # Warning: you can use a full string, but only the first character is read.
+    # Note also that the capitalization is important! For example, 'parton shower' 
+    # must be lower case and 'PDF' must be capital
+    weightgroups = cms.vstring(['scale', 'PDF', 'matrix element', 'unknown', 'shower']),
+    maxGroupsPerType = cms.vint32([1, -1, 1, 2, 1]),
+    pdfIds = cms.vint32([91400, 306000, 260000]),
     lheWeightPrecision = cms.int32(14),
 )
 
