@@ -78,6 +78,7 @@ GenWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& iLum
         iLumi.getByToken(genLumiInfoToken_, genLumiInfoHandle);
 
         weightNames_ = genLumiInfoHandle->weightNames();
+
 	    weightHelper_.parseWeightGroupsFromNames(weightNames_);
     }
     auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();

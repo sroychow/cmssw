@@ -71,7 +71,6 @@ public:
     size_t typeCount = 0;
     gen::WeightType previousType = gen::WeightType::kUnknownWeights;
 
-    size_t index = 0;
     for (const auto& groupInfo : weightInfos) {
         std::string entryName = typeName;
         gen::WeightType weightType = groupInfo.group->weightType();
@@ -141,7 +140,7 @@ public:
 
       group = weightsHandle->weightGroupsAndIndicesByType(weightType);
 
-      if (maxStore < 0 || static_cast<int>(group.size()) < maxStore) {
+      if (maxStore < 0 || static_cast<int>(group.size()) <= maxStore) {
           // Modify size in case one type of weight is present in multiple products
           maxStore -= group.size();
           return group;

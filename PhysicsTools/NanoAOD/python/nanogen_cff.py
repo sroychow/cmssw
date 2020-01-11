@@ -16,7 +16,7 @@ lheWeightsTable = cms.EDProducer(
     # Warning: you can use a full string, but only the first character is read.
     # Note also that the capitalization is important! For example, 'parton shower' 
     # must be lower case and 'PDF' must be capital
-    weightgroups = cms.vstring(['scale', 'PDF', 'matrix element', 'unknown', 'shower']),
+    weightgroups = cms.vstring(['scale', 'PDF', 'matrix element', 'unknown', 'parton shower']),
     maxGroupsPerType = cms.vint32([1, -1, 1, 2, 1]),
     pdfIds = cms.vint32([91400, 306000, 260000]),
     lheWeightPrecision = cms.int32(14),
