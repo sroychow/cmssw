@@ -197,7 +197,8 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
                             product.get(), _1));
 
   // Should also zero out the weights in the GenInfoProduct
-  auto weightProduct = weightHelper_.weightProduct(partonLevel->weights());
+  auto weightProduct = weightHelper_.weightProduct(partonLevel->weights(), 
+                                            partonLevel->originalXWGTUP());
   iEvent.put(std::move(weightProduct));
 
   product->setScales(partonLevel->scales());

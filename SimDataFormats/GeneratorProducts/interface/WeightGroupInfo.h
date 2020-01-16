@@ -25,7 +25,7 @@ namespace gen {
         kUnknownWeights = 'u',
     };
 
-    const std::array<WeightType, 5> allGenWeightTypes = {{WeightType::kPdfWeights, 
+    const std::array<WeightType, 5> allWeightTypes = {{WeightType::kPdfWeights, 
         WeightType::kScaleWeights, WeightType::kMEParamWeights, 
         WeightType::kPartonShowerWeights, WeightType::kUnknownWeights, 
     }};
@@ -50,22 +50,25 @@ namespace gen {
             WeightMetaInfo weightMetaInfo(int weightEntry) const;
             WeightMetaInfo weightMetaInfoByGlobalIndex(std::string wgtId, int weightEntry) const;
             int weightVectorEntry(const std::string& wgtId) const;
-            int containsWeight(const std::string& wgtId, int weightEntry) const;
+            bool containsWeight(const std::string& wgtId, int weightEntry) const;
             int weightVectorEntry(const std::string& wgtId, int weightEntry) const;
             void addContainedId(int weightEntry, std::string id, std::string label);
             std::vector<WeightMetaInfo> containedIds() const;
             bool indexInRange(int index) const;
 
             void setName(std::string name) { name_ = name; }
+            void setDescription(std::string description) { description_ = description; }
             void setHeaderEntry(std::string header) { headerEntry_ = header; }
             void setWeightType(WeightType type) { weightType_ = type; }
             void setFirstId(int firstId) { firstId_ = firstId; }
             void setLastId(int lastId) { lastId_ = lastId; }
 
             std::string name() const { return name_; }
+            std::string description() const { return description_; }
             std::string headerEntry() const { return headerEntry_; }
             WeightType weightType() const { return weightType_; }
             std::vector<WeightMetaInfo> idsContained() const { return idsContained_; }
+            size_t nIdsContained() const { return idsContained_.size(); }
             int firstId() const { return firstId_; }
             int lastId() const { return lastId_; }
             // Store whether the group was fully parsed succesfully
@@ -76,6 +79,7 @@ namespace gen {
             bool isWellFormed_;
             std::string headerEntry_;
             std::string name_;
+            std::string description_;
             WeightType weightType_;
             std::vector<WeightMetaInfo> idsContained_;
             int firstId_;

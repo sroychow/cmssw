@@ -43,10 +43,8 @@ private:
 // constructors and destructor
 //
 GenWeightProductProducer::GenWeightProductProducer(const edm::ParameterSet& iConfig) :
-    genLumiInfoToken_(consumes<GenLumiInfoHeader, edm::InLumi>(edm::InputTag("generator"))),
-        //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer")))),
-    genEventToken_(consumes<GenEventInfoProduct>(edm::InputTag("generator")))
-        //iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
+    genLumiInfoToken_(consumes<GenLumiInfoHeader, edm::InLumi>(iConfig.getParameter<edm::InputTag>("genInfo"))),
+    genEventToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genInfo")))
 {
   produces<GenWeightProduct>();
   produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
@@ -63,13 +61,11 @@ void
 GenWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   edm::Handle<GenEventInfoProduct> genEventInfo;
   iEvent.getByToken(genEventToken_, genEventInfo);
-  // Read weights from LHEEventProduct
-  auto weightProduct = weightHelper_.weightProduct(genEventInfo->weights());
+
+  float centralWeight = genEventInfo->weights().size() > 0 ? genEventInfo->weights().at(0) : 1.;
+  auto weightProduct = weightHelper_.weightProduct(genEventInfo->weights(), centralWeight);
   iEvent.put(std::move(weightProduct));
 }
-
-//void 
-//GenWeightProductProducer::endLuminosityBlockProduce(edm::LuminosityBlock& iLumi, edm::EventSetup const& iSetup) {}
 
 void
 GenWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& iLumi, edm::EventSetup const& iSetup) {

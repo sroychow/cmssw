@@ -10,6 +10,7 @@ namespace gen {
         isWellFormed_ = true;
         headerEntry_ = other.headerEntry();
         name_ = other.name();
+        description_ = other.description();
         weightType_ = other.weightType();
         idsContained_ = other.idsContained();
         firstId_ = other.firstId();
@@ -37,7 +38,7 @@ namespace gen {
         return weightVectorEntry(wgtId, 0);
     }
 
-    int WeightGroupInfo::containsWeight(const std::string& wgtId, int weightEntry) const {
+    bool WeightGroupInfo::containsWeight(const std::string& wgtId, int weightEntry) const {
         return weightVectorEntry(wgtId, weightEntry) != -1;
     }
 

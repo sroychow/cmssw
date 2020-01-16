@@ -13,10 +13,12 @@ typedef std::vector<std::vector<double>> WeightsContainer;
 
 class GenWeightProduct {
     public:
-        GenWeightProduct() { weightsVector_ = {}; }
+        GenWeightProduct() { weightsVector_ = {}; centralWeight_ = 1.; }
+        GenWeightProduct(double w0) { weightsVector_ = {}; centralWeight_ = w0; }
         GenWeightProduct& operator=(GenWeightProduct&& other) {
-        weightsVector_ = std::move(other.weightsVector_);
-        return *this;
+            weightsVector_ = std::move(other.weightsVector_);
+            centralWeight_ = other.centralWeight_;
+            return *this;
         }
         ~GenWeightProduct() {}
 
@@ -31,12 +33,14 @@ class GenWeightProduct {
             if (static_cast<int>(weights.size()) <= weightNum) {
                 weights.resize(weightNum+1);
             }
-            weights[weightNum] = weight;
+            weights[weightNum] = weight/centralWeight_;
         }
         const WeightsContainer& weights() const { return weightsVector_; }
+        double centralWeight() const { return centralWeight_; }
 
     private:
         WeightsContainer weightsVector_;
+        double centralWeight_;
 };
 
 #endif // GeneratorEvent_LHEInterface_GenWeightProduct_h

@@ -6,11 +6,11 @@ from PhysicsTools.NanoAOD.particlelevel_cff import *
 from PhysicsTools.NanoAOD.lheInfoTable_cfi import *
 from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 
-genWeights = cms.EDProducer("GenWeightProductProducer")
+genWeights = cms.EDProducer("GenWeightProductProducer",
+    genInfo = cms.InputTag("generator"))
 
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
-    lheInfo = cms.InputTag("externalLHEProducer"),
     lheWeights = cms.InputTag("externalLHEProducer"),
     genWeights = cms.InputTag("genWeights"),
     # Warning: you can use a full string, but only the first character is read.
@@ -18,6 +18,7 @@ lheWeightsTable = cms.EDProducer(
     # must be lower case and 'PDF' must be capital
     weightgroups = cms.vstring(['scale', 'PDF', 'matrix element', 'unknown', 'parton shower']),
     maxGroupsPerType = cms.vint32([1, -1, 1, 2, 1]),
+    # If empty or not specified, all pdf weights are stored
     pdfIds = cms.vint32([91400, 306000, 260000]),
     lheWeightPrecision = cms.int32(14),
 )

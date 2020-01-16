@@ -21,8 +21,8 @@ namespace gen {
         edm::OwnVector<gen::WeightGroupInfo> weightGroups() {
             return weightGroups_;
         }
-        std::unique_ptr<GenWeightProduct> weightProduct(std::vector<gen::WeightsInfo>);
-        std::unique_ptr<GenWeightProduct> weightProduct(std::vector<double>);
+        std::unique_ptr<GenWeightProduct> weightProduct(std::vector<gen::WeightsInfo>, float w0);
+        std::unique_ptr<GenWeightProduct> weightProduct(std::vector<double>, float w0);
         void setGroupInfo();
         bool currentGroupIsScale();
         bool currentGroupIsMEParam();

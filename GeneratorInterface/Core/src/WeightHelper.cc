@@ -85,8 +85,8 @@ namespace gen {
     }
 
     // TODO: Could probably recycle this code better
-    std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<double> weights) {
-        auto weightProduct = std::make_unique<GenWeightProduct>();
+    std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<double> weights, float w0) {
+        auto weightProduct = std::make_unique<GenWeightProduct>(w0);
         weightProduct->setNumWeightSets(weightGroups_.size());
         int weightGroupIndex = 0;
         for (unsigned int i = 0; i < weights.size(); i++) {
@@ -95,8 +95,8 @@ namespace gen {
         return std::move(weightProduct);
     }
 
-    std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights) {
-        auto weightProduct = std::make_unique<GenWeightProduct>();
+    std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights, float w0) {
+        auto weightProduct = std::make_unique<GenWeightProduct>(w0);
         weightProduct->setNumWeightSets(weightGroups_.size());
         int weightGroupIndex = 0;
         int i = 0;

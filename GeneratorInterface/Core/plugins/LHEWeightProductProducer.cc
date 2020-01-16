@@ -70,7 +70,7 @@ LHEWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<LHEEventProduct> lheEventInfo;
   iEvent.getByToken(lheEventToken_, lheEventInfo);
   // Read weights from LHEEventProduct
-  auto weightProduct = weightHelper_.weightProduct(lheEventInfo->weights());
+  auto weightProduct = weightHelper_.weightProduct(lheEventInfo->weights(), lheEventInfo->originalXWGTUP());
   iEvent.put(std::move(weightProduct));
 }
 

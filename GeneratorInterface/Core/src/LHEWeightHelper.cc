@@ -136,6 +136,8 @@ namespace gen {
                 else {
                     weightGroups_.push_back(std::make_unique<gen::UnknownWeightGroupInfo>(name));
                 }
+                auto& group = weightGroups_.back();
+                group.setDescription("Test description");
             }
             else if (std::regex_match(headerLine, std::regex(".*<weight.*>.*\n*"))) {
                 std::string fullTag = headerLine;

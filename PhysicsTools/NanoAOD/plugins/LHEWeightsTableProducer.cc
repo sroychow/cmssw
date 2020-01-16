@@ -21,13 +21,13 @@
 #include <tinyxml2.h>
 
 namespace {
-  typedef std::pair<std::vector<gen::WeightGroupData>, std::vector<gen::WeightGroupData>> WeightGroupsToStore;
+  typedef std::vector<gen::WeightGroupData> WeightGroupDataContainer;
+  typedef std::array<std::vector<gen::WeightGroupData>, 2> WeightGroupsToStore;
 }  // namespace
 
 class LHEWeightsTableProducer : public edm::global::EDProducer<edm::LuminosityBlockCache<WeightGroupsToStore>> {
 public:
   LHEWeightsTableProducer(edm::ParameterSet const& params) :
-        lheToken_(consumes<LHEEventProduct>(params.getParameter<edm::InputTag>("lheInfo"))),
         lheWeightToken_(consumes<GenWeightProduct>(params.getParameter<edm::InputTag>("lheWeights"))),
         lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(params.getParameter<edm::InputTag>("lheWeights"))),
         genWeightToken_(consumes<GenWeightProduct>(params.getParameter<edm::InputTag>("genWeights"))),
@@ -44,8 +44,6 @@ public:
 
   void produce(edm::StreamID id, edm::Event& iEvent, const edm::EventSetup& iSetup) const override {
     // tables for LHE weights, may not be filled
-    auto const& lheInfo = iEvent.get(lheToken_);
-
     edm::Handle<GenWeightProduct> lheWeightHandle;
     iEvent.getByToken(lheWeightToken_, lheWeightHandle);
     const GenWeightProduct* lheWeightProduct = lheWeightHandle.product();
@@ -57,17 +55,16 @@ public:
     WeightsContainer genWeights = genWeightProduct->weights();
 
     auto lheWeightTables = std::make_unique<std::vector<nanoaod::FlatTable>>();
-    double w0 = lheInfo.originalXWGTUP();
     auto const& weightInfos = *luminosityBlockCache(iEvent.getLuminosityBlock().index());
 
-    addWeightGroupToTable(lheWeightTables, "LHE", weightInfos.first, lheWeights, w0);
-    addWeightGroupToTable(lheWeightTables, "GEN", weightInfos.second, genWeights, w0);
+    addWeightGroupToTable(lheWeightTables, "LHE", weightInfos.at(inLHE), lheWeights);
+    addWeightGroupToTable(lheWeightTables, "Gen", weightInfos.at(inGen), genWeights);
 
     iEvent.put(std::move(lheWeightTables));
   }
 
   void addWeightGroupToTable(std::unique_ptr<std::vector<nanoaod::FlatTable>>& lheWeightTables, const char* typeName,
-          const std::vector<gen::WeightGroupData>& weightInfos, WeightsContainer& lheWeights, double w0) const {
+          const WeightGroupDataContainer& weightInfos, WeightsContainer& allWeights) const {
     size_t typeCount = 0;
     gen::WeightType previousType = gen::WeightType::kUnknownWeights;
 
@@ -76,9 +73,23 @@ public:
         gen::WeightType weightType = groupInfo.group->weightType();
         if (previousType != weightType)
             typeCount = 0;
+
         std::string name = weightTypeNames_.at(weightType);
-        auto weights = weightType != gen::WeightType::kScaleWeights ? normalizedWeights(lheWeights, groupInfo, w0) :
-                            orderedScaleWeights(lheWeights, groupInfo, w0);
+        std::string label = groupInfo.group->name();
+
+        auto& weights = allWeights.at(groupInfo.index);
+        label.append("; ");
+        if (weightType == gen::WeightType::kScaleWeights && groupInfo.group->isWellFormed() 
+                && groupInfo.group->nIdsContained() < 10) {
+            weights = orderedScaleWeights(weights, 
+                            dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
+            label.append("[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
+                        " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
+                        " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
+        }
+        else
+            label.append(groupInfo.group->description());
+
         entryName.append(name);
         entryName.append("Weight");
         if (typeCount > 0) {
@@ -88,7 +99,7 @@ public:
 
         lheWeightTables->emplace_back(weights.size(), entryName, false);
         lheWeightTables->back().addColumn<float>(
-            "", weights, groupInfo.group->name(), nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+            "", weights, label, nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
 
         typeCount++;
         previousType = weightType;
@@ -112,33 +123,25 @@ public:
         storePerType[weightgroups_.at(i)] = maxGroupsPerType_.at(i);
 
     WeightGroupsToStore weightsToStore;
-    for (auto weightType : gen::allGenWeightTypes) {
+    for (auto weightType : gen::allWeightTypes) {
         auto lheWeights = weightDataPerType(lheWeightInfoHandle, weightType, storePerType[weightType]);
-        weightsToStore.first.insert(weightsToStore.first.end(), lheWeights.begin(), lheWeights.end());
+        weightsToStore.at(inLHE).insert(weightsToStore.at(inLHE).end(), lheWeights.begin(), lheWeights.end());
 
         auto genWeights = weightDataPerType(genWeightInfoHandle, weightType, storePerType[weightType]);
-        weightsToStore.second.insert(weightsToStore.second.end(), genWeights.begin(), genWeights.end());
+        weightsToStore.at(inGen).insert(weightsToStore.at(inGen).end(), genWeights.begin(), genWeights.end());
     }
 
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
 
-  std::vector<gen::WeightGroupData> weightDataPerType(edm::Handle<GenWeightInfoProduct>& weightsHandle, 
+  WeightGroupDataContainer weightDataPerType(edm::Handle<GenWeightInfoProduct>& weightsHandle, 
                                                 gen::WeightType weightType, int& maxStore) const {
-      std::vector<gen::WeightGroupData> group;
-      if (weightType == gen::WeightType::kPdfWeights) {
-        for (auto lhaid : pdfIds_) {
-            if (auto pdfGroup = weightsHandle->pdfGroupWithIndexByLHAID(lhaid)) {
-                group.push_back(pdfGroup.value());
-                maxStore--;
-                if (maxStore == 0)
-                    break;
-            }
-        }
-        return group;
+      WeightGroupDataContainer group;
+      if (weightType == gen::WeightType::kPdfWeights && pdfIds_.size() > 0) {
+          group = weightsHandle->pdfGroupsWithIndicesByLHAIDs(pdfIds_);
       }
-
-      group = weightsHandle->weightGroupsAndIndicesByType(weightType);
+      else
+          group = weightsHandle->weightGroupsAndIndicesByType(weightType);
 
       if (maxStore < 0 || static_cast<int>(group.size()) <= maxStore) {
           // Modify size in case one type of weight is present in multiple products
@@ -149,33 +152,20 @@ public:
   }
 
 
-  std::vector<float> normalizedWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& meGroupInfo, double w0) const {
-    std::vector<float> normalizedWeights;
-    for (const auto& weight : lheWeights.at(meGroupInfo.index))
-        normalizedWeights.push_back(weight/w0);
-    return normalizedWeights;
-  }
+  std::vector<double> orderedScaleWeights(const std::vector<double>& scaleWeights, const gen::ScaleWeightGroupInfo* scaleGroup) const {
 
-  std::vector<float> orderedScaleWeights(WeightsContainer& lheWeights, const gen::WeightGroupData& scaleGroupInfo, double w0) const {
-    const gen::ScaleWeightGroupInfo* scaleGroup = static_cast<const gen::ScaleWeightGroupInfo*>(scaleGroupInfo.group);
-    size_t scaleGroupIndex = scaleGroupInfo.index;
+    std::vector<double> weights;
+    weights.push_back(scaleWeights.at(scaleGroup->muR05muF05Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR05muF1Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR05muF2Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR1muF05Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->centralIndex()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR1muF2Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR2muF05Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR2muF1Index()));
+    weights.push_back(scaleWeights.at(scaleGroup->muR2muF2Index()));
 
-    std::vector<float> normalizedWeights;
-    std::vector<double>& scaleWeights = lheWeights.at(scaleGroupIndex);
-
-    // nano ordering of mur=0.5 muf=0.5 ; [1] is mur=0.5 muf=1 ; [2] is mur=0.5 muf=2 ; [3] is mur=1 muf=0.5 ; 
-    // [4] is mur=1 muf=1 ; [5] is mur=1 muf=2 ; [6] is mur=2 muf=0.5 ; [7] is mur=2 muf=1 ; [8] is mur=2 muf=2 *
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF1Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR05muF2Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR1muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->centralIndex())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR1muF2Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF05Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF1Index())/w0);
-    normalizedWeights.push_back(scaleWeights.at(scaleGroup->muR2muF2Index())/w0);
-
-    return normalizedWeights;
+    return weights;
   }
 
   // nothing to do here
@@ -183,8 +173,6 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("lheInfo", {"externalLHEProducer"})
-        ->setComment("tag(s) for the LHE information (LHEEventProduct and LHERunInfoProduct)");
     desc.add<edm::InputTag>("lheWeights");
     desc.add<edm::InputTag>("genWeights");
     desc.add<std::vector<std::string>>("weightgroups");
@@ -213,6 +201,7 @@ protected:
 
   //std::unordered_map<std::string, int> weightGroupIndices_;
   int lheWeightPrecision_;
+  enum {inLHE, inGen};
 };
 
 #include "FWCore/Framework/interface/MakerMacros.h"
