@@ -36,6 +36,8 @@ private:
   std::string lheLabel_;
   edm::EDGetTokenT<LHERunInfoProduct> lheRunInfoToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEventToken_;
+  const edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
+  bool foundWeightProduct_;
 
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
@@ -48,11 +50,10 @@ private:
 // constructors and destructor
 //
 LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iConfig) :
-    lheLabel_(iConfig.getUntrackedParameter<std::string>("lheSourceLabel")),
-    lheRunInfoToken_(consumes<LHERunInfoProduct, edm::InRun>(
-        iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer")))),
-    lheEventToken_(consumes<LHEEventProduct>(
-        iConfig.getUntrackedParameter<edm::InputTag>("lheSource", edm::InputTag("externalLHEProducer"))))
+    lheLabel_(iConfig.getParameter<std::string>("lheSourceLabel")),
+    lheRunInfoToken_(consumes<LHERunInfoProduct, edm::InRun>(lheLabel_)),
+    lheEventToken_(consumes<LHEEventProduct>(lheLabel_)),
+    lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(lheLabel_))
 {
   produces<GenWeightProduct>();
   produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
@@ -67,6 +68,9 @@ LHEWeightProductProducer::~LHEWeightProductProducer()
 // ------------ method called to produce the data  ------------
 void
 LHEWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+  if (foundWeightProduct_)
+      return;
+  
   edm::Handle<LHEEventProduct> lheEventInfo;
   iEvent.getByToken(lheEventToken_, lheEventInfo);
   // Read weights from LHEEventProduct
@@ -74,12 +78,9 @@ LHEWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   iEvent.put(std::move(weightProduct));
 }
 
-// ------------ method called when starting to processes a run  ------------
 void 
 LHEWeightProductProducer::beginRun(edm::Run const& run, edm::EventSetup const& es) {
     edm::Handle<LHERunInfoProduct> lheRunInfoHandle;
-    //run.getByToken(lheRunInfoToken_, lheRunInfoHandle);
-    // get by token gives an error (the same one that's been in the ExternalLHEProducer for ages)
     run.getByLabel(lheLabel_, lheRunInfoHandle);
 
     typedef std::vector<LHERunInfoProduct::Header>::const_iterator header_cit;
@@ -97,6 +98,13 @@ LHEWeightProductProducer::endRun(edm::Run const& run, edm::EventSetup const& es)
 
 void
 LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
+    edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
+    lumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
+    if (lheWeightInfoHandle.isValid()) {
+        foundWeightProduct_ = true;
+        return;
+    }
+
     auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
     for (auto& weightGroup : weightHelper_.weightGroups()) {
         weightInfoProduct->addWeightGroupInfo(weightGroup.clone());

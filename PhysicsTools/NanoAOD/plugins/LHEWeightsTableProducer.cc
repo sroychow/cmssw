@@ -28,8 +28,10 @@ namespace {
 class LHEWeightsTableProducer : public edm::global::EDProducer<edm::LuminosityBlockCache<WeightGroupsToStore>> {
 public:
   LHEWeightsTableProducer(edm::ParameterSet const& params) :
-        lheWeightToken_(consumes<GenWeightProduct>(params.getParameter<edm::InputTag>("lheWeights"))),
-        lheWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(params.getParameter<edm::InputTag>("lheWeights"))),
+        lheWeightTokens_(edm::vector_transform(params.getParameter<std::vector<edm::InputTag>>("lheWeights"),
+                                [this](const edm::InputTag& tag) { return mayConsume<GenWeightProduct>(tag); })),
+        lheWeightInfoTokens_(edm::vector_transform(params.getParameter<std::vector<edm::InputTag>>("lheWeights"),
+                                [this](const edm::InputTag& tag) { return mayConsume<GenWeightInfoProduct, edm::InLumi>(tag); })),
         genWeightToken_(consumes<GenWeightProduct>(params.getParameter<edm::InputTag>("genWeights"))),
         genWeightInfoToken_(consumes<GenWeightInfoProduct, edm::InLumi>(params.getParameter<edm::InputTag>("genWeights"))),
         weightgroups_(edm::vector_transform(params.getParameter<std::vector<std::string>>("weightgroups"),
@@ -43,9 +45,14 @@ public:
   }
 
   void produce(edm::StreamID id, edm::Event& iEvent, const edm::EventSetup& iSetup) const override {
-    // tables for LHE weights, may not be filled
     edm::Handle<GenWeightProduct> lheWeightHandle;
-    iEvent.getByToken(lheWeightToken_, lheWeightHandle);
+    for (auto& token : lheWeightTokens_) {
+        iEvent.getByToken(token, lheWeightHandle);
+        if (lheWeightHandle.isValid()) {
+            break;
+        }
+    }
+
     const GenWeightProduct* lheWeightProduct = lheWeightHandle.product();
     WeightsContainer lheWeights = lheWeightProduct->weights();
 
@@ -113,7 +120,12 @@ public:
     // Set equal to the max number of groups
     // subtrack 1 for each weight group you find
     edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
-    iLumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
+    for (auto& token : lheWeightInfoTokens_) {
+        iLumi.getByToken(token, lheWeightInfoHandle);
+        if (lheWeightInfoHandle.isValid()) {
+            break;
+        }
+    }
 
     edm::Handle<GenWeightInfoProduct> genWeightInfoHandle;
     iLumi.getByToken(genWeightInfoToken_, genWeightInfoHandle);
@@ -173,7 +185,8 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("lheWeights");
+    desc.add<std::vector<edm::InputTag>>("lheWeights");
+    //desc.add<std::vector<edm::InputTag>>("genWeights");
     desc.add<edm::InputTag>("genWeights");
     desc.add<std::vector<std::string>>("weightgroups");
     desc.add<std::vector<int>>("maxGroupsPerType");
@@ -184,8 +197,8 @@ public:
 
 protected:
   const edm::EDGetTokenT<LHEEventProduct> lheToken_;
-  const edm::EDGetTokenT<GenWeightProduct> lheWeightToken_;
-  const edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
+  const std::vector<edm::EDGetTokenT<GenWeightProduct>> lheWeightTokens_;
+  const std::vector<edm::EDGetTokenT<GenWeightInfoProduct>> lheWeightInfoTokens_;
   const edm::EDGetTokenT<GenWeightProduct> genWeightToken_;
   const edm::EDGetTokenT<GenWeightInfoProduct> genWeightInfoToken_;
   const std::vector<gen::WeightType> weightgroups_;

@@ -9,9 +9,13 @@ from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 genWeights = cms.EDProducer("GenWeightProductProducer",
     genInfo = cms.InputTag("generator"))
 
+lheWeights = cms.EDProducer("LHEWeightProductProducer",
+    lheSourceLabel = cms.string("externalLHEProducer"),
+    lheSource = cms.InputTag("externalLHEProducer"))
+
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
-    lheWeights = cms.InputTag("externalLHEProducer"),
+    lheWeights = cms.VInputTag(["externalLHEProducer", "lheWeights"]),
     genWeights = cms.InputTag("genWeights"),
     # Warning: you can use a full string, but only the first character is read.
     # Note also that the capitalization is important! For example, 'parton shower' 
@@ -44,6 +48,7 @@ metGenTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
 
 nanogenSequence = cms.Sequence(
     genWeights+
+    lheWeights+
     nanoMetadata+
     particleLevel+
     genJetTable+
