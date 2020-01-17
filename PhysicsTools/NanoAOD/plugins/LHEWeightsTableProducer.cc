@@ -35,7 +35,7 @@ public:
         weightgroups_(edm::vector_transform(params.getParameter<std::vector<std::string>>("weightgroups"),
                     [](auto& c) { return gen::WeightType(c.at(0)); } )),
         maxGroupsPerType_(params.getParameter<std::vector<int>>("maxGroupsPerType")),
-        pdfIds_(params.getParameter<std::vector<int>>("pdfIds")),
+        pdfIds_(params.getUntrackedParameter<std::vector<int>>("pdfIds", {})),
         lheWeightPrecision_(params.getParameter<int32_t>("lheWeightPrecision")) {
     if (weightgroups_.size() != maxGroupsPerType_.size())
        throw std::invalid_argument("Inputs 'weightgroups' and 'weightgroupNums' must have equal size");
@@ -177,7 +177,7 @@ public:
     desc.add<edm::InputTag>("genWeights");
     desc.add<std::vector<std::string>>("weightgroups");
     desc.add<std::vector<int>>("maxGroupsPerType");
-    desc.add<std::vector<int>>("pdfIds");
+    desc.addOptionalUntracked<std::vector<int>>("pdfIds");
     desc.add<int32_t>("lheWeightPrecision", -1)->setComment("Number of bits in the mantissa for LHE weights");
     descriptions.addDefault(desc);
   }
@@ -203,6 +203,5 @@ protected:
   int lheWeightPrecision_;
   enum {inLHE, inGen};
 };
-
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(LHEWeightsTableProducer);
