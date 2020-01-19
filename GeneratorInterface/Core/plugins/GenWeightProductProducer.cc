@@ -23,6 +23,7 @@
 #include "GeneratorInterface/Core/interface/GenWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include <boost/algorithm/string.hpp>
 
 class GenWeightProductProducer : public edm::one::EDProducer<edm::BeginLuminosityBlockProducer> {
 public:
@@ -34,6 +35,7 @@ private:
   gen::GenWeightHelper weightHelper_;
   edm::EDGetTokenT<GenLumiInfoHeader> genLumiInfoToken_;
   edm::EDGetTokenT<GenEventInfoProduct> genEventToken_;
+  const edm::EDGetTokenT<GenLumiInfoHeader> genLumiInfoHeadTag_;
 
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginLuminosityBlockProduce(edm::LuminosityBlock& lb, edm::EventSetup const& c) override;
@@ -44,7 +46,8 @@ private:
 //
 GenWeightProductProducer::GenWeightProductProducer(const edm::ParameterSet& iConfig) :
     genLumiInfoToken_(consumes<GenLumiInfoHeader, edm::InLumi>(iConfig.getParameter<edm::InputTag>("genInfo"))),
-    genEventToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genInfo")))
+    genEventToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genInfo"))),
+    genLumiInfoHeadTag_(mayConsume<GenLumiInfoHeader, edm::InLumi>(iConfig.getParameter<edm::InputTag>("genLumiInfoHeader")))
 {
   produces<GenWeightProduct>();
   produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
@@ -69,6 +72,14 @@ GenWeightProductProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
 void
 GenWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& iLumi, edm::EventSetup const& iSetup) {
+    edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
+    iLumi.getByToken(genLumiInfoHeadTag_, genLumiInfoHead);
+    if (genLumiInfoHead.isValid()) {
+        std::string label = genLumiInfoHead->configDescription();
+        boost::replace_all(label,"-","_");
+        weightHelper_.setModel(label);
+    }
+
     if (weightNames_.size() == 0) {
         edm::Handle<GenLumiInfoHeader> genLumiInfoHandle;
         iLumi.getByToken(genLumiInfoToken_, genLumiInfoHandle);

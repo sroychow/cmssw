@@ -19,23 +19,13 @@
 namespace gen {
     class LHEWeightHelper : public WeightHelper {
     public:
-        LHEWeightHelper();
-
-        //// possibly add more versions of this functions for different inputs
-        void parseLHEFile(std::string filename);
-        void parseWeightGroupsFromHeader(std::vector<std::string> lheHeader);
+        LHEWeightHelper() : WeightHelper() {};
+        void setHeaderLines(std::vector<std::string> headerLines);
+        void parseWeights();
+        void buildGroups();
+        std::unique_ptr<WeightGroupInfo> buildGroup(const ParsedWeight& weight);
     private:
-        std::map<std::string, std::string> weightAttributeMapFromHeaderLine(std::string line);
-        void loadAttributeNames(std::string baseName, std::vector<std::string> altNames ={});
-        std::map<std::string, std::string> getAttributeMap(std::string);
-        std::string sanitizeText(std::string);
-        bool isAWeight(std::string);
-        
-        std::regex weightGroupStart_;
-        std::regex weightGroupEnd_;
-        std::regex weightContent_;
-        
-        std::map<std::string, std::string> nameConversionMap_;
+        std::vector<std::string> headerLines_;
     };
 }
 

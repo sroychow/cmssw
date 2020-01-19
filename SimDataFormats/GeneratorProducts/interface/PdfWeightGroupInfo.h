@@ -3,6 +3,7 @@
 
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include <iostream>
+#include <set>
 
 namespace gen {
     enum PdfUncertaintyType {
@@ -39,6 +40,12 @@ namespace gen {
             PdfUncertaintyType uncertaintyType() const { return uncertaintyType_; }
             bool hasAlphasVariations() const { return hasAlphasVars_; }
             bool containsMultipleSets() const { return lhapdfIdsContained_.size() > 1; }
+            bool containsParentLhapdfId(int lhaid, int globalIndex) const { 
+                if (indexOfLhapdfId(lhaid) != -1)
+                    return true;
+                int parentid = lhaid - (globalIndex - firstId_);
+                return indexOfLhapdfId(parentid) != -1; 
+            }
             bool containsLhapdfId(int lhaid) const { return indexOfLhapdfId(lhaid) != -1; }
             int indexOfLhapdfId(int lhaid) const {
                 for (const auto& id : lhapdfIdsContained_) {
@@ -49,8 +56,8 @@ namespace gen {
             }
             int alphasUpIndex() const { return alphasUpIndex_; }
             int alphasDownIndex() const { return alphasDownIndex_; }
-            void addLhapdfId(int lhaid, int index) { 
-                lhapdfIdsContained_.push_back(std::make_pair(lhaid, index)); 
+            void addLhapdfId(int lhaid, int globalIndex) { 
+                lhapdfIdsContained_.push_back(std::make_pair(lhaid, globalIndex-firstId_)); 
             }
             std::vector<int> lhapdfIdsContained() const { 
                 std::vector<int> lhaids;

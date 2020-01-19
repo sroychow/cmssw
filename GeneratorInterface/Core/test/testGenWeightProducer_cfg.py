@@ -21,16 +21,20 @@ process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEven
 
 process.out = cms.OutputModule("PoolOutputModule",
             fileName = cms.untracked.string('test.root'),
-            outputCommands = cms.untracked.vstring(['keep *'])
+            outputCommands = cms.untracked.vstring(['drop *', 
+                'keep GenWeightProduct_test*Weights*_*_*',
+                'keep GenWeightInfoProduct_test*Weights*_*_*',])
 )
 
-process.testLHEWeights = cms.EDProducer("LHEWeightProductProducer",
-                                    lheSource=cms.untracked.InputTag(options.lheSource),
-                                    lheSourceLabel=cms.untracked.string(options.lheSource))
-process.testGenWeights = cms.EDProducer("GenWeightProductProducer")
+#process.testLHEWeights = cms.EDProducer("LHEWeightProductProducer",
+#    lheSourceLabel = cms.string("externalLHEProducer"))
 
-process.p = cms.Path(process.testLHEWeights*process.testGenWeights)
-#process.p = cms.Path(process.testLHEWeights)
+process.testGenWeights = cms.EDProducer("GenWeightProductProducer",
+    genInfo = cms.InputTag("generator"),
+    genLumiInfoHeader = cms.InputTag("generator"))
+
+#process.p = cms.Path(process.testLHEWeights*process.testGenWeights)
+process.p = cms.Path(process.testGenWeights)
 
 process.output = cms.EndPath(process.out)
 process.schedule = cms.Schedule(process.p,process.output)

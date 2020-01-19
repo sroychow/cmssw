@@ -10,8 +10,7 @@ genWeights = cms.EDProducer("GenWeightProductProducer",
     genInfo = cms.InputTag("generator"))
 
 lheWeights = cms.EDProducer("LHEWeightProductProducer",
-    lheSourceLabel = cms.string("externalLHEProducer"),
-    lheSource = cms.InputTag("externalLHEProducer"))
+    lheSourceLabel = cms.string("externalLHEProducer"))
 
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",

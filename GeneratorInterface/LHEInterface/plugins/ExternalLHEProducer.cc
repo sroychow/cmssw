@@ -55,8 +55,6 @@ Implementation:
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
-#include "GeneratorInterface/LHEInterface/interface/TestWeightInfo.h"
-//#include "GeneratorInterface/Core/interface/GenWeightGroupReaderHelper.h"
 #include "GeneratorInterface/Core/interface/LHEWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -362,7 +360,9 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
 	run.put(std::move(product));
   
-	weightHelper_.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+	//weightHelper_.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
+	weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
+    weightHelper_.parseWeights();
       
 	runInfo.reset();
     }

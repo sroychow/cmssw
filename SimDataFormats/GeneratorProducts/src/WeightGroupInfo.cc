@@ -7,14 +7,14 @@
 
 namespace gen {
     void WeightGroupInfo::copy(const WeightGroupInfo &other) {
-        isWellFormed_ = true;
-        headerEntry_ = other.headerEntry();
-        name_ = other.name();
-        description_ = other.description();
-        weightType_ = other.weightType();
-        idsContained_ = other.idsContained();
-        firstId_ = other.firstId();
-        lastId_ = other.lastId();
+        isWellFormed_ = other.isWellFormed_;
+        headerEntry_ = other.headerEntry_;
+        name_ = other.name_;
+        description_ = other.description_;
+        weightType_ = other.weightType_;
+        idsContained_ = other.idsContained_;
+        firstId_ = other.firstId_;
+        lastId_ = other.lastId_;
     }
 
     WeightGroupInfo* WeightGroupInfo::clone() const {

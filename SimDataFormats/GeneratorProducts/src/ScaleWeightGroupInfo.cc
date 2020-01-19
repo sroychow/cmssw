@@ -20,13 +20,17 @@ namespace gen {
         return new ScaleWeightGroupInfo(*this);
     }
 
-    void ScaleWeightGroupInfo::addContainedId(int weightEntry, std::string id, std::string label, float muR, float muF) {
-        WeightGroupInfo::addContainedId(weightEntry, id, label);
-        auto metaInfo = weightMetaInfoByGlobalIndex(id, weightEntry);
+    void ScaleWeightGroupInfo::addContainedId(int globalIndex, std::string id, std::string label, float muR, float muF) {
+        WeightGroupInfo::addContainedId(globalIndex, id, label);
+        setMuRMuFIndex(globalIndex, id, muR, muF);
+    }
+
+    void ScaleWeightGroupInfo::setMuRMuFIndex(int globalIndex, std::string id, float muR, float muF) {
+        auto metaInfo = weightMetaInfoByGlobalIndex(id, globalIndex);
         setMuRMuFIndex(metaInfo, muR, muF);
     }
 
-    void ScaleWeightGroupInfo::setMuRMuFIndex(WeightMetaInfo info, float muR, float muF) {
+    void ScaleWeightGroupInfo::setMuRMuFIndex(WeightMetaInfo& info, float muR, float muF) {
         if (muR == 0.5 && muF == 0.5)
             muR05muF05Index_ = info.localIndex;
         else if (muR == 0.5 && muF == 1.0)

@@ -46,9 +46,7 @@ private:
 
 };
 
-//
-// constructors and destructor
-//
+// TODO: Accept a vector of strings (source, externalLHEProducer) exit if neither are found
 LHEWeightProductProducer::LHEWeightProductProducer(const edm::ParameterSet& iConfig) :
     lheLabel_(iConfig.getParameter<std::string>("lheSourceLabel")),
     lheRunInfoToken_(consumes<LHERunInfoProduct, edm::InRun>(lheLabel_)),
@@ -90,7 +88,7 @@ LHEWeightProductProducer::beginRun(edm::Run const& run, edm::EventSetup const& e
             headerWeightInfo = *iter;
     }
 
-	weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
+	//weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
 }
 
 void

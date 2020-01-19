@@ -2,7 +2,6 @@ from DataFormats.FWLite import Events,Handle,Runs,Lumis
 import ROOT
 sources = ["externalLHEProducer"]
 #sources = ["testLHEWeights", "testGenWeights"]
-#source = "testGenWeights"
 
 #for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"," HIG-RunIIFall18wmLHEGS-00509_ordered.root","HIG-RunIIFall18wmLHEGS-00509_unordered.root"]:
 for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
@@ -20,17 +19,17 @@ for filename in ["HIG-RunIIFall18wmLHEGS-00509.root"]:
         event.getByLabel(source, weightHandle)
         weightInfo = weightHandle.product()
         print weightInfoProd.allWeightGroupsInfo(), len(weightInfoProd.allWeightGroupsInfo())
-        print "Content of the weights"
         for j, weights in enumerate(weightInfo.weights()):
             print "-"*10, "Looking at entry", j, "length is", len(weights),"-"*10
             matching = weightInfoProd.orderedWeightGroupInfo(j)
             print "Group is", matching, "name is", matching.name(), "well formed?", matching.isWellFormed()
+            print "Group description", matching.description()
             print type(matching.weightType()), matching.weightType()
-            if matching.weightType() == 1:
+            if matching.weightType() == 's':
                 for var in [(x, y) for x in ["05", "1", "2"] for y in ["05", "1", "2"]]:
                     name = "muR%smuF%sIndex" % (var[0], var[1]) if not (var[0] == "1" and var[1] == "1") else "centralIndex"
                     print name, getattr(matching, name)()
-            elif matching.weightType() == 0:
+            elif matching.weightType() == 'P':
                 print "uncertaintyType", "Hessian" if matching.uncertaintyType() == ROOT.gen.kHessianUnc else "MC"
                 print "contains LHAPDFIds", len(matching.lhapdfIdsContained()), [i for i in matching.lhapdfIdsContained()],
                 print "Has alphas? ", matching.hasAlphasVariations()
