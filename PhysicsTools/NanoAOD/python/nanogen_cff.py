@@ -7,7 +7,8 @@ from PhysicsTools.NanoAOD.lheInfoTable_cfi import *
 from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 
 genWeights = cms.EDProducer("GenWeightProductProducer",
-    genInfo = cms.InputTag("generator"))
+    genInfo = cms.InputTag("generator"),
+    genLumiInfoHeader = cms.InputTag("generator"))
 
 lheWeights = cms.EDProducer("LHEWeightProductProducer",
     lheSourceLabel = cms.string("externalLHEProducer"))
@@ -15,6 +16,7 @@ lheWeights = cms.EDProducer("LHEWeightProductProducer",
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
     lheWeights = cms.VInputTag(["externalLHEProducer", "lheWeights"]),
+    lheWeightPrecision = cms.int32(14),
     genWeights = cms.InputTag("genWeights"),
     # Warning: you can use a full string, but only the first character is read.
     # Note also that the capitalization is important! For example, 'parton shower' 
@@ -24,7 +26,8 @@ lheWeightsTable = cms.EDProducer(
     maxGroupsPerType = cms.vint32([1, -1, 1, 2, 1]),
     # If empty or not specified, no critieria is applied to filter on LHAPDF IDs 
     pdfIds = cms.untracked.vint32([91400, 306000, 260000]),
-    lheWeightPrecision = cms.int32(14),
+    unknownOnlyIfEmpty = cms.untracked.vstring(['scale', 'PDF']),
+    unknownOnlyIfAllEmpty = cms.untracked.bool(False),
 )
 
 nanoMetadata = cms.EDProducer("UniqueStringProducer",
