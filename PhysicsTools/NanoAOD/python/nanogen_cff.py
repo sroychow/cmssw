@@ -26,8 +26,8 @@ lheWeightsTable = cms.EDProducer(
     maxGroupsPerType = cms.vint32([1, -1, 1, 2, 1]),
     # If empty or not specified, no critieria is applied to filter on LHAPDF IDs 
     pdfIds = cms.untracked.vint32([91400, 306000, 260000]),
-    unknownOnlyIfEmpty = cms.untracked.vstring(['scale', 'PDF']),
-    unknownOnlyIfAllEmpty = cms.untracked.bool(False),
+    #unknownOnlyIfEmpty = cms.untracked.vstring(['scale', 'PDF']),
+    #unknownOnlyIfAllEmpty = cms.untracked.bool(False),
 )
 
 nanoMetadata = cms.EDProducer("UniqueStringProducer",
