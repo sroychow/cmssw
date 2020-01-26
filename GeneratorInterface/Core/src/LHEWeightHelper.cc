@@ -42,12 +42,6 @@ namespace gen {
       buildGroups();
     }
 
-    //void LHEWeightHelper::setGroupPriority() {
-    //    groupCheckOrder_ = {gen::WeightType::kScaleWeights, gen::WeightType::kPdfWeights, 
-    //        gen::WeightType::kMEParamWeights
-    //    };
-    //}
-
     void LHEWeightHelper::buildGroups() {
         std::string currentGroupName;
         for (const auto& weight : parsedWeights_) {
@@ -63,6 +57,7 @@ namespace gen {
             else if (group.weightType() == gen::WeightType::kPdfWeights)
                 updatePdfInfo(weight);
         }
+        //splitPdfGroups();
     }
 
     std::unique_ptr<WeightGroupInfo> LHEWeightHelper::buildGroup(const ParsedWeight& weight) {

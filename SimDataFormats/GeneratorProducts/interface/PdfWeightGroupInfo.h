@@ -4,6 +4,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 #include <iostream>
 #include <set>
+#include <unordered_map>
 
 namespace gen {
     enum PdfUncertaintyType {
@@ -19,7 +20,8 @@ namespace gen {
             bool hasAlphasVars_;
             int alphasUpIndex_;
             int alphasDownIndex_;
-            std::vector<std::pair<int, int>> lhapdfIdsContained_;
+            // Map local index to lhaid
+            std::unordered_map<int, int> lhapdfIdsContained_;
         public:
             PdfWeightGroupInfo() : WeightGroupInfo() { weightType_ = WeightType::kPdfWeights; }
 	        PdfWeightGroupInfo(std::string header, std::string name) : 
@@ -39,25 +41,37 @@ namespace gen {
             void setAlphasDownIndex(int alphasDownIndex) { alphasDownIndex_ = alphasDownIndex; }
             PdfUncertaintyType uncertaintyType() const { return uncertaintyType_; }
             bool hasAlphasVariations() const { return hasAlphasVars_; }
+            std::vector<WeightMetaInfo> idsContainedInPdfSet(int refLhaid) {
+                std::vector<WeightMetaInfo> setIds;
+                int lhaid = refLhaid;
+                int index = indexOfLhapdfId(lhaid);
+                while (index <= lastId_ && parentLhapdfId(lhaid, index) == refLhaid) {
+                    setIds.push_back(idsContained_.at(index));
+                    index++;
+                    lhaid = lhapdfIdsContained_[index];
+                }
+                return setIds;
+            }
             bool containsMultipleSets() const { return lhapdfIdsContained_.size() > 1; }
+            int parentLhapdfId(int lhaid, int globalIndex) const { return lhaid - (globalIndex - firstId_); }
             bool containsParentLhapdfId(int lhaid, int globalIndex) const { 
                 if (indexOfLhapdfId(lhaid) != -1)
                     return true;
-                int parentid = lhaid - (globalIndex - firstId_);
+                int parentid = parentLhapdfId(lhaid, globalIndex);
                 return indexOfLhapdfId(parentid) != -1; 
             }
             bool containsLhapdfId(int lhaid) const { return indexOfLhapdfId(lhaid) != -1; }
             int indexOfLhapdfId(int lhaid) const {
                 for (const auto& id : lhapdfIdsContained_) {
-                    if (id.first == lhaid)
-                        return id.second;
+                    if (id.second == lhaid)
+                        return id.first;
                 }
                 return -1;
             }
             int alphasUpIndex() const { return alphasUpIndex_; }
             int alphasDownIndex() const { return alphasDownIndex_; }
             void addLhapdfId(int lhaid, int globalIndex) { 
-                lhapdfIdsContained_.push_back(std::make_pair(lhaid, globalIndex-firstId_)); 
+                lhapdfIdsContained_[globalIndex-firstId_] = lhaid; 
             }
             std::vector<int> lhapdfIdsContained() const { 
                 std::vector<int> lhaids;
@@ -65,6 +79,29 @@ namespace gen {
                     lhaids.push_back(id.first);
                 }
                 return lhaids; 
+            }
+            void removeIdsContained(std::vector<WeightMetaInfo> metaInfos) { 
+                for (auto& weight : metaInfos) {
+                    auto info = weightMetaInfoByGlobalIndex(weight.id, weight.globalIndex);
+                    if (info == weight) {
+                        idsContained_.erase(idsContained_.begin()+weight.localIndex, idsContained_.begin()+weight.localIndex+1);
+                        lhapdfIdsContained_.erase(weight.localIndex);
+                    }
+                }
+            }
+            void removeIdsContainedExcept(std::vector<WeightMetaInfo> metaInfos) { 
+                std::vector<WeightMetaInfo> newContainedIds;
+                std::unordered_map<int, int> newLhapdfIds;
+                for (auto& weight : metaInfos) {
+                    auto info = weightMetaInfoByGlobalIndex(weight.id, weight.globalIndex);
+                    if (info == weight) {
+                        newContainedIds.push_back(weight);
+                        if (lhapdfIdsContained_.find(weight.localIndex) != lhapdfIdsContained_.end())
+                            newLhapdfIds[weight.localIndex] = lhapdfIdsContained_[weight.localIndex];
+                    }
+                }
+                idsContained_ = newContainedIds;
+                lhapdfIdsContained_ = newLhapdfIds;
             }
     };
 }

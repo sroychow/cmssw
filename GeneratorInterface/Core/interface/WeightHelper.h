@@ -50,7 +50,10 @@ namespace gen {
         bool isPdfWeightGroup(const ParsedWeight& weight);
         void updateScaleInfo(const ParsedWeight& weight);
         void updatePdfInfo(const ParsedWeight& weight);
-        std::string searchAttributes(const std::string& label, const ParsedWeight& weight);
+        void splitPdfGroups();
+        std::string searchAttributes(const std::string& label, const ParsedWeight& weight) const;
+        std::string searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const;
+        std::string searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const;
 
         // Possible names for the same thing
         const std::unordered_map<std::string, std::vector<std::string>> attributeNames_ = {

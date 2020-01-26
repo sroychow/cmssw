@@ -1,4 +1,5 @@
 #include "GeneratorInterface/Core/interface/WeightHelper.h"
+#include <regex>
 
 namespace gen {
     WeightHelper::WeightHelper() :
@@ -69,14 +70,32 @@ namespace gen {
         return (weight.groupname.find("mg_reweighting") != std::string::npos);
     }
 
-    std::string WeightHelper::searchAttributes(const std::string& label, const ParsedWeight& weight) {
+    std::string WeightHelper::searchAttributes(const std::string& label, const ParsedWeight& weight) const {
+        std::string attribute = searchAttributesByTag(label, weight);
+        return attribute.empty() ? searchAttributesByRegex(label, weight) : attribute;
+        attribute = searchAttributesByRegex(label, weight);
+    }
+
+    std::string WeightHelper::searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const {
         for (const auto& lab : attributeNames_.at(label)) {
             auto& attributes = weight.attributes;
             if (attributes.find(lab) != attributes.end()) {
                 return boost::algorithm::trim_copy_if(attributes.at(lab), boost::is_any_of("\""));
             }
         }
-        // Next regexes
+        return "";
+    }
+
+    std::string WeightHelper::searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const {
+        for (const auto& lab : attributeNames_.at(label)) {
+            auto& content = weight.content;
+            
+            std::regex expr(lab+"=([0-9]+)");
+            std::smatch match;
+            if (std::regex_search(content, match, expr)) {
+                return boost::algorithm::trim_copy(match.str(1));
+            }
+        }
         return "";
     }
 
@@ -113,21 +132,23 @@ namespace gen {
             }
 
             if (!pdfGroup.containsParentLhapdfId(lhaid, weight.index)) {
-                std::string description;
+                std::string description = "";
                 auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(),
                     [lhaid] (const PdfSetInfo& setInfo) { return setInfo.lhapdfId == lhaid; });
                 if (pdfInfo != pdfSetsInfo.end()) {
                     pdfGroup.setUncertaintyType(pdfInfo->uncertaintyType);
                     if (pdfInfo->uncertaintyType == gen::kHessianUnc)
-                        description = "Hessian ";
+                        description += "Hessian ";
                     else if (pdfInfo->uncertaintyType == gen::kMonteCarloUnc)
-                        description = "Monte Carlo ";
+                        description += "Monte Carlo ";
                     description += "Uncertainty sets for LHAPDF set " + pdfInfo->name;
                     description += " with LHAID = " + std::to_string(lhaid);
+                    description += "; ";
                 }
-                description = "Uncertainty sets for LHAPDF set with LHAID = " + std::to_string(lhaid);
+                //else
+                //    description += "Uncertainty sets for LHAPDF set with LHAID = " + std::to_string(lhaid);
                 pdfGroup.addLhapdfId(lhaid, weight.index);
-                pdfGroup.setDescription(description);
+                pdfGroup.appendDescription(description);
             }
         }
         else
@@ -143,6 +164,17 @@ namespace gen {
             addWeightToProduct(weightProduct, weights.at(i), "", i, weightGroupIndex);
         }
         return std::move(weightProduct);
+    }
+
+    void WeightHelper::splitPdfGroups() {
+    //    std::vector<gen::PdfWeightGroupInfo> groupsToSplit;
+    //    for (auto& group: weightGroups_) {
+    //        if (group.weightType() == gen::WeightType::kPdfWeights) {
+    //            gen::PdfWeightGroupInfo& = dynamic_cast<gen::PdfWeightGroupInfo&>(group);
+    //            if (group.containsMultipleSets())
+    //                groupsToSplit.push_back(group);
+    //        }
+    //    }
     }
 
     std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights, float w0) {

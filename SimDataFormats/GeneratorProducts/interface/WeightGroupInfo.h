@@ -15,6 +15,13 @@ namespace gen {
         size_t localIndex;
         std::string id;
         std::string label;
+
+        bool operator==(const WeightMetaInfo& other) {
+            return (other.globalIndex == globalIndex &&
+                other.localIndex == localIndex &&
+                other.id == id &&
+                other.label == label);
+        }
     };
 
     enum class WeightType : char {
@@ -58,6 +65,7 @@ namespace gen {
 
             void setName(std::string name) { name_ = name; }
             void setDescription(std::string description) { description_ = description; }
+            void appendDescription(std::string description) { description_ += description; }
             void setHeaderEntry(std::string header) { headerEntry_ = header; }
             void setWeightType(WeightType type) { weightType_ = type; }
             void setFirstId(int firstId) { firstId_ = firstId; }
