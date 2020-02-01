@@ -84,11 +84,13 @@ LHEWeightProductProducer::beginRun(edm::Run const& run, edm::EventSetup const& e
     typedef std::vector<LHERunInfoProduct::Header>::const_iterator header_cit;
     LHERunInfoProduct::Header headerWeightInfo;
     for (header_cit iter=lheRunInfoHandle->headers_begin(); iter!=lheRunInfoHandle->headers_end(); iter++) { 
-        if (iter->tag() == "initrwgt")
+        if (iter->tag() == "initrwgt") {
             headerWeightInfo = *iter;
+            break;
+        }
     }
 
-	//weightHelper_.parseWeightGroupsFromHeader(headerWeightInfo.lines());
+	weightHelper_.setHeaderLines(headerWeightInfo.lines());
 }
 
 void
@@ -102,6 +104,7 @@ LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi
         foundWeightProduct_ = true;
         return;
     }
+    weightHelper_.parseWeights();
 
     auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
     for (auto& weightGroup : weightHelper_.weightGroups()) {

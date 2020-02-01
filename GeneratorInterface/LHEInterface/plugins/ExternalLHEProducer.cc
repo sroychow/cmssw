@@ -360,7 +360,6 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
 	run.put(std::move(product));
   
-	//weightHelper_.parseWeightGroupsFromHeader(runInfo->findHeader("initrwgt"));
 	weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
     weightHelper_.parseWeights();
       
