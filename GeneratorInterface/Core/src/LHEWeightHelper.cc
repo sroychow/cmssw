@@ -10,6 +10,7 @@ namespace gen {
     }
 
     void LHEWeightHelper::parseWeights() {
+      parsedWeights_.clear();
       tinyxml2::XMLDocument xmlDoc;
       xmlDoc.Parse(("<root>" + boost::algorithm::join(headerLines_, "") + "</root>").c_str());
       tinyxml2::XMLElement* root = xmlDoc.FirstChildElement("root");
@@ -43,6 +44,7 @@ namespace gen {
     }
 
     void LHEWeightHelper::buildGroups() {
+        weightGroups_.clear();
         std::string currentGroupName;
         for (const auto& weight : parsedWeights_) {
             if (weight.groupname != currentGroupName) {

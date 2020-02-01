@@ -1694,7 +1694,7 @@ class ConfigBuilder(object):
             self._options.customise_commands = self._options.customise_commands + "process.unpackedPatTrigger.triggerResults= cms.InputTag( 'TriggerResults::"+self._options.hltProcess+"' )\n"
 
     def prepare_NANOGEN(self, sequence = "nanoAOD"):
-        ''' Enrich the schedule with NANO '''
+        ''' Enrich the schedule with NANOGEN '''
         # TODO: Need to modify this based on the input file type
         fromGen = any([x in self.stepMap for x in ['LHE', 'GEN', 'AOD']])
         self.loadDefaultOrSpecifiedCFF(sequence,self.NANOGENDefaultCFF)
