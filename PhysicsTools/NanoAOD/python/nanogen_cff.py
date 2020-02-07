@@ -124,6 +124,8 @@ NANOAODGENoutput = cms.OutputModule("NanoAODOutputModule",
 )
 
 def customizeNanoGENFromMini(process):
+    # Why is this false by default?!
+    process.lheInfoTable.storeLHEParticles = True
     process.genParticleTable.src = "prunedGenParticles"
     process.patJetPartons.particles = "prunedGenParticles"
     process.particleLevel.src = "genParticles2HepMC:unsmeared"
@@ -142,6 +144,7 @@ def customizeNanoGENFromMini(process):
     return process
 
 def customizeNanoGEN(process):
+    process.lheInfoTable.storeLHEParticles = True
     process.genParticleTable.src = "genParticles"
     process.patJetPartons.particles = "genParticles"
     process.particleLevel.src = "generatorSmeared"
