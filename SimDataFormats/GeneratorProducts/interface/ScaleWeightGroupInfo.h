@@ -2,6 +2,7 @@
 #define SimDataFormats_GeneratorProducts_ScaleWeightGroupInfo_h
 
 #include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
+#include <unordered_map>
 
 namespace gen {
   class ScaleWeightGroupInfo : public WeightGroupInfo {
@@ -16,6 +17,10 @@ namespace gen {
     size_t muR05muF05Index_;
     size_t muR05muF1Index_;
     size_t muR05muF2Index_;
+    // Dyn_scale
+    // bool hasDyn = false;
+    // Maybe have mapping of [muR##muF##index] = vector<dyn_scale_indices>
+    // std::unordered_map<size_t, std::vector<size_t>> dynMap;
 
   public:
     ScaleWeightGroupInfo() : ScaleWeightGroupInfo("") {}
