@@ -1,0 +1,58 @@
+#include <cuda_runtime.h>
+#include "DataFormats/Common/interface/DetSetVectorNew.h"
+#include "DataFormats/Common/interface/Handle.h"
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/Utilities/interface/InputTag.h"
+#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
+#include "DQMServices/Core/interface/DQMStore.h"
+#include "DQMServices/Core/interface/DQMEDAnalyzer.h"
+
+class ValidationTemplate : public DQMEDAnalyzer {
+
+public:
+  explicit ValidationTemplate(const edm::ParameterSet& iConfig);
+  ~ValidationTemplate() override = default;
+
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+
+private:
+  void analyze(const edm::Event& iEvent, edm::EventSetup const& iSetup) override;
+  void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
+  //Token for the type of collection you want to read
+  edm::EDGetTokenT<T> token_;
+
+  std::string topFolderName_;
+  MonitorElement* h;
+};
+
+ValidationTemplate::ValidationTemplate(const edm::ParameterSet& iConfig)
+    : token_(consumes<T>(iConfig.getParameter<edm::InputTag>("src")))
+{
+  //define the top folder name according to the type  T 
+  topFolderName_ = "SiPixelHeterogeneous/T";
+}
+
+void ValidationTemplate::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {
+  ibooker.cd();
+  ibooker.setCurrentFolder(topFolderName_);
+  h = ibooker.book1D("myhisto", "", 100, 0., 100.);
+
+}
+
+void ValidationTemplate::analyze(const edm::Event& iEvent, edm::EventSetup const& es) {
+  //get the collection
+  //fill the histos
+}
+
+void ValidationTemplate::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  edm::ParameterSetDescription desc;
+  desc.add<edm::InputTag>("src", edm::InputTag("........"));
+  descriptions.add("ValidationTemplate", desc);
+}
+DEFINE_FWK_MODULE(ValidationTemplate);
