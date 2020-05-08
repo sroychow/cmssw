@@ -26,7 +26,7 @@ process.load('DQMOffline.Configuration.DQMOfflineMC_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(100),
+    input = cms.untracked.int32(10),
     output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
 )
 
@@ -116,7 +116,6 @@ process.prevalidation_step = cms.Path(process.globalPrevalidationPixelTrackingOn
 #the standard validation path is updated to run the new sequence -
 # It can either be pixelHeterogeneousValidationSource(if you want to run the modules which access products directly from GPU)
 # or be pixelHeterogeneousValidationFromsoaSource(if you want to run the modules which access products directly from GPU)
-
 process.validation_step = cms.EndPath(process.globalValidationPixelTrackingOnly*process.pixelHeterogeneousValidationFromsoaSource)
 
 process.dqmoffline_step = cms.EndPath(process.DQMOfflinePixelTracking)

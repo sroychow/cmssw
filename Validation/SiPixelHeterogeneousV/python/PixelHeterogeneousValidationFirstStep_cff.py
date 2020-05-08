@@ -10,4 +10,4 @@ from Validation.SiPixelHeterogeneousV.pixelValidateVerticesFromSoA_cfi import *
 #the following sequence needs to be added to the standard validation sequence##TODO
 pixelHeterogeneousValidationSource = cms.Sequence(sipixelrechitvalid)
 
-pixelHeterogeneousValidationFromsoaSource = cms.Sequence(sipixelrechitvalid)
+pixelHeterogeneousValidationFromsoaSource = cms.Sequence(sipixelrechitvalid*pixelverticesfromsoavalid)
