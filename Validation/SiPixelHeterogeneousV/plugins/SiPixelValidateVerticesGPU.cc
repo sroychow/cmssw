@@ -37,7 +37,6 @@ public:
   using HMSstorage = HostProduct<unsigned int[]>;
 
 private:
-  //void produce(edm::Event& iEvent, edm::EventSetup const& iSetup) override;
   void analyze(const edm::Event& iEvent, edm::EventSetup const& iSetup) override;
   void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
   
@@ -57,7 +56,7 @@ SiPixelValidateVerticesGPU::SiPixelValidateVerticesGPU(const edm::ParameterSet& 
       tokenbeamSpot_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpotsrc"))),
       tokenTracks_(consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollectionsrc")))
 {
-  topFolderName_ = "Tracking/PixelVerticesGPU";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelVerticesGPU";
 }
 
 void SiPixelValidateVerticesGPU::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {

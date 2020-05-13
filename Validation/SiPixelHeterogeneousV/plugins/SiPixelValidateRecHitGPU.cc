@@ -54,7 +54,7 @@ SiPixelValidateRecHitGPU::SiPixelValidateRecHitGPU(const edm::ParameterSet& iCon
     : tokenHit_(consumes<cms::cuda::Product<TrackingRecHit2DCUDA>>(iConfig.getParameter<edm::InputTag>("pixelRecHitSrc"))),
       clusterToken_(consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src")))
 {
-  topFolderName_ = "Tracking/PixelRecHitGPU";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelRecHitGPU";
 }
 
 void SiPixelValidateRecHitGPU::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {

@@ -44,7 +44,7 @@ private:
 SiPixelValidateDigiFromSoA::SiPixelValidateDigiFromSoA(const edm::ParameterSet& iConfig)
     : digisoaToken_(consumes<SiPixelDigisSoA>(iConfig.getParameter<edm::InputTag>("src")))
 {
-  topFolderName_ = "PixelPhase1/PixelDigisSoA";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelDigisSoA";
 }
 
 void SiPixelValidateDigiFromSoA::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {

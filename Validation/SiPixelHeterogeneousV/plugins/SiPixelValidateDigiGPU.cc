@@ -50,7 +50,7 @@ private:
 SiPixelValidateDigiGPU::SiPixelValidateDigiGPU(const edm::ParameterSet& iConfig)
     : gpudigiToken_(consumes<cms::cuda::Product<SiPixelDigisCUDA>>(iConfig.getParameter<edm::InputTag>("src")))
 {
-  topFolderName_ = "PixelPhase1/PixelDigisGPU";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelDigisGPU";
 }
 
 void SiPixelValidateDigiGPU::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {

@@ -9,6 +9,7 @@
 <use name="CUDADataFormats/Vertex"/>
 <use name="CUDADataFormats/SiPixelDigi"/>
 <use name="CUDADataFormats/PixelDigi"/>
+<use name="CUDADataFormats/Track"/>
 <use name="DataFormats/Common"/>
 <use name="DataFormats/DetId"/>
 <use name="DataFormats/TrackerRecHit2D"/>

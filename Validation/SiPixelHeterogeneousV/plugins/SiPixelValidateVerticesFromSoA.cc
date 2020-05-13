@@ -54,7 +54,7 @@ SiPixelValidateVerticesFromSoA::SiPixelValidateVerticesFromSoA(const edm::Parame
       tokenbeamSpot_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpotsrc"))),
       tokenTracks_(consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollectionsrc")))
 {
-  topFolderName_ = "Tracking/PixelVerticesSoA";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelVerticesSoA";
 }
 
 void SiPixelValidateVerticesFromSoA::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {
