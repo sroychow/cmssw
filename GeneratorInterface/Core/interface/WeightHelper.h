@@ -10,7 +10,9 @@
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/MEParamWeightGroupInfo.h"
+#include "LHAPDF/LHAPDF.h"
 #include <boost/algorithm/string.hpp>
+#include <fstream>
 
 namespace gen {
   struct PdfSetInfo {
@@ -48,18 +50,22 @@ namespace gen {
     bool isScaleWeightGroup(const ParsedWeight& weight);
     bool isMEParamWeightGroup(const ParsedWeight& weight);
     bool isPdfWeightGroup(const ParsedWeight& weight);
+    bool isOrphanPdfWeightGroup(ParsedWeight& weight);
     void updateScaleInfo(const ParsedWeight& weight);
     void updatePdfInfo(const ParsedWeight& weight);
     void splitPdfGroups();
+    std::vector<PdfSetInfo> setupPdfSetsInfo();
     std::string searchAttributes(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const;
 
     // Possible names for the same thing
     const std::unordered_map<std::string, std::vector<std::string>> attributeNames_ = {
-        {"muf", {"muR", "MUR", "muf", "facscfact"}},
-        {"mur", {"muF", "MUF", "mur", "renscfact"}},
-        {"pdf", {"PDF", "PDF set", "lhapdf", "pdf", "pdf set", "pdfset"}}};
+        {"muf", {"muF", "MUF", "muf", "facscfact"}},
+        {"mur", {"muR", "MUR", "mur", "renscfact"}},
+        {"pdf", {"PDF", "PDF set", "lhapdf", "pdf", "pdf set", "pdfset"}},
+        //{"dyn", {"DYN_SCALE", "dyn_scale_choice"}},
+    };
   };
 }  // namespace gen
 
