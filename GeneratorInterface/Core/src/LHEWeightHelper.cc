@@ -60,6 +60,10 @@ namespace gen {
         if (groupName.empty()) {
           throw std::runtime_error("couldn't find groupname");
         }
+        // May remove this, very specific error
+        if (groupName.find(".") != std::string::npos)
+          groupName.erase(groupName.find("."), groupName.size());
+
         for (auto* inner = e->FirstChildElement("weight"); inner != nullptr;
              inner = inner->NextSiblingElement("weight")) {
           // we are here if there is a weight in a weightgroup

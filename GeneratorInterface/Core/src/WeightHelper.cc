@@ -43,6 +43,7 @@ namespace gen {
         return true;
       }
     } catch (...) {
+      return false;
     }
     return false;
   }
@@ -71,7 +72,7 @@ namespace gen {
     auto& content = weight.content;
     std::smatch match;
     for (const auto& lab : attributeNames_.at(label)) {
-      std::regex expr(lab + "\\s?=\\s?([0-9.]+(?:[eE][+-]?[0-9]+)?)");
+      std::regex expr(lab + "\\s?=\\s*([0-9.]+(?:[eE][+-]?[0-9]+)?)");
       if (std::regex_search(content, match, expr)) {
         return boost::algorithm::trim_copy(match.str(1));
       }
@@ -116,8 +117,17 @@ namespace gen {
         return;
       }
       updatePdfInfo(lhaid, weight.index);
-    } else
+    } else {
+      //auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(group);
+      std::string groupName = group.headerEntry();
+      auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [groupName](const PdfSetInfo& setInfo) {
+        return setInfo.name == groupName;
+      });
+      lhaid = pdfInfo->lhapdfId + weight.index - group.firstId();
+      updatePdfInfo(lhaid, weight.index);
+      // debateable if we want to call it "wellformed"
       group.setIsWellFormed(false);
+    }
   }
 
   void WeightHelper::updatePdfInfo(int lhaid, int index) {
