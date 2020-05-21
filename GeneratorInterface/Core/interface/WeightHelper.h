@@ -16,12 +16,6 @@
 #include <fstream>
 
 namespace gen {
-  struct PdfSetInfo {
-    std::string name;
-    int lhapdfId;
-    PdfUncertaintyType uncertaintyType;
-  };
-
   struct ParsedWeight {
     std::string id;
     size_t index;
@@ -45,7 +39,6 @@ namespace gen {
   protected:
     std::string model_;
     std::vector<ParsedWeight> parsedWeights_;
-    const std::vector<PdfSetInfo> pdfSetsInfo;
     std::map<std::string, std::string> currWeightAttributeMap_;
     std::map<std::string, std::string> currGroupAttributeMap_;
     edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
@@ -58,7 +51,6 @@ namespace gen {
     void updatePdfInfo(const ParsedWeight& weight);
     void updatePdfInfo(int lhaid, int index);
     void splitPdfGroups();
-    std::vector<PdfSetInfo> setupPdfSetsInfo();
     std::string searchAttributes(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const;

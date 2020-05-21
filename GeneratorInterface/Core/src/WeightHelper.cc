@@ -2,20 +2,7 @@
 #include <regex>
 
 namespace gen {
-  WeightHelper::WeightHelper() : pdfSetsInfo(setupPdfSetsInfo()) { model_ = ""; }
-
-  std::vector<PdfSetInfo> WeightHelper::setupPdfSetsInfo() {
-    std::vector<PdfSetInfo> tmpSetsInfo;
-    std::string lhapdf_path = std::getenv("LHAPDF_DATA_PATH");
-    std::ifstream pdf_file;
-    pdf_file.open(lhapdf_path + "/pdfsets.index");
-    int lha_set, dummy;
-    std::string lha_name;
-    while (pdf_file >> lha_set >> lha_name >> dummy) {
-      tmpSetsInfo.push_back({lha_name, lha_set, kUnknownUnc});
-    }
-    return tmpSetsInfo;
-  }
+  WeightHelper::WeightHelper() { model_ = ""; }
 
   bool WeightHelper::isScaleWeightGroup(const ParsedWeight& weight) {
     return (weight.groupname.find("scale_variation") != std::string::npos ||
@@ -24,12 +11,10 @@ namespace gen {
 
   bool WeightHelper::isPdfWeightGroup(const ParsedWeight& weight) {
     const std::string& name = weight.groupname;
+
     if (name.find("PDF_variation") != std::string::npos)
       return true;
-
-    return std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [name](const PdfSetInfo& setInfo) {
-             return setInfo.name == name;
-           }) != pdfSetsInfo.end();
+    return LHAPDF::lookupLHAPDFID(name) != -1;
   }
 
   bool WeightHelper::isOrphanPdfWeightGroup(ParsedWeight& weight) {
@@ -120,10 +105,7 @@ namespace gen {
     } else {
       //auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(group);
       std::string groupName = group.headerEntry();
-      auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [groupName](const PdfSetInfo& setInfo) {
-        return setInfo.name == groupName;
-      });
-      lhaid = pdfInfo->lhapdfId + weight.index - group.firstId();
+      lhaid = LHAPDF::lookupLHAPDFID(groupName) + weight.index - group.firstId();
       updatePdfInfo(lhaid, weight.index);
       // debateable if we want to call it "wellformed"
       group.setIsWellFormed(false);
@@ -134,19 +116,14 @@ namespace gen {
     auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
     if (!pdfGroup.containsParentLhapdfId(lhaid)) {
       std::string description = "";
-      auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [lhaid](const PdfSetInfo& setInfo) {
-        return setInfo.lhapdfId == lhaid;
-      });
-      if (pdfInfo != pdfSetsInfo.end()) {
-        pdfGroup.setUncertaintyType(pdfInfo->uncertaintyType);
-        if (pdfInfo->uncertaintyType == gen::kHessianUnc)
-          description += "Hessian ";
-        else if (pdfInfo->uncertaintyType == gen::kMonteCarloUnc)
-          description += "Monte Carlo ";
-        description += "Uncertainty sets for LHAPDF set " + pdfInfo->name;
-        description += " with LHAID = " + std::to_string(lhaid);
-        description += "; ";
-      }
+      pdfGroup.setUncertaintyType(gen::kUnknownUnc);
+      if (pdfGroup.uncertaintyType() == gen::kHessianUnc)
+        description += "Hessian ";
+      else if (pdfGroup.uncertaintyType() == gen::kMonteCarloUnc)
+        description += "Monte Carlo ";
+      description += "Uncertainty sets for LHAPDF set " + LHAPDF::lookupPDF(lhaid).first;
+      description += " with LHAID = " + std::to_string(lhaid);
+      description += "; ";
       //else
       //    description += "Uncertainty sets for LHAPDF set with LHAID = " + std::to_string(lhaid);
       pdfGroup.addLhapdfId(lhaid, index);
