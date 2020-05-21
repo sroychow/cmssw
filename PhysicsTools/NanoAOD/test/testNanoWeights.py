@@ -9,6 +9,8 @@ def variableAndNumber(varName, tree):
         count = getattr(tree, countVar)
         var = getattr(tree, varName)
         print("Found %i entries of %s in file" % (count, varName))
+        branch = tree.GetBranch(varName)
+        print("    --> Desciption:%s" % branch.GetTitle())
 
 parser = argparse.ArgumentParser()
 parser.add_argument('inputFile', type=str, help='NanoAOD file to process')
@@ -17,7 +19,7 @@ args = parser.parse_args()
 rtfile = ROOT.TFile(args.inputFile)
 tree = rtfile.Get("Events")
 tree.GetEntry(0)
-variables = ["LHEScaleWeight", "LHEPdfWeight", "LHEUnknownWeight", "GenPartonShowerWeight", "LHEMEParamWeight"]
+variables = ["LHEScaleWeight", "LHEPdfWeight", "LHEMEParamWeight", "GenPartonShowerWeight", "LHEUnknownWeight", ]
 
 for varName in variables:
     variableAndNumber(varName, tree)
