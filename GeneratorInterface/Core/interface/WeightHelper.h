@@ -46,11 +46,10 @@ namespace gen {
     bool isMEParamWeightGroup(const ParsedWeight& weight);
     bool isPdfWeightGroup(const ParsedWeight& weight);
     bool isOrphanPdfWeightGroup(ParsedWeight& weight);
-    bool isMultiSetPdfGroup(WeightGroupInfo& group);
     void updateScaleInfo(const ParsedWeight& weight);
     void updatePdfInfo(const ParsedWeight& weight);
-    void updatePdfInfo(int lhaid, int index);
     void splitPdfGroups();
+    int getLhapdfId(const ParsedWeight& weight);
     std::string searchAttributes(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const;

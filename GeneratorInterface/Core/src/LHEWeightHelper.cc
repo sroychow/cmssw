@@ -134,15 +134,22 @@ namespace gen {
         currentGroupIdx = weight.wgtGroup_idx;
       }
 
+      // split PDF groups
+      if (weightGroups_.back().weightType() == gen::WeightType::kPdfWeights) {
+        auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
+        int lhaid = getLhapdfId(weight);
+        if (lhaid > 0 && !pdfGroup.isIdInParentSet(lhaid) && pdfGroup.getParentLhapdfId() > 0) {
+          weightGroups_.push_back(*buildGroup(weight));
+        }
+      }
       WeightGroupInfo& group = weightGroups_.back();
-
       group.addContainedId(weight.index, weight.id, weight.content);
       if (group.weightType() == gen::WeightType::kScaleWeights)
         updateScaleInfo(weight);
       else if (group.weightType() == gen::WeightType::kPdfWeights)
         updatePdfInfo(weight);
     }
-    splitPdfGroups();
+    //splitPdfGroups();
     // checks
     for (auto& wgt : weightGroups_) {
       if (!wgt.isWellFormed())
