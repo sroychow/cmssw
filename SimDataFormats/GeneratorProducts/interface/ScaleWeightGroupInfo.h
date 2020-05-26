@@ -10,7 +10,8 @@ namespace gen {
   private:
     bool isFunctionalFormVar_;
     std::vector<size_t> muIndices_;
-
+    bool containsCentral_ = false;
+    int lhaid_ = -1;
     // Dyn_scale
     std::vector<std::string> dynNames_;
     std::vector<std::vector<size_t>> dynVec_;
@@ -32,11 +33,13 @@ namespace gen {
     virtual ~ScaleWeightGroupInfo() override {}
     void copy(const ScaleWeightGroupInfo& other);
     virtual ScaleWeightGroupInfo* clone() const override;
+    bool containsCentralWeight() const { return containsCentral_; }
 
     void setMuRMuFIndex(
         int globalIndex, std::string id, float muR, float muF, size_t dynNum = -1, std::string dynName = "");
     void addContainedId(int weightEntry, std::string id, std::string label, float muR, float muF);
-
+    int getLhaid() { return lhaid_; }
+    void setLhaid(int lhaid) { lhaid_ = lhaid; }
     // Is a variation of the functional form of the dynamic scale
     bool isFunctionalFormVariation();
     void setIsFunctionalFormVariation(bool functionalVar) { isFunctionalFormVar_ = functionalVar; }

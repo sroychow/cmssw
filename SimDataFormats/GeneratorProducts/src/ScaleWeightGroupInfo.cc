@@ -13,6 +13,17 @@ namespace gen {
   ScaleWeightGroupInfo* ScaleWeightGroupInfo::clone() const { return new ScaleWeightGroupInfo(*this); }
 
   void ScaleWeightGroupInfo::addContainedId(int globalIndex, std::string id, std::string label, float muR, float muF) {
+    int idxDiff = firstId_ - globalIndex;
+    if (idxDiff > 0) {
+      for (auto& entry : muIndices_) {
+        entry += idxDiff;
+      }
+      for (auto& subVec : dynVec_) {
+        for (auto& entry : subVec) {
+          entry += idxDiff;
+        }
+      }
+    }
     WeightGroupInfo::addContainedId(globalIndex, id, label);
     setMuRMuFIndex(globalIndex, id, muR, muF);
   }
@@ -32,6 +43,8 @@ namespace gen {
       isWellFormed_ = false;
       return;
     }
+    if (index == 4)
+      containsCentral_ = true;
     muIndices_[index] = info.localIndex;
   }
 

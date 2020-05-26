@@ -78,8 +78,6 @@ namespace gen {
       scaleGroup.setIsWellFormed(false);
       return;
     }
-    // currently skips events with a dynscale. May add back
-    //size_t dyn = -1;
 
     try {
       float muR = std::stof(muRText);
@@ -92,9 +90,16 @@ namespace gen {
         int dynNum = std::stoi(dynNumText);
         scaleGroup.setMuRMuFIndex(weight.index, weight.id, muR, muF, dynNum, dynType);
       }
-
     } catch (std::invalid_argument& e) {
       scaleGroup.setIsWellFormed(false);
+    }
+    if (scaleGroup.getLhaid() == -1) {
+      std::string lhaidText = searchAttributes("pdf", weight);
+      try {
+        scaleGroup.setLhaid(std::stoi(lhaidText));
+      } catch (std::invalid_argument& e) {
+        scaleGroup.setLhaid(-2);
+      }
     }
   }
 
@@ -114,6 +119,7 @@ namespace gen {
     }
     return -1;
   }
+
   void WeightHelper::updatePdfInfo(const ParsedWeight& weight) {
     auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
     int lhaid = getLhapdfId(weight);
@@ -146,6 +152,31 @@ namespace gen {
       addWeightToProduct(weightProduct, weights.at(i), "", i, weightGroupIndex);
     }
     return std::move(weightProduct);
+  }
+
+  void WeightHelper::cleanupOrphanCentralWeight() {
+    std::vector<int> removeList;
+    for (auto it = weightGroups_.begin(); it < weightGroups_.end(); it++) {
+      if (it->weightType() != WeightType::kScaleWeights)
+        continue;
+      auto& baseWeight = dynamic_cast<gen::ScaleWeightGroupInfo&>(*it);
+      if (baseWeight.containsCentralWeight())
+        continue;
+      for (auto subIt = weightGroups_.begin(); subIt < it; subIt++) {
+        if (subIt->weightType() != WeightType::kPdfWeights)
+          continue;
+        auto& subWeight = dynamic_cast<gen::PdfWeightGroupInfo&>(*subIt);
+        if (subWeight.nIdsContained() == 1 && subWeight.getParentLhapdfId() == baseWeight.getLhaid()) {
+          removeList.push_back(subIt - weightGroups_.begin());
+          auto info = subWeight.idsContained().at(0);
+          baseWeight.addContainedId(info.globalIndex, info.id, info.label, 1, 1);
+        }
+      }
+    }
+    std::sort(removeList.begin(), removeList.end(), std::greater<int>());
+    for (auto idx : removeList) {
+      weightGroups_.erase(weightGroups_.begin() + idx);
+    }
   }
 
   std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights, float w0) {
