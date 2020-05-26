@@ -57,8 +57,11 @@ namespace gen {
     auto& content = weight.content;
     std::smatch match;
     for (const auto& lab : attributeNames_.at(label)) {
-      std::regex expr(lab + "\\s?=\\s*([0-9.]+(?:[eE][+-]?[0-9]+)?)");
-      if (std::regex_search(content, match, expr)) {
+      std::regex floatExpr(lab + "\\s*=\\s*([0-9.]+(?:[eE][+-]?[0-9]+)?)");
+      std::regex strExpr(lab + "\\s*=\\s*([^=]+)");
+      if (std::regex_search(content, match, floatExpr)) {
+        return boost::algorithm::trim_copy(match.str(1));
+      } else if (std::regex_search(content, match, strExpr)) {
         return boost::algorithm::trim_copy(match.str(1));
       }
     }
@@ -70,21 +73,26 @@ namespace gen {
     auto& scaleGroup = dynamic_cast<gen::ScaleWeightGroupInfo&>(group);
     std::string muRText = searchAttributes("mur", weight);
     std::string muFText = searchAttributes("muf", weight);
+
     if (muRText.empty() || muFText.empty()) {
       scaleGroup.setIsWellFormed(false);
       return;
     }
     // currently skips events with a dynscale. May add back
     //size_t dyn = -1;
-    if (weight.attributes.find("DYN_SCALE") != weight.attributes.end()) {
-      //  dyn = std::stoi(boost::algorithm::trim_copy_if(weight.attributes.at("DYN_SCALE"), boost::is_any_of("\"")));
-      return;
-    }
 
     try {
       float muR = std::stof(muRText);
       float muF = std::stof(muFText);
-      scaleGroup.setMuRMuFIndex(weight.index, weight.id, muR, muF);
+      std::string dynNumText = searchAttributes("dyn", weight);
+      if (dynNumText.empty()) {
+        scaleGroup.setMuRMuFIndex(weight.index, weight.id, muR, muF);
+      } else {
+        std::string dynType = searchAttributes("dyn_name", weight);
+        int dynNum = std::stoi(dynNumText);
+        scaleGroup.setMuRMuFIndex(weight.index, weight.id, muR, muF, dynNum, dynType);
+      }
+
     } catch (std::invalid_argument& e) {
       scaleGroup.setIsWellFormed(false);
     }

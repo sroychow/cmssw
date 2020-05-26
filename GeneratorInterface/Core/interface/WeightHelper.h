@@ -59,8 +59,8 @@ namespace gen {
         {"muf", {"muF", "MUF", "muf", "facscfact"}},
         {"mur", {"muR", "MUR", "mur", "renscfact"}},
         {"pdf", {"PDF", "PDF set", "lhapdf", "pdf", "pdf set", "pdfset"}},
-        //{"dyn", {"DYN_SCALE", "dyn_scale_choice"}},
-    };
+        {"dyn", {"DYN_SCALE"}},
+        {"dyn_name", {"dyn_scale_choice"}}};
   };
 }  // namespace gen
 
