@@ -117,13 +117,10 @@ namespace gen {
   void WeightHelper::updatePdfInfo(const ParsedWeight& weight) {
     auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
     int lhaid = getLhapdfId(weight);
-    pdfGroup.addLhaid(lhaid);
-
     if (pdfGroup.getParentLhapdfId() < 0) {
       int parentId = lhaid - LHAPDF::lookupPDF(lhaid).second;
-      pdfGroup.setParentLhapdfId(parentId);
+      pdfGroup.setParentLhapdfInfo(parentId);
       pdfGroup.setUncertaintyType(gen::kUnknownUnc);
-      //pdfGroup.setName(LHAPDF::lookupPDF(parentId).first);
 
       std::string description = "";
       if (pdfGroup.uncertaintyType() == gen::kHessianUnc)
@@ -136,6 +133,8 @@ namespace gen {
 
       pdfGroup.appendDescription(description);
     }
+    // after setup parent info, add lhaid
+    pdfGroup.addLhaid(lhaid);
   }
 
   // TODO: Could probably recycle this code better

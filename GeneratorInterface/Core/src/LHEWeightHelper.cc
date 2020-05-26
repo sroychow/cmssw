@@ -149,7 +149,6 @@ namespace gen {
       else if (group.weightType() == gen::WeightType::kPdfWeights)
         updatePdfInfo(weight);
     }
-    //splitPdfGroups();
     // checks
     for (auto& wgt : weightGroups_) {
       if (!wgt.isWellFormed())

@@ -22,7 +22,9 @@ namespace gen {
     int alphasUpIndex_;
     int alphasDownIndex_;
     int parentLhapdfId_ = -1;
-    std::vector<int> lhaids;
+    size_t parentLhapdfSize_ = -1;
+    std::string parentLhapdfError_;
+    std::vector<int> lhaids_;
     int parentLhapdfId(int lhaid) const { return lhaid - LHAPDF::lookupPDF(lhaid).second; }
 
   public:
@@ -42,12 +44,12 @@ namespace gen {
     void setAlphasDownIndex(int alphasDownIndex) { alphasDownIndex_ = alphasDownIndex; }
     PdfUncertaintyType uncertaintyType() const { return uncertaintyType_; }
     bool hasAlphasVariations() const { return hasAlphasVars_; }
-    void addLhaid(int lhaid) { lhaids.push_back(lhaid); }
-    std::vector<int>& getLhaIds() { return lhaids; }
+    void addLhaid(int lhaid);
+    std::vector<int>& getLhaIds() { return lhaids_; }
 
     bool isIdInParentSet(int lhaid) const { return parentLhapdfId_ == parentLhapdfId(lhaid); }
     int getParentLhapdfId() const { return parentLhapdfId_; }
-    void setParentLhapdfId(int lhaid) { parentLhapdfId_ = lhaid; }
+    void setParentLhapdfInfo(int lhaid);
 
     // need to remove
     bool containsLhapdfId(int lhaid) const { return isIdInParentSet(lhaid); }
