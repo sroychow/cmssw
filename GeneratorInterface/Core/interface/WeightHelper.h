@@ -12,21 +12,17 @@
 #include "SimDataFormats/GeneratorProducts/interface/MEParamWeightGroupInfo.h"
 #include "LHAPDF/LHAPDF.h"
 #include <boost/algorithm/string.hpp>
+#include <bits/stdc++.h>
 #include <fstream>
 
 namespace gen {
-  struct PdfSetInfo {
-    std::string name;
-    int lhapdfId;
-    PdfUncertaintyType uncertaintyType;
-  };
-
   struct ParsedWeight {
     std::string id;
     size_t index;
     std::string groupname;
     std::string content;
     std::unordered_map<std::string, std::string> attributes;
+    size_t wgtGroup_idx;
   };
 
   class WeightHelper {
@@ -43,7 +39,6 @@ namespace gen {
   protected:
     std::string model_;
     std::vector<ParsedWeight> parsedWeights_;
-    const std::vector<PdfSetInfo> pdfSetsInfo;
     std::map<std::string, std::string> currWeightAttributeMap_;
     std::map<std::string, std::string> currGroupAttributeMap_;
     edm::OwnVector<gen::WeightGroupInfo> weightGroups_;
@@ -53,8 +48,9 @@ namespace gen {
     bool isOrphanPdfWeightGroup(ParsedWeight& weight);
     void updateScaleInfo(const ParsedWeight& weight);
     void updatePdfInfo(const ParsedWeight& weight);
-    void splitPdfGroups();
-    std::vector<PdfSetInfo> setupPdfSetsInfo();
+    void cleanupOrphanCentralWeight();
+
+    int getLhapdfId(const ParsedWeight& weight);
     std::string searchAttributes(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByTag(const std::string& label, const ParsedWeight& weight) const;
     std::string searchAttributesByRegex(const std::string& label, const ParsedWeight& weight) const;
@@ -64,8 +60,8 @@ namespace gen {
         {"muf", {"muF", "MUF", "muf", "facscfact"}},
         {"mur", {"muR", "MUR", "mur", "renscfact"}},
         {"pdf", {"PDF", "PDF set", "lhapdf", "pdf", "pdf set", "pdfset"}},
-        //{"dyn", {"DYN_SCALE", "dyn_scale_choice"}},
-    };
+        {"dyn", {"DYN_SCALE"}},
+        {"dyn_name", {"dyn_scale_choice"}}};
   };
 }  // namespace gen
 

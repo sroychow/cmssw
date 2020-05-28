@@ -11,6 +11,10 @@ namespace gen {
   void LHEWeightHelper::parseWeights() {
     parsedWeights_.clear();
 
+    if (!isConsistent()) {
+      swapHeaders();
+    }
+
     tinyxml2::XMLDocument xmlDoc;
     std::string fullHeader = boost::algorithm::join(headerLines_, "");
 
@@ -31,6 +35,7 @@ namespace gen {
     std::vector<std::string> nameAlts_ = {"name", "type"};
 
     size_t weightIndex = 0;
+    size_t groupIndex = 0;
     //for (auto* e = root->FirstChildElement(); e != nullptr; e = e->NextSiblingElement()) {
     for (auto* e = xmlDoc.RootElement(); e != nullptr; e = e->NextSiblingElement()) {
       std::string groupName = "";
@@ -43,9 +48,8 @@ namespace gen {
         std::unordered_map<std::string, std::string> attributes;
         for (auto* att = e->FirstAttribute(); att != nullptr; att = att->Next())
           attributes[att->Name()] = att->Value();
-        parsedWeights_.push_back({e->Attribute("id"), weightIndex++, groupName, text, attributes});
-      }
-      if (strcmp(e->Name(), "weightgroup") == 0) {
+        parsedWeights_.push_back({e->Attribute("id"), weightIndex++, groupName, text, attributes, groupIndex});
+      } else if (strcmp(e->Name(), "weightgroup") == 0) {
         // to deal wiht files with "id" instead of "name"
         for (auto nameAtt : nameAlts_) {
           if (e->Attribute(nameAtt.c_str())) {
@@ -56,6 +60,10 @@ namespace gen {
         if (groupName.empty()) {
           throw std::runtime_error("couldn't find groupname");
         }
+        // May remove this, very specific error
+        if (groupName.find(".") != std::string::npos)
+          groupName.erase(groupName.find("."), groupName.size());
+
         for (auto* inner = e->FirstChildElement("weight"); inner != nullptr;
              inner = inner->NextSiblingElement("weight")) {
           // we are here if there is a weight in a weightgroup
@@ -65,9 +73,10 @@ namespace gen {
           std::unordered_map<std::string, std::string> attributes;
           for (auto* att = inner->FirstAttribute(); att != nullptr; att = att->Next())
             attributes[att->Name()] = att->Value();
-          parsedWeights_.push_back({inner->Attribute("id"), weightIndex++, groupName, text, attributes});
+          parsedWeights_.push_back({inner->Attribute("id"), weightIndex++, groupName, text, attributes, groupIndex});
         }
       }
+      groupIndex++;
     }
     buildGroups();
   }
@@ -118,21 +127,29 @@ namespace gen {
 
   void LHEWeightHelper::buildGroups() {
     weightGroups_.clear();
-    std::string currentGroupName = "None";
+    size_t currentGroupIdx = -1;
     for (auto& weight : parsedWeights_) {
-      if (weight.groupname != currentGroupName) {
+      if (currentGroupIdx != weight.wgtGroup_idx) {
         weightGroups_.push_back(*buildGroup(weight));
+        currentGroupIdx = weight.wgtGroup_idx;
       }
-      currentGroupName = weight.groupname;
-      WeightGroupInfo& group = weightGroups_.back();
 
+      // split PDF groups
+      if (weightGroups_.back().weightType() == gen::WeightType::kPdfWeights) {
+        auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
+        int lhaid = getLhapdfId(weight);
+        if (lhaid > 0 && !pdfGroup.isIdInParentSet(lhaid) && pdfGroup.getParentLhapdfId() > 0) {
+          weightGroups_.push_back(*buildGroup(weight));
+        }
+      }
+      WeightGroupInfo& group = weightGroups_.back();
       group.addContainedId(weight.index, weight.id, weight.content);
       if (group.weightType() == gen::WeightType::kScaleWeights)
         updateScaleInfo(weight);
       else if (group.weightType() == gen::WeightType::kPdfWeights)
         updatePdfInfo(weight);
     }
-
+    cleanupOrphanCentralWeight();
     // checks
     for (auto& wgt : weightGroups_) {
       if (!wgt.isWellFormed())
@@ -150,13 +167,25 @@ namespace gen {
         std::cout << wgtScale.muR05muF1Index() << " ";
         std::cout << wgtScale.muR05muF2Index() << " ";
         std::cout << wgtScale.muR05muF05Index() << " \n";
+        for (auto name : wgtScale.getDynNames()) {
+          std::cout << name << ": ";
+          std::cout << wgtScale.getScaleIndex(1.0, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(1.0, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(1.0, 0.5, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 0.5, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 0.5, name) << "\n";
+        }
+
       } else if (wgt.weightType() == gen::WeightType::kPdfWeights) {
         std::cout << wgt.description() << "\n";
       }
       if (!wgt.isWellFormed())
         std::cout << "\033[0m";
     }
-    //splitPdfGroups();
   }
 
   std::unique_ptr<WeightGroupInfo> LHEWeightHelper::buildGroup(ParsedWeight& weight) {
