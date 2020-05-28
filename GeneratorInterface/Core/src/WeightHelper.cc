@@ -105,43 +105,39 @@ namespace gen {
   }
 
   void WeightHelper::updatePdfInfo(const ParsedWeight& weight) {
-    auto& group = weightGroups_.back();
+    auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
     std::string lhaidText = searchAttributes("pdf", weight);
+
     int lhaid = 0;
     if (!lhaidText.empty()) {
       try {
         lhaid = std::stoi(lhaidText);
       } catch (std::invalid_argument& e) {
-        group.setIsWellFormed(false);
-        return;
+        pdfGroup.setIsWellFormed(false);
       }
-      updatePdfInfo(lhaid, weight.index);
-    } else
-      group.setIsWellFormed(false);
-  }
 
-  void WeightHelper::updatePdfInfo(int lhaid, int index) {
-    auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
-    if (!pdfGroup.containsParentLhapdfId(lhaid)) {
-      std::string description = "";
-      auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [lhaid](const PdfSetInfo& setInfo) {
-        return setInfo.lhapdfId == lhaid;
-      });
-      if (pdfInfo != pdfSetsInfo.end()) {
-        pdfGroup.setUncertaintyType(pdfInfo->uncertaintyType);
-        if (pdfInfo->uncertaintyType == gen::kHessianUnc)
-          description += "Hessian ";
-        else if (pdfInfo->uncertaintyType == gen::kMonteCarloUnc)
-          description += "Monte Carlo ";
-        description += "Uncertainty sets for LHAPDF set " + pdfInfo->name;
-        description += " with LHAID = " + std::to_string(lhaid);
-        description += "; ";
+      if (!pdfGroup.containsParentLhapdfId(lhaid, weight.index)) {
+        std::string description = "";
+        auto pdfInfo = std::find_if(pdfSetsInfo.begin(), pdfSetsInfo.end(), [lhaid](const PdfSetInfo& setInfo) {
+          return setInfo.lhapdfId == lhaid;
+        });
+        if (pdfInfo != pdfSetsInfo.end()) {
+          pdfGroup.setUncertaintyType(pdfInfo->uncertaintyType);
+          if (pdfInfo->uncertaintyType == gen::kHessianUnc)
+            description += "Hessian ";
+          else if (pdfInfo->uncertaintyType == gen::kMonteCarloUnc)
+            description += "Monte Carlo ";
+          description += "Uncertainty sets for LHAPDF set " + pdfInfo->name;
+          description += " with LHAID = " + std::to_string(lhaid);
+          description += "; ";
+        }
+        //else
+        //    description += "Uncertainty sets for LHAPDF set with LHAID = " + std::to_string(lhaid);
+        pdfGroup.addLhapdfId(lhaid, weight.index);
+        pdfGroup.appendDescription(description);
       }
-      //else
-      //    description += "Uncertainty sets for LHAPDF set with LHAID = " + std::to_string(lhaid);
-      pdfGroup.addLhapdfId(lhaid, index);
-      pdfGroup.appendDescription(description);
-    }
+    } else
+      pdfGroup.setIsWellFormed(false);
   }
 
   // TODO: Could probably recycle this code better
@@ -155,48 +151,15 @@ namespace gen {
     return std::move(weightProduct);
   }
 
-  bool WeightHelper::isMultiSetPdfGroup(WeightGroupInfo& group) {
-    if (group.weightType() == gen::WeightType::kPdfWeights) {
-      gen::PdfWeightGroupInfo& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(group);
-      if (pdfGroup.containsMultipleSets()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   void WeightHelper::splitPdfGroups() {
-    std::vector<gen::PdfWeightGroupInfo> groupsToSplit;
-    for (auto& group : weightGroups_) {
-      if (isMultiSetPdfGroup(group)) {
-        groupsToSplit.push_back(dynamic_cast<gen::PdfWeightGroupInfo&>(group));
-      }
-    }
-    weightGroups_.erase(std::remove_if(weightGroups_.begin(),
-                                       weightGroups_.end(),
-                                       [this](auto& group) { return this->isMultiSetPdfGroup(group); }),
-                        weightGroups_.end());
-
-    // Actually split groups
-    for (auto parentGroup : groupsToSplit) {
-      int currentPdfParent = -1;
-      std::vector<int> firstLhapdfIds = parentGroup.lhapdfIdsContained();
-      std::sort(firstLhapdfIds.begin(), firstLhapdfIds.end(), std::greater<int>());
-      int parentFirstId = parentGroup.firstId();
-      for (auto& metaInfo : parentGroup.containedIds()) {
-        if (firstLhapdfIds.back() == (int)(metaInfo.globalIndex - parentFirstId)) {
-          currentPdfParent = parentGroup.getLHAPDFidFromIdx(firstLhapdfIds.back());
-          firstLhapdfIds.pop_back();
-          std::string groupName = LHAPDF::lookupPDF(currentPdfParent).first;
-          weightGroups_.push_back(*std::make_unique<PdfWeightGroupInfo>(groupName));
-        }
-        WeightGroupInfo& childGroup = weightGroups_.back();
-
-        childGroup.addContainedId(metaInfo.globalIndex, metaInfo.id, metaInfo.label);
-        int lhaid = currentPdfParent + (metaInfo.globalIndex - childGroup.firstId());
-        updatePdfInfo(lhaid, metaInfo.globalIndex);
-      }
-    }
+    // std::vector<gen::PdfWeightGroupInfo> groupsToSplit;
+    // for (auto& group: weightGroups_) {
+    //     if (group.weightType() == gen::WeightType::kPdfWeights) {
+    // 	gen::PdfWeightGroupInfo& = dynamic_cast<gen::PdfWeightGroupInfo&>(group);
+    // 	if (group.containsMultipleSets())
+    // 	    groupsToSplit.push_back(group);
+    //     }
+    // }
   }
 
   std::unique_ptr<GenWeightProduct> WeightHelper::weightProduct(std::vector<gen::WeightsInfo> weights, float w0) {
