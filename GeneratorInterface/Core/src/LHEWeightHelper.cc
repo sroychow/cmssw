@@ -60,6 +60,10 @@ namespace gen {
         if (groupName.empty()) {
           throw std::runtime_error("couldn't find groupname");
         }
+        // May remove this, very specific error
+        if (groupName.find(".") != std::string::npos)
+          groupName.erase(groupName.find("."), groupName.size());
+
         for (auto* inner = e->FirstChildElement("weight"); inner != nullptr;
              inner = inner->NextSiblingElement("weight")) {
           // we are here if there is a weight in a weightgroup
@@ -130,15 +134,22 @@ namespace gen {
         currentGroupIdx = weight.wgtGroup_idx;
       }
 
+      // split PDF groups
+      if (weightGroups_.back().weightType() == gen::WeightType::kPdfWeights) {
+        auto& pdfGroup = dynamic_cast<gen::PdfWeightGroupInfo&>(weightGroups_.back());
+        int lhaid = getLhapdfId(weight);
+        if (lhaid > 0 && !pdfGroup.isIdInParentSet(lhaid) && pdfGroup.getParentLhapdfId() > 0) {
+          weightGroups_.push_back(*buildGroup(weight));
+        }
+      }
       WeightGroupInfo& group = weightGroups_.back();
-
       group.addContainedId(weight.index, weight.id, weight.content);
       if (group.weightType() == gen::WeightType::kScaleWeights)
         updateScaleInfo(weight);
       else if (group.weightType() == gen::WeightType::kPdfWeights)
         updatePdfInfo(weight);
     }
-    splitPdfGroups();
+    cleanupOrphanCentralWeight();
     // checks
     for (auto& wgt : weightGroups_) {
       if (!wgt.isWellFormed())
@@ -156,6 +167,19 @@ namespace gen {
         std::cout << wgtScale.muR05muF1Index() << " ";
         std::cout << wgtScale.muR05muF2Index() << " ";
         std::cout << wgtScale.muR05muF05Index() << " \n";
+        for (auto name : wgtScale.getDynNames()) {
+          std::cout << name << ": ";
+          std::cout << wgtScale.getScaleIndex(1.0, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(1.0, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(1.0, 0.5, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(2.0, 0.5, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 1.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 2.0, name) << " ";
+          std::cout << wgtScale.getScaleIndex(0.5, 0.5, name) << "\n";
+        }
+
       } else if (wgt.weightType() == gen::WeightType::kPdfWeights) {
         std::cout << wgt.description() << "\n";
       }
