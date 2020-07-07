@@ -36,7 +36,7 @@ private:
   edm::EDGetTokenT<LHERunInfoProduct> lheRunInfoToken_;
   edm::EDGetTokenT<LHEEventProduct> lheEventToken_;
   const edm::EDGetTokenT<GenWeightInfoProduct> lheWeightInfoToken_;
-  bool foundWeightProduct_;
+  bool foundWeightProduct_ = false;
 
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
@@ -89,10 +89,11 @@ void LHEWeightProductProducer::endRun(edm::Run const& run, edm::EventSetup const
 void LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
   edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
   lumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
-  if (lheWeightInfoHandle.isValid()) {
-    foundWeightProduct_ = true;
-    return;
-  }
+  // Turn this off for now, not working properly in some of my private LHE prod
+  //if (lheWeightInfoHandle.isValid()) {
+  //  foundWeightProduct_ = true;
+  //  return;
+  //}
   weightHelper_.parseWeights();
 
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
