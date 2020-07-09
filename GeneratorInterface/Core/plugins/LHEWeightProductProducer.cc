@@ -90,10 +90,10 @@ void LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock&
   edm::Handle<GenWeightInfoProduct> lheWeightInfoHandle;
   lumi.getByToken(lheWeightInfoToken_, lheWeightInfoHandle);
   // Turn this off for now, not working properly in some of my private LHE prod
-  //if (lheWeightInfoHandle.isValid()) {
-  //  foundWeightProduct_ = true;
-  //  return;
-  //}
+  if (lheWeightInfoHandle.isValid()) {
+    foundWeightProduct_ = true;
+    return;
+  }
   weightHelper_.parseWeights();
 
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
