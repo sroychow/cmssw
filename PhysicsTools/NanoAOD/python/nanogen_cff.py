@@ -106,24 +106,6 @@ nanogenMiniSequence = cms.Sequence(
     lheInfoTable
 )
 
-NANOAODGENoutput = cms.OutputModule("NanoAODOutputModule",
-    compressionAlgorithm = cms.untracked.string('LZMA'),
-    compressionLevel = cms.untracked.int32(9),
-    dataset = cms.untracked.PSet(
-        dataTier = cms.untracked.string('NANOAODSIM'),
-        filterName = cms.untracked.string('')
-    ),
-    fileName = cms.untracked.string('nanogen.root'),
-    outputCommands = cms.untracked.vstring(
-        'drop *',
-        "keep *_lheWeightsTable_*_*",     # event data
-        "keep nanoaodFlatTable_*Table_*_*",     # event data
-        "keep String_*_genModel_*",  # generator model data
-        "keep nanoaodMergeableCounterTable_*Table_*_*", # accumulated per/run or per/lumi data
-        "keep nanoaodUniqueString_nanoMetadata_*_*",   # basic metadata
-    )
-)
-
 def customizeNanoGENFromMini(process):
     # Why is this false by default?!
     process.lheInfoTable.storeLHEParticles = True
