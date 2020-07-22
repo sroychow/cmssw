@@ -11,12 +11,12 @@ genWeights = cms.EDProducer("GenWeightProductProducer",
     genLumiInfoHeader = cms.InputTag("generator"))
 
 lheWeights = cms.EDProducer("LHEWeightProductProducer",
+    # TODO: Should take a vstring of inputs
     lheSourceLabel = cms.string("externalLHEProducer"))
 
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
-    #lheWeights = cms.VInputTag(["externalLHEProducer", "lheWeights"]),
-    lheWeights = cms.VInputTag(["lheWeights"]),
+    lheWeights = cms.VInputTag(["externalLHEProducer", "source", "lheWeights"]),
     lheWeightPrecision = cms.int32(14),
     genWeights = cms.InputTag("genWeights"),
     # Warning: you can use a full string, but only the first character is read.

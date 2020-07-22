@@ -10,8 +10,8 @@ namespace gen {
     int index = 0;
 
     // If size is 1, it's just the central weight
-    if (weightNames.size() <= 1)
-      return;
+    //if (weightNames.size() <= 1)
+    //  return;
 
     for (std::string weightName : weightNames) {
       if (weightName.find("LHE") != std::string::npos) {
