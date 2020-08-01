@@ -78,7 +78,7 @@ nanogenSequence = cms.Sequence(
 
 nanogenMiniSequence = cms.Sequence(
     genWeights+
-    lheWeights+
+    #lheWeights+
     nanoMetadata+
     mergedGenParticles+
     genParticles2HepMC+
