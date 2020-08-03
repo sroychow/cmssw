@@ -72,7 +72,6 @@ public:
 
     auto lheWeightTables = std::make_unique<std::vector<nanoaod::FlatTable>>();
     if (foundLheWeights) {
-        std::cout << "Adding LHEweights\n";
         addWeightGroupToTable(lheWeightTables, "LHE", weightInfos.at(inLHE), lheWeights);
     }
     addWeightGroupToTable(lheWeightTables, "Gen", weightInfos.at(inGen), genWeights);
@@ -87,8 +86,6 @@ public:
     std::unordered_map<gen::WeightType, int> typeCount = {};
     for (auto& type : gen::allWeightTypes)
       typeCount[type] = 0; 
-
-    std::cout << "Adding type " << typeName << std::endl;
 
     for (const auto& groupInfo : weightInfos) {
       std::string entryName = typeName;
