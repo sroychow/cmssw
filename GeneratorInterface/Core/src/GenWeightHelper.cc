@@ -28,7 +28,7 @@ namespace gen {
           std::vector<std::string> subInfo;
           boost::split(subInfo, i, boost::is_any_of("="));
           if (subInfo.size() == 2) {
-            attributes[trim(subInfo[0])] = trim(subInfo[1]);
+            attributes[boost::algorithm::trim_copy(subInfo[0])] = boost::algorithm::trim_copy(subInfo[1]);
           }
         }
         if (attributes["group"] != curGroup) {
