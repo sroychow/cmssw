@@ -49,12 +49,11 @@ public:
   void produce(edm::StreamID id, edm::Event& iEvent, const edm::EventSetup& iSetup) const override {
     edm::Handle<GenWeightProduct> lheWeightHandle;
     bool foundLheWeights = false;
-    if (foundLheWeights) {
-      for (auto& token : lheWeightTokens_) {
-        iEvent.getByToken(token, lheWeightHandle);
-        if (lheWeightHandle.isValid()) {
-            break;
-        }
+    for (auto& token : lheWeightTokens_) {
+      iEvent.getByToken(token, lheWeightHandle);
+      if (lheWeightHandle.isValid()) {
+          foundLheWeights = true;
+          break;
       }
     }
 
@@ -72,8 +71,10 @@ public:
     auto const& weightInfos = *luminosityBlockCache(iEvent.getLuminosityBlock().index());
 
     auto lheWeightTables = std::make_unique<std::vector<nanoaod::FlatTable>>();
-    if (foundLheWeights)
+    if (foundLheWeights) {
+        std::cout << "Adding LHEweights\n";
         addWeightGroupToTable(lheWeightTables, "LHE", weightInfos.at(inLHE), lheWeights);
+    }
     addWeightGroupToTable(lheWeightTables, "Gen", weightInfos.at(inGen), genWeights);
 
     iEvent.put(std::move(lheWeightTables));
@@ -87,6 +88,8 @@ public:
     for (auto& type : gen::allWeightTypes)
       typeCount[type] = 0; 
 
+    std::cout << "Adding type " << typeName << std::endl;
+
     for (const auto& groupInfo : weightInfos) {
       std::string entryName = typeName;
       gen::WeightType weightType = groupInfo.group->weightType();
@@ -96,7 +99,7 @@ public:
 
       auto& weights = allWeights.at(groupInfo.index);
       label.append("; ");
-      if (weightType == gen::WeightType::kScaleWeights && groupInfo.group->isWellFormed() &&
+      if (false && weightType == gen::WeightType::kScaleWeights && groupInfo.group->isWellFormed() &&
           groupInfo.group->nIdsContained() < 10) {
         weights = orderedScaleWeights(weights, dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
         label.append(
