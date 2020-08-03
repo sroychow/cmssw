@@ -8,16 +8,14 @@ namespace gen {
 
   void GenWeightHelper::parseWeightGroupsFromNames(std::vector<std::string> weightNames) {
     parsedWeights_.clear();
-    size_t index = 0;
-    size_t groupIndex = 0;
+    int index = 0;
+    int groupIndex = -1;
+    int showerGroupIndex = -1;
     std::string curGroup = "";
     // If size is 1, it's just the central weight
     if (weightNames.size() <= 1)
       return;
 
-    for (std::string weightName : weightNames) {
-      std::cout << weightName << std::endl;
-    }
     for (std::string weightName : weightNames) {
       if (weightName.find("LHE") != std::string::npos) {
         // Parse as usual, this is the SUSY workflow
@@ -37,17 +35,19 @@ namespace gen {
           curGroup = attributes["group"];
           groupIndex++;
         }
-        parsedWeights_.push_back({attributes["id"], index++, curGroup, text, attributes, groupIndex});
+        // Gen Weights can't have an ID, because they are just a std::vector<float> in the event
+        attributes["id"] = "";
+        parsedWeights_.push_back({attributes["id"], index, curGroup, text, attributes, groupIndex});
       } else {
         parsedWeights_.push_back(
-            {weightName, index++, weightName, weightName, std::unordered_map<std::string, std::string>(), groupIndex++});
-        if (isPartonShowerWeightGroup(parsedWeights_.back()))
-          parsedWeights_.back().wgtGroup_idx = -1;  // all parton showers are grouped together
+            {"", index, weightName, weightName, std::unordered_map<std::string, std::string>(), groupIndex});
+        if (isPartonShowerWeightGroup(parsedWeights_.back())) {
+          if (showerGroupIndex < 0)
+              showerGroupIndex = ++groupIndex;
+          parsedWeights_.back().wgtGroup_idx = showerGroupIndex;  // all parton showers are grouped together
+        }
       }
-      // Working on the not-so-nice assumption that all non-LHE gen weights are PS weights
-      // else if (weightGroups_.size() == 0) {
-      //   weightGroups_.push_back(new gen::PartonShowerWeightGroupInfo("shower"));
-      // }
+      index++;
     }
     buildGroups();
     printWeights();
