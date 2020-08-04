@@ -11,8 +11,9 @@ genWeights = cms.EDProducer("GenWeightProductProducer",
     genLumiInfoHeader = cms.InputTag("generator"))
 
 lheWeights = cms.EDProducer("LHEWeightProductProducer",
-    # TODO: Should take a vstring of inputs
-    lheSourceLabel = cms.string("externalLHEProducer"))
+    lheSourceLabels = cms.vstring(["externalLHEProducer", "source"])
+    #lheWeightSourceLabels = cms.vstring(["externalLHEProducer", "source"])
+)
 
 lheWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
