@@ -47,12 +47,15 @@ Implementation:
 
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEXMLStringProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
+#include "GeneratorInterface/Core/interface/LHEWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
@@ -63,7 +66,8 @@ Implementation:
 // class declaration
 //
 
-class ExternalLHEProducer : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer> {
+class ExternalLHEProducer
+    : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
   ~ExternalLHEProducer() override;
@@ -74,10 +78,12 @@ private:
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
   void endRunProduce(edm::Run&, edm::EventSetup const&) override;
+  void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
   void preallocThreads(unsigned int) override;
 
   int closeDescriptors(int preserve);
   void executeScript();
+  int findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);
   std::unique_ptr<std::string> readOutput();
 
   void nextEvent();
@@ -96,6 +102,7 @@ private:
   std::map<unsigned, std::pair<unsigned, unsigned>> nPartonMapping_{};
 
   std::unique_ptr<lhef::LHEReader> reader_;
+  gen::LHEWeightHelper weightHelper_;
   std::shared_ptr<lhef::LHERunInfo> runInfoLast;
   std::shared_ptr<lhef::LHERunInfo> runInfo;
   std::shared_ptr<lhef::LHEEvent> partonLevel;
@@ -151,8 +158,10 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
   produces<LHEXMLStringProduct, edm::Transition::BeginRun>("LHEScriptOutput");
 
   produces<LHEEventProduct>();
+  produces<GenWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
 ExternalLHEProducer::~ExternalLHEProducer() {}
@@ -182,6 +191,11 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   std::for_each(partonLevel->weights().begin(),
                 partonLevel->weights().end(),
                 boost::bind(&LHEEventProduct::addWeight, product.get(), _1));
+
+  // Should also zero out the weights in the GenInfoProduct
+  auto weightProduct = weightHelper_.weightProduct(partonLevel->weights(), partonLevel->originalXWGTUP());
+  iEvent.put(std::move(weightProduct));
+
   product->setScales(partonLevel->scales());
   if (nPartonMapping_.empty()) {
     product->setNpLO(partonLevel->npLO());
@@ -248,7 +262,6 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 // ------------ method called when starting to processes a run  ------------
 void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es) {
   // pass the number of events as previous to last argument
-
   std::ostringstream eventStream;
   eventStream << nEvents_;
   // args_.push_back(eventStream.str());
@@ -266,10 +279,8 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
   }
   std::ostringstream randomStream;
   randomStream << rng->mySeed();
-  // args_.push_back(randomStream.str());
   args_.insert(args_.begin() + 2, randomStream.str());
 
-  // args_.emplace_back(std::to_string(nThreads_));
   args_.insert(args_.begin() + 3, std::to_string(nThreads_));
 
   for (unsigned int iArg = 0; iArg < args_.size(); iArg++) {
@@ -322,6 +333,30 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
 
     runInfo.reset();
   }
+
+  nextEvent();
+  if (runInfoLast) {
+    runInfo = runInfoLast;
+
+    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+    std::for_each(runInfo->getHeaders().begin(),
+                  runInfo->getHeaders().end(),
+                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
+    std::for_each(runInfo->getComments().begin(),
+                  runInfo->getComments().end(),
+                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
+
+    // keep a copy around in case of merging
+    runInfoProducts.push_back(new LHERunInfoProduct(*product));
+    wasMerged = false;
+
+    run.put(std::move(product));
+
+    weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
+    weightHelper_.parseWeights();
+
+    runInfo.reset();
+  }
 }
 
 // ------------ method called when ending the processing of a run  ------------
@@ -345,6 +380,14 @@ void ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es
     throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_
                                               << " (errno=" << errno << ", " << strerror(errno) << ").";
   }
+}
+
+void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
+  auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
+  for (auto& weightGroup : weightHelper_.weightGroups()) {
+    weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
+  }
+  lumi.put(std::move(weightInfoProduct));
 }
 
 // ------------ Close all the open file descriptors ------------

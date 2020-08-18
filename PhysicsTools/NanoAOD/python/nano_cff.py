@@ -16,6 +16,7 @@ from PhysicsTools.NanoAOD.met_cff import *
 from PhysicsTools.NanoAOD.triggerObjects_cff import *
 from PhysicsTools.NanoAOD.isotracks_cff import *
 from PhysicsTools.NanoAOD.NanoAODEDMEventContent_cff import *
+from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 
 from Configuration.Eras.Modifier_run2_miniAOD_80XLegacy_cff import run2_miniAOD_80XLegacy
 from Configuration.Eras.Modifier_run2_nanoAOD_94X2016_cff import run2_nanoAOD_94X2016
@@ -114,7 +115,8 @@ genWeightsTable = cms.EDProducer("GenWeightsTableProducer",
 lheInfoTable = cms.EDProducer("LHETablesProducer",
     lheInfo = cms.VInputTag(cms.InputTag("externalLHEProducer"), cms.InputTag("source")),
     precision = cms.int32(14),
-    storeLHEParticles = cms.bool(True) 
+    storeLHEParticles = cms.bool(True),
+    storeAllLHEInfo = cms.bool(False),  
 )
 
 l1bits=cms.EDProducer("L1TriggerResultsConverter", src=cms.InputTag("gtStage2Digis"), legacyL1=cms.bool(False),
