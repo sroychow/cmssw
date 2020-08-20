@@ -52,6 +52,7 @@ namespace gen {
     bool isPartonShowerWeightGroup(const ParsedWeight& weight);
     bool isOrphanPdfWeightGroup(ParsedWeight& weight);
     void updateScaleInfo(const ParsedWeight& weight, int index);
+    void updateMEParamInfo(const ParsedWeight& weight, int index);
     void updatePdfInfo(const ParsedWeight& weight, int index);
     void cleanupOrphanCentralWeight();
 
