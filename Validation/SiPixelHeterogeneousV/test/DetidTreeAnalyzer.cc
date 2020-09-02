@@ -121,7 +121,7 @@ void DetidTreeAnalyzer::analyze(const edm::Event& iEvent, edm::EventSetup const&
   for (cit = clusterColl->begin(); cit != clusterColl->end(); ++cit) {
     auto detId_raw = cit->id();
     if(detVec_->find(detId_raw) == detVec_->end()) {
-      std::cout << "Not found in cluster detsetV:" << detId_raw << std::endl;
+      //std::cout << "Not found in cluster detsetV:" << detId_raw << std::endl;
       continue;
     }
 
@@ -150,7 +150,7 @@ void DetidTreeAnalyzer::analyze(const edm::Event& iEvent, edm::EventSetup const&
   for (SiPixelRecHitCollection::const_iterator it = recHitColl->begin(); it != recHitColl->end(); ++it) {
     auto detId_raw = it->detId();
     if(detVec_->find(detId_raw) == detVec_->end()) {
-      std::cout << "Not found in recHit detsetV:" << detId_raw << std::endl;
+      //std::cout << "Not found in recHit detsetV:" << detId_raw << std::endl;
       continue;
     }
     detVec_->at(detId_raw).nrechit = it->size();
