@@ -1,0 +1,27 @@
+import FWCore.ParameterSet.Config as cms
+
+from DQMServices.Core.DQMEDAnalyzer import DQMEDAnalyzer
+rechitValid = DQMEDAnalyzer('Phase2TrackerValidateRecHit',
+    Verbosity = cms.bool(False),
+    TopFolderName = cms.string("Ph2TkRecHitV"),
+    rechits = cms.InputTag("siPhase2RecHits"),
+    clusters = cms.InputTag("siPhase2Clusters"),
+    OuterTrackerDigiSource = cms.InputTag("mix", "Tracker"),
+    OuterTrackerDigiSimLinkSource = cms.InputTag("simSiPixelDigis", "Tracker"),
+    InnerPixelDigiSource   = cms.InputTag("simSiPixelDigis","Pixel"),                          
+    InnerPixelDigiSimLinkSource = cms.InputTag("simSiPixelDigis", "Pixel"), 
+    PSimHitSourceBarrel  = cms.VInputTag('g4SimHits:TrackerHitsPixelBarrelLowTof',
+                                   'g4SimHits:TrackerHitsPixelBarrelHighTof',
+                                   'g4SimHits:TrackerHitsTIBLowTof',
+                                   'g4SimHits:TrackerHitsTIBHighTof',
+                                   'g4SimHits:TrackerHitsTIDLowTof',
+                                   'g4SimHits:TrackerHitsTIDHighTof',
+                                   'g4SimHits:TrackerHitsTOBLowTof',
+                                   'g4SimHits:TrackerHitsTOBHighTof'),
+    PSimHitSourceEndcap  = cms.VInputTag('g4SimHits:TrackerHitsPixelEndcapLowTof',
+                                   'g4SimHits:TrackerHitsPixelEndcapHighTof',
+                                   'g4SimHits:TrackerHitsTECLowTof',
+                                   'g4SimHits:TrackerHitsTECHighTof'),
+    SimTrackSource = cms.InputTag("g4SimHits"),
+    SimVertexSource = cms.InputTag("g4SimHits"),
+) 
