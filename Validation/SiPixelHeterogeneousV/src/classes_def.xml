@@ -1,0 +1,5 @@
+<lcgdict>
+  <class name="DetInfo"/>
+  <class name="std::vector<DetInfo>"/>
+  <class name="std::map<unsigned int, DetInfo>"/>
+</lcgdict>
