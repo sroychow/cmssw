@@ -16,22 +16,10 @@
 #include<utility>
 
 struct DetHisto {
-  TH2D* hclscharge;
-  TH2D* hclsSizex;
-  TH2D* hclsSizey; 
-  TH2D* hncls;
-
   TH2D* hdigiadc;
   TH2D* hdigirow;
   TH2D* hdigicol;
   TH2D* hndigis;
-
-  TH2D* hnrechits;
-  TH1D* hrechitxRes;
-  TH1D* hrechityRes;
-  TH1D* hrechitxerrRes;
-  TH1D* hrechityerrRes;
-
   //not matched
   
 
@@ -51,22 +39,11 @@ struct DetHisto {
   void bookHistos(unsigned int rawid) {
     std::cout << "Booking histos for:" << rawid << std::endl;
     TString tag = TString(std::to_string(rawid));
-    //clusters
-    hclscharge = new TH2D("compcharge" + tag, "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3);      
-    hclsSizex = new TH2D("compclswx" + tag, "Cluster size X;gpu;cpu", 30, 0, 30, 30, 0, 30);
-    hclsSizey = new TH2D("compclswy" + tag, "Cluster size Y;gpu;cpu", 30, 0, 30, 30, 0, 30);
-    hncls = new TH2D("compnclusters" + tag, "#clusters;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
     //digis
     hdigiadc = new TH2D("compadc" + tag, "Digi adc;gpu;cpu", 300, 0, 300, 300, 0, 300); 
     hdigirow = new TH2D("comprow" + tag, "Digi row;gpu;cpu", 200, 0, 200, 200, 0, 200);
     hdigicol = new TH2D("compcolumn" + tag, "Digi column;gpu;cpu", 300, 0, 300, 300, 0, 300);
     hndigis = new TH2D("compndigis" + tag, "#Digis;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
-    //rechits
-    hnrechits = new TH2D("compnrechits" + tag, "#RecHits;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
-    hrechitxRes = new TH1D("comprechitXRes" + tag, "RecHit local x diff;x_{gpu} - x_{cpu};", 1000, -0.0001, 0.0001);
-    hrechityRes = new TH1D("comprechitYRes" + tag, "RecHit local y diff;y_{gpu} - y_{cpu};", 1000, -0.0001, 0.0001);
-    hrechitxerrRes = new TH1D("comprechitXerrRes" + tag, "RecHit local x error diff;xerr_{gpu} - xerr_{cpu};", 1000, -0.0001, 0.0001);
-    hrechityerrRes = new TH1D("comprechitYerrRes" + tag, "RecHit local y error diff;yerr_{gpu} - yerr_{cpu};", 1000, -0.0001, 0.0001);
   }
 
 };
@@ -110,16 +87,13 @@ public:
   }
   
   void bookGlobalHistos() {
-    //clusters
-    hclscharge = new TH2D("compcharge", "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3);      
-    hclsSizex = new TH2D("compclswx", "Cluster size X;gpu;cpu", 30, 0, 30, 30, 0, 30);
-    hclsSizey = new TH2D("compclswy", "Cluster size Y;gpu;cpu", 30, 0, 30, 30, 0, 30);
-    hncls = new TH2D("compnclusters", "#clusters;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
     //digis
     hdigiadc = new TH2D("compadc", "Digi adc;gpu;cpu", 300, 0, 300, 300, 0, 300); 
     hdigirow = new TH2D("comprow", "Digi row;gpu;cpu", 200, 0, 200, 200, 0, 200);
     hdigicol = new TH2D("compcolumn", "Digi column;gpu;cpu", 300, 0, 300, 300, 0, 300);
     hndigis = new TH2D("compndigis", "#Digis;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
+    hdigiADC_gpu = new TH2D("compdigiADC_gpu", "Digi ADC GPU;row;col", 200, 0, 200, 300, 0, 300);
+    hdigiADC_cpu = new TH2D("compdigiADC_cpu", "Digi ADC Legacy;row;col", 200, 0, 200, 300, 0, 300);
     //Digis from GPU wf whcih are unmatched
     hdigiadc_gUM = new TH1D("gpuadcUM", "Unmateched GPU Digi adc;;", 300, 0, 300); 
     hdigirow_gUM = new TH1D("gpuprowUM", "Unmatched GPU Digi row;", 200, 0, 200);
@@ -129,66 +103,21 @@ public:
     hdigirow_cUM = new TH1D("cpuprowUM", "Unmatched Legacy Digi row;", 200, 0, 200);
     hdigicol_cUM = new TH1D("cpucolumnUM", "Unmateched Legacy Digi column;", 300, 0, 300);
 
-    //rechits
-    hnrechits = new TH2D("compnrechits", "#RecHits;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
-    hrechitxRes = new TH1D("comprechitXres", "RecHit local x diff;x_{gpu} - x_{cpu};", 1000, -0.0001, 0.0001);
-    hrechityRes = new TH1D("comprechitYRes", "RecHit local y diff;y_{gpu} - y_{cpu}", 1000, -0.0001, 0.0001);
-    hrechitxerrRes = new TH1D("comprechitXerrRes", "RecHit local x error diff;xerr_{gpu} - xerr_{cpu};", 1000, -0.0001, 0.0001);
-    hrechityerrRes = new TH1D("comprechitYerrRes", "RecHit local y error diff;yerr_{gpu} - yerr_{cpu};", 1000, -0.0001, 0.0001);
   }
    
   void fillDetHistos(DetInfo& gpuinfo, DetInfo& cpuinfo, unsigned int rawid, unsigned int jentry) {
     //Fill number of objects  histos
-    hncls->Fill(gpuinfo.ncluster, cpuinfo.ncluster);
     hndigis->Fill(gpuinfo.ndigi, cpuinfo.ndigi);
-    hnrechits->Fill(gpuinfo.nrechit, cpuinfo.nrechit);
     if(fillHistosFordet_) { 
-      histomap_[rawid].hnrechits->Fill(gpuinfo.nrechit, cpuinfo.nrechit);
       histomap_[rawid].hndigis->Fill(gpuinfo.ndigi, cpuinfo.ndigi);
-      histomap_[rawid].hncls->Fill(gpuinfo.ncluster, cpuinfo.ncluster);
     }
-    for(unsigned int gi = 0; gi < gpuinfo.ncluster; gi++) {
-      auto g_charge = gpuinfo.cluster_charge[gi];
-      auto g_sizeX = gpuinfo.cluster_sizeX[gi];
-      auto g_sizeY = gpuinfo.cluster_sizeY[gi];
-      auto g_x = gpuinfo.cluster_x[gi];
-      auto g_y = gpuinfo.cluster_y[gi];
-      auto g_minPixelRow = gpuinfo.cluster_minPixelRow[gi];
-      auto g_maxPixelRow = gpuinfo.cluster_maxPixelRow[gi];
-      auto g_minPixelCol = gpuinfo.cluster_minPixelCol[gi];
-      auto g_maxPixelCol = gpuinfo.cluster_maxPixelCol[gi];
-      bool matched = false;
-      for(unsigned int ci = 0; ci < cpuinfo.ncluster; ci++) {
-        auto c_charge = cpuinfo.cluster_charge[ci];
- 	auto c_sizeX = cpuinfo.cluster_sizeX[ci];
- 	auto c_sizeY = cpuinfo.cluster_sizeY[ci];
- 	auto c_x = cpuinfo.cluster_x[ci];
- 	auto c_y = cpuinfo.cluster_y[ci];
- 	auto c_minPixelRow = cpuinfo.cluster_minPixelRow[ci];
- 	auto c_maxPixelRow = cpuinfo.cluster_maxPixelRow[ci];
- 	auto c_minPixelCol = cpuinfo.cluster_minPixelCol[ci];
- 	auto c_maxPixelCol = cpuinfo.cluster_maxPixelCol[ci];
-	//define some matching condition
-        if(fillHistosFordet_) {
-	  histomap_[rawid].hclscharge->Fill(g_charge, c_charge);
-	  histomap_[rawid].hclsSizex->Fill(g_sizeX, c_sizeX);
-          histomap_[rawid].hclsSizey->Fill(g_sizeY, c_sizeY);
-        }
-	hclscharge->Fill(g_charge, c_charge);
-        hclsSizex->Fill(g_sizeX, c_sizeX);
-        hclsSizey->Fill(g_sizeX, c_sizeY);
-
-      }
-    }
-    //DIGI comparison
-
     
     std::vector<bool> isCPUdigimathed(cpuinfo.ndigi, false);
-
     for(unsigned int gi = 0; gi < gpuinfo.ndigi; gi++) {
           auto g_row = gpuinfo.digi_row[gi];
           auto g_col = gpuinfo.digi_col[gi];
           auto g_adc = gpuinfo.digi_adc[gi];
+	  hdigiADC_gpu->Fill(g_row,g_col,g_adc);
 	  bool matched = false;
           for(unsigned int ci = 0; ci < cpuinfo.ndigi; ci++) {
             auto c_row = cpuinfo.digi_row[ci];
@@ -198,6 +127,7 @@ public:
 	      hdigiadc->Fill(g_adc, c_adc);
 	      hdigicol->Fill(g_col, c_col);
 	      hdigirow->Fill(g_row, c_row);
+
               if(fillHistosFordet_) {
 	        histomap_[rawid].hdigiadc->Fill(g_adc, c_adc);
 	        histomap_[rawid].hdigirow->Fill(g_row, c_row);
@@ -214,38 +144,34 @@ public:
 	    hdigicol_gUM->Fill(g_col);
 	  }
     }//end loop over gpu digis
+
+    for(unsigned int ci = 0; ci < cpuinfo.ndigi; ci++) {
+            auto c_row = cpuinfo.digi_row[ci];
+            auto c_col = cpuinfo.digi_col[ci];
+            auto c_adc = cpuinfo.digi_adc[ci];
+      hdigiADC_cpu->Fill(c_row, c_col, c_adc);  
+    }
+
+    bool eventhasUM = false;
     //Fill histos for unmatched legacy digis
     for(unsigned int ci = 0; ci <  isCPUdigimathed.size(); ci ++) {
       if(isCPUdigimathed[ci])  continue;
+      eventhasUM = true;
       hdigiadc_cUM->Fill(cpuinfo.digi_adc[ci]);
       hdigirow_cUM->Fill(cpuinfo.digi_row[ci]);
       hdigicol_cUM->Fill(cpuinfo.digi_col[ci]);
     }
-    
-    //if(jentry==724) std::cout << "#nrechits gpu:" << gpuinfo.nrechit << "\t gpu=" << gpuinfo.rechit_x.size() << std::endl;
-    for(unsigned int gi = 0; gi < gpuinfo.rechit_x.size(); gi++) {
-      double g_x = gpuinfo.rechit_x[gi];
-      double g_y = gpuinfo.rechit_y[gi];
-      double g_xerr = gpuinfo.rechit_xerror[gi];
-      double g_yerr = gpuinfo.rechit_yerror[gi];
-      for(unsigned int ci = 0; ci <  cpuinfo.rechit_x.size(); ci++) {
-        double c_x = cpuinfo.rechit_x[ci];
-        double c_y = cpuinfo.rechit_y[ci];
-        double c_xerr = cpuinfo.rechit_xerror[ci];
-        double c_yerr = cpuinfo.rechit_yerror[ci];
-	hrechitxRes->Fill(g_x - c_x);
-	hrechityRes->Fill(g_y - c_y);
-        hrechitxerrRes->Fill(g_xerr - c_xerr);
-        hrechityerrRes->Fill(g_yerr - c_yerr);
-        if(fillHistosFordet_) {
- 	  histomap_[rawid].hrechitxRes->Fill(g_x - c_x);
-	  histomap_[rawid].hrechityRes->Fill(g_y - c_y);
-          histomap_[rawid].hrechitxerrRes->Fill(g_xerr - c_xerr);
-          histomap_[rawid].hrechityerrRes->Fill(g_yerr - c_yerr);
-        }
-      }
-    }
-    
+    /*
+    if(eventhasUM) {
+     // std::cout << "Event has unmatched legacy clusters\nLegacy DIGI dump\n";
+     // std::cout << "ROW:COL:ADC:ISMATCHED\n";
+      for(unsigned int ci = 0; ci <  isCPUdigimathed.size(); ci ++) 
+      //  std::cout << cpuinfo.digi_row[ci] << ":" << cpuinfo.digi_col[ci] << ":" << cpuinfo.digi_adc[ci] << ":" << isCPUdigimathed[ci] << std::endl;
+      //std::cout << "GPU DIGI dump\nROW:COL:ADC\n";      
+      for(unsigned int gi = 0; gi < gpuinfo.ndigi; gi++) 
+        //std::cout << gpuinfo.digi_row[gi] << ":" << gpuinfo.digi_col[gi] << ":" << gpuinfo.digi_adc[gi] << std::endl;        
+        //std::cout << "DUMP END" << std::endl;
+    }*/
   }
 
   void Loop() {
@@ -296,13 +222,7 @@ public:
 
 
   void writeHistos() {
-    TFile* fout = TFile::Open("comparison.root", "recreate");
-    fout->mkdir("cluster");
-    fout->cd("cluster");
-    hclscharge->Write();
-    hclsSizex->Write();
-    hclsSizey->Write();
-    hncls->Write();
+    TFile* fout = TFile::Open("compDigi.root", "recreate");
     fout->mkdir("digi");
     fout->cd("digi");
     hdigiadc->Write();
@@ -315,35 +235,20 @@ public:
     hdigiadc_cUM->Write();
     hdigirow_cUM->Write();
     hdigicol_cUM->Write();
+    hdigiADC_gpu->Write(); 
+    hdigiADC_cpu->Write(); 
 
-    fout->mkdir("rechit");
-    fout->cd("rechit");
-    hnrechits->Write();
-    hrechitxRes->Write();
-    hrechityRes->Write();
-    hrechitxerrRes->Write();
-    hrechityerrRes->Write();
     fout->cd();
     if(fillHistosFordet_) {
     for(auto& hd : histomap_) {
       TString fn(hd.second.folderName.c_str());
       fout->mkdir(fn);
       fout->cd(fn);
-      hd.second.hclscharge->Write();
-      hd.second.hclsSizex->Write();
-      hd.second.hclsSizey->Write();
-      hd.second.hncls->Write();
       //digis
       hd.second.hdigiadc->Write();
       hd.second.hdigirow->Write();
       hd.second.hdigicol->Write();
       hd.second.hndigis->Write();
-      //rechits->Write();
-      hd.second.hnrechits->Write();
-      hd.second.hrechitxRes->Write();
-      hd.second.hrechityRes->Write();
-      hd.second.hrechitxerrRes->Write();
-      hd.second.hrechityerrRes->Write();
       fout->cd();
     }
     }
@@ -359,11 +264,6 @@ private:
   
   bool fillHistosFordet_;
 
-  TH2D* hclscharge;
-  TH2D* hclsSizex;
-  TH2D* hclsSizey; 
-  TH2D* hncls;
-
   TH2D* hdigiadc;
   TH2D* hdigirow;
   TH2D* hdigicol;
@@ -374,20 +274,16 @@ private:
   TH1D* hdigiadc_cUM;
   TH1D* hdigirow_cUM;
   TH1D* hdigicol_cUM;
-
-  TH2D* hnrechits;
-  TH1D* hrechitxRes;
-  TH1D* hrechityRes;
-  TH1D* hrechitxerrRes;
-  TH1D* hrechityerrRes;
+  TH2D* hdigiADC_gpu; 
+  TH2D* hdigiADC_cpu; 
 
   std::map<unsigned int, DetHisto> histomap_;
 };
 
 int main() {
   DetAnalyzer dt(0);
-  dt.getTree("gpu_input.root", 1);
-  dt.getTree("legacy_input.root", 0);
+  dt.getTree("input/gpuNew_input.root", 1);
+  dt.getTree("input/legacyNew_input.root", 0);
   dt.Loop();
   dt.writeHistos();
 }

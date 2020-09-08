@@ -29,6 +29,7 @@ struct DetInfo {
   std::vector<float> rechit_y;
   std::vector<float> rechit_xerror;
   std::vector<float> rechit_yerror;
+  std::vector<int>   rechit_clusteridx;
 
   bool isbarrel;
   int layer;//layer or disk
