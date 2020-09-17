@@ -20,3 +20,32 @@ siPixelPhase1OfflineDQM_sourceV = cms.Sequence(SiPixelPhase1DigisAnalyzerV
                                             + SiPixelPhase1TrackingParticleAnalyzerV
                                             )
 
+###PixelTracking only configurations for gpu wf###
+#digi
+pixelOnlyDigisAnalyzerV = SiPixelPhase1DigisAnalyzerV.clone()
+#cluster
+pixelOnlyTrackClustersAnalyzerV = SiPixelPhase1TrackClustersAnalyzerV.clone()
+pixelOnlyTrackClustersAnalyzerV.clusters = cms.InputTag('siPixelClustersPreSplitting')
+pixelOnlyTrackClustersAnalyzerV.tracks = cms.InputTag('pixelTracks')
+
+#rechit analyzer
+pixelOnlyRecHitsAnalyzerV = SiPixelPhase1RecHitsAnalyzerV.clone()
+pixelOnlyRecHitsAnalyzerV.src = cms.InputTag("siPixelRecHitsPreSplitting")
+pixelOnlyRecHitsAnalyzerV.pixelSimLinkSrc = cms.InputTag("simSiPixelDigis")
+pixelOnlyRecHitsAnalyzerV.ROUList = cms.vstring('TrackerHitsPixelBarrelLowTof',
+                                                'TrackerHitsPixelBarrelHighTof',
+                                                'TrackerHitsPixelEndcapLowTof',
+                                                'TrackerHitsPixelEndcapHighTof')
+#Hits
+pixelOnlyHitsAnalyzerV = SiPixelPhase1HitsAnalyzerV.clone()
+pixelOnlyHitsAnalyzerV.tracksTag = cms.InputTag("pixelTracks")
+
+#TP
+pixelOnlyTrackingParticleAnalyzerV = SiPixelPhase1TrackingParticleAnalyzerV.clone()
+
+siPixelPhase1ValidationPixelTrackingOnly_sourceV = cms.Sequence(pixelOnlyDigisAnalyzerV 
+                                                                + pixelOnlyTrackClustersAnalyzerV 
+                                                                + pixelOnlyHitsAnalyzerV
+                                                                + pixelOnlyRecHitsAnalyzerV
+                                                                + pixelOnlyTrackingParticleAnalyzerV
+)
