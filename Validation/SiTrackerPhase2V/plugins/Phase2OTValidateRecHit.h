@@ -1,5 +1,5 @@
-#ifndef Phase2TrackerValidateRecHit_h
-#define Phase2TrackerValidateRecHit_h
+#ifndef Phase2OTValidateRecHit_h
+#define Phase2OTValidateRecHit_h
 #include <iostream>
 #include <map>
 #include <vector>
@@ -44,10 +44,10 @@ class PixelDigi;
 class Phase2TrackerDigi;
 class TrackerGeometry;
 
-class Phase2TrackerValidateRecHit : public DQMEDAnalyzer {
+class Phase2OTValidateRecHit : public DQMEDAnalyzer {
 public:
-  explicit Phase2TrackerValidateRecHit(const edm::ParameterSet&);
-  ~Phase2TrackerValidateRecHit() override;
+  explicit Phase2OTValidateRecHit(const edm::ParameterSet&);
+  ~Phase2OTValidateRecHit() override;
   void bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& iRun, edm::EventSetup const& iSetup) override;
   void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) override;
   
@@ -56,14 +56,16 @@ public:
 		    const TrackerTopology* tTopo,
 		    const TrackerGeometry* tkGeom,
 		    const TrackerHitAssociator& associateRecHit,
-		    const std::vector<edm::Handle<edm::PSimHitContainer>>& simHits);
+		    const std::vector<edm::Handle<edm::PSimHitContainer>>& simHits,
+		    const std::map<unsigned int, SimTrack>& selectedSimTrackMap);
 
       
   void fillOTHistos(const edm::Event& iEvent, 
 		    const TrackerTopology* tTopo, 
 		    const TrackerGeometry* tkGeom, 
 		    const TrackerHitAssociator& associateRecHit,
-		    const std::vector<edm::Handle<edm::PSimHitContainer>>& simHits);
+		    const std::vector<edm::Handle<edm::PSimHitContainer>>& simHits,
+		    const std::map<unsigned int, SimTrack>& selectedSimTrackMap);
 
 
   void bookLayerHistos(DQMStore::IBooker& ibooker, unsigned int det_id, const TrackerTopology* tTopo, std::string& subdir);
@@ -74,14 +76,16 @@ public:
   bool pixelFlag_;
   TrackerHitAssociator::Config trackerHitAssociatorConfig_;
   std::string geomType_;
-  edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHitsOT_;
-  edm::EDGetTokenT<SiPixelRecHitCollection> tokenRecHitsIT_;
+  const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHitsOT_;
+  const edm::EDGetTokenT<SiPixelRecHitCollection> tokenRecHitsIT_;
   //edm::EDGetTokenT<Phase2TrackerCluster1DCollectionNew> tokenClusters_;
   //const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > otDigiSimLinkToken_;
   //const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > itPixelDigiSimLinkToken_;
-  //const edm::EDGetTokenT<edm::SimTrackContainer> simTrackToken_;
+  const edm::EDGetTokenT<edm::SimTrackContainer> simTracksToken_;
+  const double simtrackminpt_;
   //const edm::EDGetTokenT<edm::SimVertexContainer> simVertexToken_;
   std::vector<edm::EDGetTokenT<edm::PSimHitContainer> > simHitTokens_;
+
 
   MonitorElement* numberRecHits_;
   MonitorElement* globalXY_Pixel_;
@@ -122,6 +126,13 @@ public:
     MonitorElement* pullX_eta_S = nullptr;
     MonitorElement* pullY_eta_P = nullptr;
     MonitorElement* pullY_eta_S = nullptr;
+
+
+    //For rechits matched to simhits from highPT tracks
+    MonitorElement* nRecHitshighPt_P = nullptr;
+    MonitorElement* nRecHitshighPt_S = nullptr; 
+
+
     /*
       MonitorElement* pullX_primary;
       MonitorElement* pullY_primary;
