@@ -61,16 +61,7 @@ namespace genCounter {
       for(auto& wmap : weightSumMap_) {
         mergeSumVectors(wmap.second, other.weightSumMap_.at(wmap.first));
       }
-      /*
-	std::cout << "From merge function\n";
-      for(auto& wmap : weightSumMap_) {
-	std::cout << "Wname:" << wmap.first 
-                  << "\t WVec Size:" << wmap.second.size()
-                  << "\t First entry:" << wmap.second.at(0)
-		  << std::endl;;
-      }
-      std::cout << "End : From merge function\n";
-      */
+      
     }
 
     //private:
