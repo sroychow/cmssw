@@ -2,9 +2,7 @@
 // Class:      Phase2OTValidateRecHit
 //
 /**\class Phase2OTValidateRecHit Phase2OTValidateRecHit.cc 
-
  Description:  Plugin for Phase2 RecHit validation
-
 */
 //
 // Author: Shubhi Parolia, Suvankar Roy Chowdhury
@@ -12,7 +10,8 @@
 //
 // system include files
 #include <memory>
-#include "Validation/SiTrackerPhase2V/plugins/Phase2OTValidateRecHit.h"
+#include "Validation/SiTrackerPhase2V/interface/Phase2OTValidateRecHit.h"
+#include "Validation/SiTrackerPhase2V/interface/Phase2ValidationUtil.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESWatcher.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -35,7 +34,6 @@
 #include "SimTracker/SiPhase2Digitizer/plugins/Phase2TrackerDigitizerFwd.h"
 // DQM Histograming
 #include "DQMServices/Core/interface/MonitorElement.h"
-
 //
 // constructors
 //
@@ -94,12 +92,8 @@ void Phase2OTValidateRecHit::analyze(const edm::Event& iEvent, const edm::EventS
       selectedSimTrackMap.insert(std::make_pair(simTrackIt->trackId(), *simTrackIt));
     }
   }
-  
   TrackerHitAssociator associateRecHit(iEvent, trackerHitAssociatorConfig_);
-
   fillOTHistos(iEvent, tTopo, tkGeom, associateRecHit, simHits, selectedSimTrackMap);
-
-
 }
 
 void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent, 
@@ -112,9 +106,10 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
   edm::Handle<Phase2TrackerRecHit1DCollectionNew> rechits;
   iEvent.getByToken(tokenRecHitsOT_, rechits);
   if(!rechits.isValid())  return;
-
   std::map<std::string, unsigned int>  nrechitLayerMapP;
   std::map<std::string, unsigned int>  nrechitLayerMapS;
+  std::map<std::string, unsigned int>  nrechitLayerMapP_primary;
+  std::map<std::string, unsigned int>  nrechitLayerMapS_primary;
   unsigned long int nTotrechitsinevt = 0;
   // Loop over modules
   Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter; 
@@ -131,13 +126,22 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
     std::string key = getHistoId(detId.rawId(), tTopo);
     nTotrechitsinevt += DSViter->size();
     if (mType == TrackerGeometry::ModuleType::Ph2PSP) {
-      if(nrechitLayerMapP.find(key) == nrechitLayerMapP.end())
-	nrechitLayerMapP.insert(std::make_pair(key, DSViter->size()));
-      else nrechitLayerMapP[key] += DSViter->size();
+      if(nrechitLayerMapP.find(key) == nrechitLayerMapP.end()) {
+	nrechitLayerMapP.insert(std::make_pair(key, DSViter->size())); 
+	nrechitLayerMapP_primary.insert(std::make_pair(key, DSViter->size())); 
+      } else {
+	nrechitLayerMapP[key] += DSViter->size();
+	nrechitLayerMapP_primary[key] += DSViter->size();
+      }
     } else if (mType == TrackerGeometry::ModuleType::Ph2PSS || mType == TrackerGeometry::ModuleType::Ph2SS){
-      if(nrechitLayerMapS.find(key) == nrechitLayerMapS.end())
+      if(nrechitLayerMapS.find(key) == nrechitLayerMapS.end()) {
 	nrechitLayerMapS.insert(std::make_pair(key, DSViter->size()));
-      else nrechitLayerMapS[key] += DSViter->size();
+	nrechitLayerMapS_primary.insert(std::make_pair(key, DSViter->size()));
+      }
+      else {
+	nrechitLayerMapS[key] += DSViter->size();
+	nrechitLayerMapS_primary[key] += DSViter->size();
+      }
     }
     edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt;
     //loop over rechits for a single detId
@@ -192,6 +196,10 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
 	}//end loop over PSimhitcontainers
       }//end loop over simHits
       if(!simhitClosest)   continue;
+      auto simTrackIt(selectedSimTrackMap.find(simhitClosest->trackId()));
+      bool isPrimary = false;
+      //check if simhit is primary
+      if(simTrackIt != selectedSimTrackMap.end()) isPrimary = Phase2TkUtil::isPrimary(simTrackIt->second, simhitClosest);
       Local3DPoint simlp(simhitClosest->localPosition());
       const LocalError& lperr = rechitIt->localPositionError();
       double dx = lp.x() - simlp.x();
@@ -212,6 +220,13 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
 	layerMEs_[key].deltaY_eta_P->Fill(eta,dy);
 	layerMEs_[key].pullX_eta_P->Fill(eta,pullx);
 	layerMEs_[key].pullY_eta_P->Fill(eta,pully);
+	if(isPrimary) {
+	  layerMEs_[key].deltaX_primary_P->Fill(dx);
+	  layerMEs_[key].deltaY_primary_P->Fill(dy);
+	  layerMEs_[key].pullX_primary_P->Fill(pullx);
+	  layerMEs_[key].pullY_primary_P->Fill(pully);
+	} else 
+	  nrechitLayerMapP_primary[key]--;
       } else if (mType == TrackerGeometry::ModuleType::Ph2PSS || mType == TrackerGeometry::ModuleType::Ph2SS) {
 	layerMEs_[key].deltaX_S->Fill(dx);
 	layerMEs_[key].deltaY_S->Fill(dy);
@@ -221,6 +236,13 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
 	layerMEs_[key].deltaY_eta_S->Fill(eta,dy);
 	layerMEs_[key].pullX_eta_S->Fill(eta,pullx);
 	layerMEs_[key].pullY_eta_S->Fill(eta,pully);
+	if(isPrimary) {
+	  layerMEs_[key].deltaX_primary_S->Fill(dx);
+	  layerMEs_[key].deltaY_primary_S->Fill(dy);
+	  layerMEs_[key].pullX_primary_S->Fill(pullx);
+	  layerMEs_[key].pullY_primary_S->Fill(pully);
+	}else 
+	  nrechitLayerMapS_primary[key]--;
       }
     }//end loop over rechits of a detId
   } //End loop over DetSetVector
@@ -230,9 +252,11 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
   //fill nRecHit counter per layer
   for(auto& lme : nrechitLayerMapP) {
     layerMEs_[lme.first].numberRecHits_P->Fill(lme.second);
+    layerMEs_[lme.first].numberRecHitsprimary_P->Fill(nrechitLayerMapP_primary[lme.first]);
   }
   for(auto& lme : nrechitLayerMapS) {
     layerMEs_[lme.first].numberRecHits_S->Fill(lme.second);
+    layerMEs_[lme.first].numberRecHitsprimary_S->Fill(nrechitLayerMapS_primary[lme.first]);
   }
 }
 //
@@ -246,7 +270,6 @@ void Phase2OTValidateRecHit::bookHistograms(DQMStore::IBooker& ibooker,
   //std::stringstream folder_name;
   
   ibooker.cd();
-  //folder_name << top_folder;
   //edm::LogInfo("Phase2OTValidateRecHit") << " Booking Histograms in : " << folder_name.str();
   std::cout << "Booking Histograms in : " << top_folder << std::endl;
   std::string dir = top_folder;
@@ -260,22 +283,22 @@ void Phase2OTValidateRecHit::bookHistograms(DQMStore::IBooker& ibooker,
   
   HistoName.str("");
   HistoName << "Global_Position_XY_PSP";
-  globalXY_PSP_   = ibooker.book2D(HistoName.str(), HistoName.str(), 2500, -1250., 1250., 2500, -1250., 1250.);
+  globalXY_PSP_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1250, -1250., 1250., 1250, -1250., 1250.);
   HistoName.str("");
   HistoName << "Global_Position_RZ_PSP";
-  globalRZ_PSP_   = ibooker.book2D(HistoName.str(), HistoName.str(), 3000, -3000., 3000., 1250., 0., 1250);
+  globalRZ_PSP_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1500, -3000., 3000., 1250., 0., 1250);
   HistoName.str("");
   HistoName << "Global_Position_XY_PSS";
-  globalXY_PSS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 2500, -1250., 1250., 2500, -1250., 1250.);
+  globalXY_PSS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1250, -1250., 1250., 1250, -1250., 1250.);
   HistoName.str("");
   HistoName << "Global_Position_RZ_PSS";
-  globalRZ_PSS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 3000, -3000., 3000., 1250., 0., 1250);
+  globalRZ_PSS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1500, -3000., 3000., 1250., 0., 1250);
   HistoName.str("");
   HistoName << "Global_Position_XY_SS";
-  globalXY_SS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 2500, -1250., 1250., 2500, -1250., 1250.);
+  globalXY_SS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1250, -1250., 1250., 1250, -1250., 1250.);
   HistoName.str("");
   HistoName << "Global_Position_RZ_SS";
-  globalRZ_SS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 3000, -3000., 3000., 1250., 0., 1250);
+  globalRZ_SS_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1500, -3000., 3000., 1250., 0., 1250);
 
   //Now book layer wise histos
 
@@ -335,44 +358,43 @@ void Phase2OTValidateRecHit::bookLayerHistos(DQMStore::IBooker& ibooker,
     bool forP = (layer < 4 || (layer > 6 && (forDisc12UptoRing10 || forDisc345UptoRing7))) ? true : false;
     
     ibooker.cd();
-    std::cout<< "Setting subfolder>>>" << subdir << "\t" << key << std::endl;
-    ibooker.setCurrentFolder(subdir+"/"+key);
-    edm::LogInfo("Phase2OTValidateRecHit") << " Booking Histograms in : " << key;
-    
     RecHitME local_histos;
     std::ostringstream histoName;
-    
+    ibooker.setCurrentFolder(subdir+"/"+key);
+    std::cout<< "Setting subfolder>>>" << subdir << "\t" << key << std::endl;
+    edm::LogInfo("Phase2OTValidateRecHit") << " Booking Histograms in : " << key;
+
     if(forP) {
       histoName.str("");
-      histoName << "Number_RecHits_PSP";
+      histoName << "Number_RecHits_P";
       local_histos.numberRecHits_P = ibooker.book1D(histoName.str(), histoName.str(), 50, 0., 0.);
       
       histoName.str("");
-      histoName << "Cluster_Size_PSP";
+      histoName << "Cluster_Size_P";
       local_histos.clusterSize_P = ibooker.book1D(histoName.str(), histoName.str(), 21, -0.5, 20.5);
       
       histoName.str("");
-      histoName << "Global_Position_XY_PSP"; 
-      local_histos.globalPosXY_P = ibooker.book2D(histoName.str(), histoName.str(), 250, -1250., 1250., 250, -1250., 1250.);
+      histoName << "Global_Position_XY_P"; 
+      local_histos.globalPosXY_P = ibooker.book2D(histoName.str(), histoName.str(), 1250, -1250., 1250., 1250, -1250., 1250.);
 
       histoName.str("");
-      histoName << "Local_Position_XY_PSP" ;
+      histoName << "Local_Position_XY_P" ;
       local_histos.localPosXY_P = ibooker.book2D(histoName.str(), histoName.str(), 500, 0., 0., 500, 0., 0.);
 
       histoName.str("");
-      histoName << "Delta_X_PSP";
+      histoName << "Delta_X_P";
       local_histos.deltaX_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Delta_Y_PSP";
+      histoName << "Delta_Y_P";
       local_histos.deltaY_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
 
       histoName.str("");
-      histoName << "Pull_X_PSP";
+      histoName << "Pull_X_P";
       local_histos.pullX_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
 
       histoName.str("");
-      histoName << "Pull_Y_PSP";
+      histoName << "Pull_Y_P";
       local_histos.pullY_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
       
       histoName.str("");
@@ -391,60 +413,99 @@ void Phase2OTValidateRecHit::bookLayerHistos(DQMStore::IBooker& ibooker,
       histoName << "Pull_Y_vs_Eta_P";
       local_histos.pullY_eta_P = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -3., 3.);
 
+      ibooker.setCurrentFolder(subdir+"/"+key+"/PrimarySimHits");
       //all histos for Primary particles
       histoName.str("");
-      histoName << "Number_RecHits_SimTrackHighPt_PSP";
-      local_histos.nRecHitshighPt_P = ibooker.book1D(histoName.str(), histoName.str(), 50, 0., 0.);
+      histoName << "Number_RecHits_matched_PrimarySimTrack_P";
+      local_histos.numberRecHitsprimary_P = ibooker.book1D(histoName.str(), histoName.str(), 50, 0., 0.);
       
-    }//if block for PSP
+      histoName.str("");
+      histoName << "Delta_X_SimHitPrimary_P";
+      local_histos.deltaX_primary_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
+
+      histoName.str("");
+      histoName << "Delta_Y_SimHitPrimary_P";
+      local_histos.deltaY_primary_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
+
+      histoName.str("");
+      histoName << "Pull_X_SimHitPrimary_P";
+      local_histos.pullX_primary_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
+
+      histoName.str("");
+      histoName << "Pull_Y_SimHitPrimary_P";
+      local_histos.pullY_primary_P = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
+    }//if block for P
     
+    ibooker.setCurrentFolder(subdir+"/"+key);
     histoName.str("");
-    histoName << "Number_RecHits_SS";
+    histoName << "Number_RecHits_S";
     local_histos.numberRecHits_S = ibooker.book1D(histoName.str().c_str(), histoName.str().c_str(), 50, 0., 0.);
     
     histoName.str("");
-    histoName << "Cluster_Size_SS";
+    histoName << "Cluster_Size_S";
     local_histos.clusterSize_S = ibooker.book1D(histoName.str().c_str(), histoName.str().c_str(), 21, -0.5, 20.5);
     
     histoName.str("");
-    histoName << "Global_Position_XY_SS"; 
+    histoName << "Global_Position_XY_S"; 
     local_histos.globalPosXY_S = ibooker.book2D(histoName.str(), histoName.str(), 250, -1250., 1250., 250, -1250., 1250.);
     
     histoName.str("");
-    histoName << "Local_Position_XY_SS" ;
+    histoName << "Local_Position_XY_S" ;
     local_histos.localPosXY_S = ibooker.book2D(histoName.str(), histoName.str(), 500, 0., 0., 500, 0., 0.);
     
     histoName.str("");
-    histoName << "Delta_X_SS";
+    histoName << "Delta_X_S";
     local_histos.deltaX_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
     
     histoName.str("");
-    histoName << "Delta_Y_SS";
+    histoName << "Delta_Y_S";
     local_histos.deltaY_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
     
     histoName.str("");
-    histoName << "Pull_X_SS";
+    histoName << "Pull_X_S";
     local_histos.pullX_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
     
     histoName.str("");
-    histoName << "Pull_Y_SS";
+    histoName << "Pull_Y_S";
     local_histos.pullY_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
     
     histoName.str("");
-    histoName << "Delta_X_vs_Eta_SS";
+    histoName << "Delta_X_vs_Eta_S";
     local_histos.deltaX_eta_S = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
     
     histoName.str("");
-    histoName << "Delta_Y_vs_Eta_SS";
+    histoName << "Delta_Y_vs_Eta_S";
     local_histos.deltaY_eta_S = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -0.02, 0.02);
     
     histoName.str("");
-    histoName << "Pull_X_vs_Eta_SS";
+    histoName << "Pull_X_vs_Eta_S";
     local_histos.pullX_eta_S = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -3., 3.);
+
+    histoName.str("");
+    histoName << "Pull_Y_vs_Eta_S";
+    local_histos.pullY_eta_S = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -3., 3.);      
+
+    //primary
+    ibooker.setCurrentFolder(subdir+"/"+key+"/PrimarySimHits");
+    histoName.str("");
+    histoName << "Number_RecHits_matched_PrimarySimTrack_S";
+    local_histos.numberRecHitsprimary_S = ibooker.book1D(histoName.str(), histoName.str(), 50, 0., 0.);
+
+    histoName.str("");
+    histoName << "Delta_X_SimHitPrimary_S";
+    local_histos.deltaX_primary_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
     
     histoName.str("");
-    histoName << "Pull_Y_vs_Eta_SS";
-    local_histos.pullY_eta_S = ibooker.bookProfile(histoName.str(), histoName.str(), 50, -2.5, 2.5, 100, -3., 3.);      
+    histoName << "Delta_Y_SimHitPrimary_S";
+    local_histos.deltaY_primary_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -0.02, 0.02);
+    
+    histoName.str("");
+    histoName << "Pull_X_SimHitPrimary_S";
+    local_histos.pullX_primary_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
+    
+    histoName.str("");
+    histoName << "Pull_Y_SimHitPrimary_S";
+    local_histos.pullY_primary_S = ibooker.book1D(histoName.str(), histoName.str(), 100, -3., 3.);
     
     layerMEs_.insert(std::make_pair(key, local_histos));
   }
