@@ -40,9 +40,9 @@
 Phase2OTValidateRecHit::Phase2OTValidateRecHit(const edm::ParameterSet& iConfig):
   config_(iConfig),
   trackerHitAssociatorConfig_(iConfig, consumesCollector()),
+  simtrackminpt_(iConfig.getParameter<double>("SimTrackMinPt")),
   tokenRecHitsOT_(consumes<Phase2TrackerRecHit1DCollectionNew>(config_.getParameter<edm::InputTag>("rechitsSrc"))),
-  simTracksToken_(consumes<edm::SimTrackContainer>(iConfig.getParameter<edm::InputTag>("simTracksSrc"))),
-  simtrackminpt_(iConfig.getParameter<double>("SimTrackMinPt"))
+  simTracksToken_(consumes<edm::SimTrackContainer>(iConfig.getParameter<edm::InputTag>("simTracksSrc")))
 {      
   edm::LogInfo("Phase2OTValidateRecHit") << ">>> Construct Phase2OTValidateRecHit ";
   for (const auto& itag :  config_.getParameter<std::vector<edm::InputTag> >("PSimHitSource"))
@@ -123,7 +123,7 @@ void Phase2OTValidateRecHit::fillOTHistos(const edm::Event& iEvent,
       continue;
     // determine the detector we are in
     TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
-    std::string key = getHistoId(detId.rawId(), tTopo);
+    std::string key = Phase2TkUtil::getOTHistoId(detId.rawId(), tTopo);
     nTotrechitsinevt += DSViter->size();
     if (mType == TrackerGeometry::ModuleType::Ph2PSP) {
       if(nrechitLayerMapP.find(key) == nrechitLayerMapP.end()) {
@@ -279,8 +279,7 @@ void Phase2OTValidateRecHit::bookHistograms(DQMStore::IBooker& ibooker,
   //Global histos for OT
   HistoName.str("");
   HistoName << "NumberRecHits";
-  numberRecHits_ = ibooker.book1D(HistoName.str(), HistoName.str(), 50, 0, 2500);
-  
+  numberRecHits_ = ibooker.book1D(HistoName.str(), HistoName.str(), 50, 0., 0.);
   HistoName.str("");
   HistoName << "Global_Position_XY_PSP";
   globalXY_PSP_   = ibooker.book2D(HistoName.str(), HistoName.str(), 1250, -1250., 1250., 1250, -1250., 1250.);
@@ -320,7 +319,7 @@ void Phase2OTValidateRecHit::bookHistograms(DQMStore::IBooker& ibooker,
       unsigned int detId_raw = det_u->geographicalId().rawId();
       std::cout << "Detid:" << detId_raw
 		<<"\tsubdet=" << det_u->subDetector()
-		<< "\t key=" << getHistoId(detId_raw, tTopo)
+		<< "\t key=" << Phase2TkUtil::getOTHistoId(detId_raw, tTopo)
 		<< std::endl;
       bookLayerHistos(ibooker, detId_raw, tTopo, dir);
     }
@@ -341,7 +340,7 @@ void Phase2OTValidateRecHit::bookLayerHistos(DQMStore::IBooker& ibooker,
   layer = tTopo->getOTLayerNumber(det_id);
   if (layer < 0)
     return;
-  std::string key = getHistoId(det_id, tTopo);
+  std::string key = Phase2TkUtil::getOTHistoId(det_id, tTopo);
 
   //std::map<std::string, RecHitME>::iterator pos = layerMEs_.find(key);
   if (layerMEs_.find(key) == layerMEs_.end()) {
@@ -511,31 +510,6 @@ void Phase2OTValidateRecHit::bookLayerHistos(DQMStore::IBooker& ibooker,
   }
 }
   
-
-std::string Phase2OTValidateRecHit::getHistoId(uint32_t det_id, const TrackerTopology* tTopo) {
-  int layer;
-  std::string Disc;
-  std::ostringstream fname1;
-  layer = tTopo->getOTLayerNumber(det_id);
-  
-  if(layer < 0)
-    return "";
-
-  if (layer < 100) {
-    fname1 << "Barrel/";
-    fname1 << "Layer" << layer;
-    fname1 << "";
-  } else {
-    int side = layer / 100;
-    fname1 << "EndCap_Side" << side << "/";
-    int disc = layer - side * 100;
-    Disc = (disc < 3) ? "TEDD_1" : "TEDD_2";
-    fname1 << Disc << "/";
-    int ring = tTopo->tidRing(det_id);
-    fname1 << "Ring" << ring;
-  }
-  return fname1.str();
-}
-  //define this as a plug-in
+//define this as a plug-in
 DEFINE_FWK_MODULE(Phase2OTValidateRecHit);
  

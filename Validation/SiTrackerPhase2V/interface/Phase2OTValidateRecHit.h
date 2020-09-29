@@ -52,14 +52,6 @@ public:
   void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) override;
   
  private:
-  void fillITHistos(const edm::Event& iEvent,
-		    const TrackerTopology* tTopo,
-		    const TrackerGeometry* tkGeom,
-		    const TrackerHitAssociator& associateRecHit,
-		    const std::vector<edm::Handle<edm::PSimHitContainer>>& simHits,
-		    const std::map<unsigned int, SimTrack>& selectedSimTrackMap);
-
-      
   void fillOTHistos(const edm::Event& iEvent, 
 		    const TrackerTopology* tTopo, 
 		    const TrackerGeometry* tkGeom, 
@@ -69,21 +61,15 @@ public:
 
 
   void bookLayerHistos(DQMStore::IBooker& ibooker, unsigned int det_id, const TrackerTopology* tTopo, std::string& subdir);
-  std::vector<unsigned int> getSimTrackId(const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks, const DetId& detId, unsigned int channel);
-  std::string getHistoId(uint32_t det_id, const TrackerTopology* tTopo);
 
   edm::ParameterSet config_;
   bool pixelFlag_;
   TrackerHitAssociator::Config trackerHitAssociatorConfig_;
+  const double simtrackminpt_;
   std::string geomType_;
   const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHitsOT_;
   const edm::EDGetTokenT<SiPixelRecHitCollection> tokenRecHitsIT_;
-  //edm::EDGetTokenT<Phase2TrackerCluster1DCollectionNew> tokenClusters_;
-  //const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > otDigiSimLinkToken_;
-  //const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > itPixelDigiSimLinkToken_;
   const edm::EDGetTokenT<edm::SimTrackContainer> simTracksToken_;
-  const double simtrackminpt_;
-  //const edm::EDGetTokenT<edm::SimVertexContainer> simVertexToken_;
   std::vector<edm::EDGetTokenT<edm::PSimHitContainer> > simHitTokens_;
 
 
@@ -99,18 +85,16 @@ public:
   struct RecHitME {
     // use TH1D instead of TH1F to avoid stauration at 2^31
     // above this increments with +1 don't work for float, need double
-    
-    MonitorElement* numberRecHits_P = nullptr;
-    MonitorElement* numberRecHits_S = nullptr; 
-    MonitorElement* clusterSize_P = nullptr;
-    MonitorElement* clusterSize_S = nullptr;
-    
     MonitorElement* globalPosXY_P = nullptr;
     MonitorElement* globalPosXY_S = nullptr;
     MonitorElement* localPosXY_P = nullptr;
     MonitorElement* localPosXY_S = nullptr;
       
     MonitorElement* deltaX_P = nullptr;
+    MonitorElement* numberRecHits_P = nullptr;
+    MonitorElement* numberRecHits_S = nullptr; 
+    MonitorElement* clusterSize_P = nullptr;
+    MonitorElement* clusterSize_S = nullptr;
     MonitorElement* deltaX_S = nullptr;
     MonitorElement* deltaY_P = nullptr;
     MonitorElement* deltaY_S = nullptr;
@@ -126,12 +110,9 @@ public:
     MonitorElement* pullX_eta_S = nullptr;
     MonitorElement* pullY_eta_P = nullptr;
     MonitorElement* pullY_eta_S = nullptr;
-
     //For rechits matched to simhits from highPT tracks
     MonitorElement* numberRecHitsprimary_P = nullptr;
     MonitorElement* numberRecHitsprimary_S = nullptr; 
-
-    
     MonitorElement* pullX_primary_P;
     MonitorElement* pullX_primary_S;
     MonitorElement* pullY_primary_P;
@@ -140,9 +121,6 @@ public:
     MonitorElement* deltaX_primary_S;
     MonitorElement* deltaY_primary_P;
     MonitorElement* deltaY_primary_S;
-    //MonitorElement* primarySimHits;
-    //MonitorElement* otherSimHits;
-    
   };
   std::map<std::string, RecHitME>  layerMEs_;
 };
