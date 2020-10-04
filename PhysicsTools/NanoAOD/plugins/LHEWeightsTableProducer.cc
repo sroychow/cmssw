@@ -276,22 +276,27 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     label.append(std::to_string(lheWeightTables[weightType].size()));//to append the start index of this set
     label.append("]; ");
     auto& weights = allWeights.at(groupInfo.index);
-    if (weightType == gen::WeightType::kScaleWeights && groupInfo.group->isWellFormed() &&
- 	groupInfo.group->nIdsContained() < 10) {
+    if (weightType == gen::WeightType::kScaleWeights)
+      if (groupInfo.group->isWellFormed()) {
       weights = orderedScaleWeights(weights, dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
       label.append(
  		   "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
  		   " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
  		   " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
+    } else {
+      size_t nstore = std::min<size_t>(gen::ScaleWeightGroupInfo::MIN_SCALE_VARIATIONS, weights.size());
+      weights = std::vector(weights.begin(), weights.begin()+nstore);
+      label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) + " elements of weights vector, unordered");
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights && groupInfo.group->isWellFormed()) {
       weights = getPreferredPSweights(weights, dynamic_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group));
       label.append("PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2");
     } 
-    lheWeightTables[weightType].insert(lheWeightTables[weightType].end(), weights.begin(), weights.end());
-    weightVecsizes[weightType].emplace_back(weights.size());
     //else
     //  label.append(groupInfo.group->description());
-    if(weightlabels[weightType] == "") 
+    lheWeightTables[weightType].insert(lheWeightTables[weightType].end(), weights.begin(), weights.end());
+    weightVecsizes[weightType].emplace_back(weights.size());
+
+    if (weightlabels[weightType].empty())
       weightlabels[weightType].append("[idx in AltSetSizes array] Name [start idx in weight array];\n");
 
     weightlabels[weightType].append(label);

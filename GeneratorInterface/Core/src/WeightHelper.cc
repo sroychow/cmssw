@@ -118,6 +118,12 @@ namespace gen {
         scaleGroup.setLhaid(-2);
       }
     }
+    if (!(scaleGroup.centralIndex() >= 0 && scaleGroup.muR05muF05Index() >= 0 && 
+        scaleGroup.muR1muF05Index() >= 0 && scaleGroup.muR2muF05Index() >= 0 && 
+        scaleGroup.muR05muF1Index() >= 0 && scaleGroup.muR05muF2Index() >= 0 &&
+        scaleGroup.muR1muF2Index() >= 0 && scaleGroup.muR2muF2Index() >= 0 &&
+        scaleGroup.muR2muF2Index() >= 0))
+      scaleGroup.setIsWellFormed(true);
   }
 
   int WeightHelper::lhapdfId(const ParsedWeight& weight, gen::PdfWeightGroupInfo& pdfGroup) {
