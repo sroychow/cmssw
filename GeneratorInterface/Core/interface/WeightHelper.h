@@ -33,6 +33,7 @@ namespace gen {
     std::unique_ptr<GenWeightProduct> weightProduct(std::vector<gen::WeightsInfo>, float w0);
     std::unique_ptr<GenWeightProduct> weightProduct(std::vector<double>, float w0);
     void setModel(std::string model) { model_ = model; }
+    void addUnassociatedGroup() { weightGroups_.push_back(new UnknownWeightGroupInfo("unassociated")); }
     int addWeightToProduct(
         std::unique_ptr<GenWeightProduct>& product, double weight, std::string name, int weightNum, int groupIndex);
     int findContainingWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);

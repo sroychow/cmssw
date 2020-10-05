@@ -219,9 +219,31 @@ namespace gen {
 
   int WeightHelper::addWeightToProduct(
       std::unique_ptr<GenWeightProduct>& product, double weight, std::string name, int weightNum, int groupIndex) {
-    groupIndex = findContainingWeightGroup(name, weightNum, groupIndex);
-    auto group = weightGroups_[groupIndex];
-    int entry = group.weightVectorEntry(name, weightNum);
+    bool isUnassociated = false;
+    try {
+      groupIndex = findContainingWeightGroup(name, weightNum, groupIndex);
+    }
+    catch (const std::range_error& e) {
+      std::cerr << "WARNING: " << e.what() << std::endl;
+      isUnassociated = true;
+
+      bool foundUnassocGroup = false;
+      while (!foundUnassocGroup && groupIndex < static_cast<int>(weightGroups_.size())) {
+        auto& g = weightGroups_[groupIndex];
+        if (g.weightType() == gen::WeightType::kUnknownWeights && g.name() == "unassociated")
+          foundUnassocGroup = true;
+        else
+          groupIndex++;
+      }
+      if (!foundUnassocGroup) {
+        addUnassociatedGroup();
+      }
+    }
+    auto& group = weightGroups_[groupIndex];
+    if (isUnassociated) {
+      group.addContainedId(weightNum, name, name);
+    }
+    int entry = !isUnassociated ? group.weightVectorEntry(name, weightNum) : group.nIdsContained();
     if (debug_)
         std::cout << "Adding weight " << entry << " to group " << groupIndex << std::endl;
     product->addWeight(weight, groupIndex, entry);

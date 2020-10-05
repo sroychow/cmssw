@@ -239,7 +239,6 @@ void LHEWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
     std::string wname = wg.second;
     auto& weightVec = lheWeightTables[wg.first];
     counter.incLHE(genWeight, weightVec, wname);
-    //std::cout << "Writing out weight of type:" << wname << std::endl;
     auto outTable = std::make_unique<nanoaod::FlatTable>(weightVec.size(), wname + "Weight", false);
     outTable->addColumn<float>("", weightVec, weightlabels[wg.first], 
 			       nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);

@@ -81,6 +81,9 @@ void GenWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock&
   weightHelper_.parseWeightGroupsFromNames(weightNames_);
 
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
+  if (weightHelper_.weightGroups().size() == 0)
+      weightHelper_.addUnassociatedGroup();
+  
   for (auto& weightGroup : weightHelper_.weightGroups()) {
     weightInfoProduct->addWeightGroupInfo(weightGroup.clone());
   }
