@@ -24,8 +24,8 @@
 #include <tinyxml2.h>
 
 namespace {
-  typedef std::vector<gen::WeightGroupData> WeightGroupDataContainer;
-  typedef std::array<std::vector<gen::WeightGroupData>, 2> WeightGroupsToStore;
+  typedef std::vector<gen::SharedWeightGroupData> WeightGroupDataContainer;
+  typedef std::array<std::vector<gen::SharedWeightGroupData>, 2> WeightGroupsToStore;
 }  // namespace
 using CounterMap = genCounter::CounterMap;
 using Counter = genCounter::Counter;
@@ -80,11 +80,13 @@ public:
     WeightGroupsToStore weightsToStore;
     for (auto weightType : gen::allWeightTypes) {
       if (foundLheWeights) { 
- 	auto lheWeights = weightDataPerType(lheWeightInfoHandle, weightType, storePerType[weightType]);
- 	weightsToStore.at(inLHE).insert(weightsToStore.at(inLHE).end(), lheWeights.begin(), lheWeights.end());
+ 	    auto lheWeights = weightDataPerType(lheWeightInfoHandle, weightType, storePerType[weightType]);
+        for (auto& w : lheWeights)
+          weightsToStore.at(inLHE).push_back({w.index, std::move(w.group)});
       }
       auto genWeights = weightDataPerType(genWeightInfoHandle, weightType, storePerType[weightType]);
-      weightsToStore.at(inGen).insert(weightsToStore.at(inGen).end(), genWeights.begin(), genWeights.end());
+      for (auto& w : genWeights)
+        weightsToStore.at(inGen).push_back({w.index, std::move(w.group)});
     }
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
@@ -277,7 +279,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     auto& weights = allWeights.at(groupInfo.index);
     if (weightType == gen::WeightType::kScaleWeights)
       if (groupInfo.group->isWellFormed()) {
-      weights = orderedScaleWeights(weights, dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
+      weights = orderedScaleWeights(weights, static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get()));
       label.append(
  		   "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
  		   " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
@@ -287,7 +289,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
       weights = std::vector(weights.begin(), weights.begin()+nstore);
       label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) + " elements of weights vector, unordered");
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights && groupInfo.group->isWellFormed()) {
-      weights = getPreferredPSweights(weights, dynamic_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group));
+      weights = getPreferredPSweights(weights, static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get()));
       label.append("PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2");
     } 
     //else
@@ -305,18 +307,27 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
 WeightGroupDataContainer LHEWeightsTableProducer::weightDataPerType(edm::Handle<GenWeightInfoProduct>& weightsHandle,
 								    gen::WeightType weightType,
 								    int& maxStore) const {
-  WeightGroupDataContainer group;
+  WeightGroupDataContainer groups;
+  std::vector<gen::WeightGroupData> allgroups;
   if (weightType == gen::WeightType::kPdfWeights && pdfIds_.size() > 0) {
-    group = weightsHandle->pdfGroupsWithIndicesByLHAIDs(pdfIds_);
+    allgroups = weightsHandle->pdfGroupsWithIndicesByLHAIDs(pdfIds_);
   } else
-    group = weightsHandle->weightGroupsAndIndicesByType(weightType);
+    allgroups = weightsHandle->weightGroupsAndIndicesByType(weightType);
   
-  if (maxStore < 0 || static_cast<int>(group.size()) <= maxStore) {
+  int toStore = maxStore;
+  if (maxStore < 0 || static_cast<int>(groups.size()) <= maxStore) {
     // Modify size in case one type of weight is present in multiple products
-    maxStore -= group.size();
-    return group;
+    maxStore -= groups.size();
+    toStore = groups.size();
   }
-  return std::vector(group.begin(), group.begin() + maxStore);
+
+  WeightGroupDataContainer out;
+  for (int i = 0; i < toStore; i++) {
+    auto& group = groups.at(i);
+    gen::SharedWeightGroupData temp = {group.index, std::move(group.group)};
+    out.push_back(temp);
+  }
+  return out;
 }
 
 std::vector<double> LHEWeightsTableProducer::orderedScaleWeights(const std::vector<double>& scaleWeights,
