@@ -24,21 +24,24 @@ siPixelPhase1OfflineDQM_sourceV = cms.Sequence(SiPixelPhase1DigisAnalyzerV
 #digi
 pixelOnlyDigisAnalyzerV = SiPixelPhase1DigisAnalyzerV.clone()
 #cluster
-pixelOnlyTrackClustersAnalyzerV = SiPixelPhase1TrackClustersAnalyzerV.clone()
-pixelOnlyTrackClustersAnalyzerV.clusters = cms.InputTag('siPixelClustersPreSplitting')
-pixelOnlyTrackClustersAnalyzerV.tracks = cms.InputTag('pixelTracks')
+pixelOnlyTrackClustersAnalyzerV = SiPixelPhase1TrackClustersAnalyzerV.clone(
+    clusters = 'siPixelClustersPreSplitting',
+    tracks = 'pixelTracks'
+)
 
 #rechit analyzer
-pixelOnlyRecHitsAnalyzerV = SiPixelPhase1RecHitsAnalyzerV.clone()
-pixelOnlyRecHitsAnalyzerV.src = cms.InputTag("siPixelRecHitsPreSplitting")
-pixelOnlyRecHitsAnalyzerV.pixelSimLinkSrc = cms.InputTag("simSiPixelDigis")
-pixelOnlyRecHitsAnalyzerV.ROUList = cms.vstring('TrackerHitsPixelBarrelLowTof',
-                                                'TrackerHitsPixelBarrelHighTof',
-                                                'TrackerHitsPixelEndcapLowTof',
-                                                'TrackerHitsPixelEndcapHighTof')
+pixelOnlyRecHitsAnalyzerV = SiPixelPhase1RecHitsAnalyzerV.clone(
+    src = 'siPixelRecHitsPreSplitting',
+    pixelSimLinkSrc = 'simSiPixelDigis',
+    ROUList = ('TrackerHitsPixelBarrelLowTof',
+               'TrackerHitsPixelBarrelHighTof',
+               'TrackerHitsPixelEndcapLowTof',
+               'TrackerHitsPixelEndcapHighTof')
+)
 #Hits
-pixelOnlyHitsAnalyzerV = SiPixelPhase1HitsAnalyzerV.clone()
-pixelOnlyHitsAnalyzerV.tracksTag = cms.InputTag("pixelTracks")
+pixelOnlyHitsAnalyzerV = SiPixelPhase1HitsAnalyzerV.clone(
+    tracksTag = 'pixelTracks'
+)
 
 #TP
 pixelOnlyTrackingParticleAnalyzerV = SiPixelPhase1TrackingParticleAnalyzerV.clone()
