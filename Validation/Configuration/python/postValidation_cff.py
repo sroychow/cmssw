@@ -75,6 +75,7 @@ postValidation_trackingOnly = cms.Sequence(
       postProcessorTrackSequenceTrackingOnly
     + postProcessorVertexSequence
 )
+
 postValidation_muons = cms.Sequence(
     recoMuonPostProcessors
     + MuonGEMHitsPostProcessors
