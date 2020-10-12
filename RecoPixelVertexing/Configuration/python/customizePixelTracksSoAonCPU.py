@@ -22,7 +22,6 @@ def customizePixelTracksSoAonCPU(process) :
 
   process.reconstruction_step += process.siPixelRecHitHostSoA+process.pixelTrackSoA+process.pixelVertexSoA
 
-
   return process
 
 def customizePixelTracksSoAonCPUForProfiling(process) :

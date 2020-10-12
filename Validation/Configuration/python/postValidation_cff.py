@@ -73,10 +73,8 @@ postValidation_common = cms.Sequence()
 
 postValidation_trackingOnly = cms.Sequence(
       postProcessorTrackSequenceTrackingOnly
-    + postProcessorVertexSequence	
+    + postProcessorVertexSequence
 )
-
-
 postValidation_muons = cms.Sequence(
     recoMuonPostProcessors
     + MuonGEMHitsPostProcessors
