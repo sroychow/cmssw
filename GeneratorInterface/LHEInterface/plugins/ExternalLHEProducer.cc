@@ -50,12 +50,15 @@ Implementation:
 
 #include "SimDataFormats/GeneratorProducts/interface/LesHouches.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEXMLStringProduct.h"
 
 #include "GeneratorInterface/LHEInterface/interface/LHERunInfo.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEEvent.h"
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
+#include "GeneratorInterface/Core/interface/LHEWeightHelper.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
@@ -66,7 +69,8 @@ Implementation:
 // class declaration
 //
 
-class ExternalLHEProducer : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer> {
+class ExternalLHEProducer
+    : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
 
@@ -76,11 +80,13 @@ private:
   void produce(edm::Event&, const edm::EventSetup&) override;
   void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
   void endRunProduce(edm::Run&, edm::EventSetup const&) override;
+  void beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) override;
   void preallocThreads(unsigned int) override;
 
-  std::vector<std::string> makeArgs(uint32_t nEvents, unsigned int nThreads, std::uint32_t seed) const;
-  int closeDescriptors(int preserve) const;
-  void executeScript(std::vector<std::string> const& args, int id) const;
+  int closeDescriptors(int preserve);
+  void executeScript();
+  int findWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);
+  std::unique_ptr<std::string> readOutput();
 
   void nextEvent();
 
@@ -99,10 +105,11 @@ private:
   std::map<unsigned, std::pair<unsigned, unsigned>> nPartonMapping_{};
 
   std::unique_ptr<lhef::LHEReader> reader_;
-  std::shared_ptr<lhef::LHERunInfo> runInfoLast_;
-  std::shared_ptr<lhef::LHERunInfo> runInfo_;
-  std::shared_ptr<lhef::LHEEvent> partonLevel_;
-  std::deque<std::unique_ptr<LHERunInfoProduct>> runInfoProducts_;
+  gen::LHEWeightHelper weightHelper_;
+  std::shared_ptr<lhef::LHERunInfo> runInfoLast;
+  std::shared_ptr<lhef::LHERunInfo> runInfo;
+  std::shared_ptr<lhef::LHEEvent> partonLevel;
+  boost::ptr_deque<LHERunInfoProduct> runInfoProducts;
   bool wasMerged;
 
   class FileCloseSentry {
@@ -159,8 +166,10 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
   produces<LHEXMLStringProduct, edm::Transition::BeginRun>("LHEScriptOutput");
 
   produces<LHEEventProduct>();
+  produces<GenWeightProduct>();
   produces<LHERunInfoProduct, edm::Transition::BeginRun>();
   produces<LHERunInfoProduct, edm::Transition::EndRun>();
+  produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
 //
@@ -185,10 +194,15 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   if (partonLevel_->getPDF()) {
     product->setPDF(*partonLevel_->getPDF());
   }
-  std::for_each(partonLevel_->weights().begin(),
-                partonLevel_->weights().end(),
-                std::bind(&LHEEventProduct::addWeight, product.get(), std::placeholders::_1));
-  product->setScales(partonLevel_->scales());
+  std::for_each(partonLevel->weights().begin(),
+                partonLevel->weights().end(),
+                boost::bind(&LHEEventProduct::addWeight, product.get(), _1));
+
+  // Should also zero out the weights in the GenInfoProduct
+  auto weightProduct = weightHelper_.weightProduct(partonLevel->weights(), partonLevel->originalXWGTUP());
+  iEvent.put(std::move(weightProduct));
+
+  product->setScales(partonLevel->scales());
   if (nPartonMapping_.empty()) {
     product->setNpLO(partonLevel_->npLO());
     product->setNpNLO(partonLevel_->npNLO());
@@ -254,6 +268,10 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 // ------------ method called when starting to processes a run  ------------
 void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es) {
   // pass the number of events as previous to last argument
+  std::ostringstream eventStream;
+  eventStream << nEvents_;
+  // args_.push_back(eventStream.str());
+  args_.insert(args_.begin() + 1, eventStream.str());
 
   // pass the random number generator seed as last argument
 
@@ -265,7 +283,12 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
            "which is not present in the configuration file.  You must add the service\n"
            "in the configuration file if you want to run ExternalLHEProducer";
   }
+  std::ostringstream randomStream;
+  randomStream << rng->mySeed();
+  args_.insert(args_.begin() + 2, randomStream.str());
 
+  args_.insert(args_.begin() + 3, std::to_string(nThreads_));
+  /*
   std::vector<std::string> infiles;
   auto const seed = rng->mySeed();
   if (generateConcurrently_) {
@@ -364,6 +387,96 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
 
     runInfo_.reset();
   }
+
+  nextEvent();
+  if (runInfoLast) {
+    runInfo = runInfoLast;
+
+    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+    std::for_each(runInfo->getHeaders().begin(),
+                  runInfo->getHeaders().end(),
+                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
+    std::for_each(runInfo->getComments().begin(),
+                  runInfo->getComments().end(),
+                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
+
+    // keep a copy around in case of merging
+    runInfoProducts.push_back(new LHERunInfoProduct(*product));
+    wasMerged = false;
+
+    run.put(std::move(product));
+
+    weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
+    weightHelper_.parseWeights();
+
+    runInfo.reset();
+  }
+*/
+  //store the XML file only if explictly requested
+  if (storeXML_) {
+    std::ifstream instream(outputFile_);
+    if (!instream) {
+      throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_ << ".";
+    }
+    instream.seekg(0, instream.end);
+    int insize = instream.tellg();
+    instream.seekg(0, instream.beg);
+    p->fillCompressedContent(instream, 0.25 * insize);
+    instream.close();
+  }
+  run.put(std::move(p), "LHEScriptOutput");
+
+  // LHE C++ classes translation
+  // (read back uncompressed file from disk in streaming mode again to save memory)
+
+  std::vector<std::string> infiles(1, outputFile_);
+  unsigned int skip = 0;
+  reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
+
+  nextEvent();
+  if (runInfoLast) {
+    runInfo = runInfoLast;
+
+    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+    std::for_each(runInfo->getHeaders().begin(),
+                  runInfo->getHeaders().end(),
+                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
+    std::for_each(runInfo->getComments().begin(),
+                  runInfo->getComments().end(),
+                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
+
+    // keep a copy around in case of merging
+    runInfoProducts.push_back(new LHERunInfoProduct(*product));
+    wasMerged = false;
+
+    run.put(std::move(product));
+
+    runInfo.reset();
+  }
+
+  nextEvent();
+  if (runInfoLast) {
+    runInfo = runInfoLast;
+
+    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+    std::for_each(runInfo->getHeaders().begin(),
+                  runInfo->getHeaders().end(),
+                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
+    std::for_each(runInfo->getComments().begin(),
+                  runInfo->getComments().end(),
+                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
+
+    // keep a copy around in case of merging
+    runInfoProducts.push_back(new LHERunInfoProduct(*product));
+    wasMerged = false;
+
+    run.put(std::move(product));
+
+    weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
+    weightHelper_.parseWeights();
+
+    runInfo.reset();
+  }
 }
 
 // ------------ method called when ending the processing of a run  ------------
@@ -420,6 +533,14 @@ std::vector<std::string> ExternalLHEProducer::makeArgs(uint32_t nEvents,
   }
 
   return args;
+}
+
+void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
+  auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
+  for (auto& weightGroup : weightHelper_.weightGroups()) {
+    weightInfoProduct->addWeightGroupInfo(std::make_unique<gen::WeightGroupInfo>(*weightGroup.clone()));
+  }
+  lumi.put(std::move(weightInfoProduct));
 }
 
 // ------------ Close all the open file descriptors ------------
