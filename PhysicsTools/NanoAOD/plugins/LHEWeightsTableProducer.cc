@@ -284,6 +284,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     label.append(std::to_string(lheWeightTables[weightType].size()));//to append the start index of this set
     label.append("]; ");
     auto& weights = allWeights.at(groupInfo.index);
+    td::vector<double> splicedweights;
     if (weightType == gen::WeightType::kScaleWeights)
       if (groupInfo.group->isWellFormed()) {
         weights = orderedScaleWeights(weights, static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get()));
@@ -292,8 +293,9 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
  	         " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
  	         " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
     } else {
-      size_t nstore = std::min<size_t>(gen::ScaleWeightGroupInfo::MIN_SCALE_VARIATIONS, weights.size());
-      weights = std::vector(weights.begin(), weights.begin()+nstore);
+      int nstore = std::min<int>(gen::ScaleWeightGroupInfo::MIN_SCALE_VARIATIONS, weights.size());
+      splicedweights = std::vector<double>(weights.begin(), weights.begin()+nstore);
+      weights = splicedweights;
       label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) + " elements of weights vector, unordered");
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights && groupInfo.group->isWellFormed()) {
       weights = getPreferredPSweights(weights, static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get()));
