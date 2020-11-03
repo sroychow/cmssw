@@ -120,7 +120,16 @@ void LHEWeightProductProducer::beginLuminosityBlockProduce(edm::LuminosityBlock&
   if (!hasLhe_)
       return;
 
-  weightHelper_.parseWeights();
+  try {
+    weightHelper_.parseWeights();
+  } catch (cms::Exception& e) {
+      std::string error = e.what();
+      error += "\n   NOTE: if you want to attempt to process this sample anyway, set failIfInvalidXML = False "
+                    "in the configuration file\n. If you set this flag and the error persists, the issue " 
+                    " is fatal and must be solved at the LHE/gridpack level.";
+      throw cms::Exception("LHEWeightProductProducer") << error;
+  }
+
   if (weightHelper_.weightGroups().size() == 0)
       weightHelper_.addUnassociatedGroup();
 
