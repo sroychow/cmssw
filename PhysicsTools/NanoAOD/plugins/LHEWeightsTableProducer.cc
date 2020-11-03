@@ -272,33 +272,31 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     gen::WeightType weightType = groupInfo.group->weightType();
     std::string name = weightTypeNames_.at(weightType);
     std::string label = "[" + std::to_string(typeCount[weightType]) + "] " + groupInfo.group->name();
-    auto& weights = allWeights.at(groupInfo.index);
-    //std::cout << "Name:" << name 
-    //     << "\tWsize=" << weights.size() 
-    //	      << "\tPrevious size=" << lheWeightTables[weightType].size()
-    //	      << std::endl;
     label.append("[");
     label.append(std::to_string(lheWeightTables[weightType].size()));//to append the start index of this set
     label.append("]; ");
-    lheWeightTables[weightType].insert(lheWeightTables[weightType].end(), weights.begin(), weights.end());
-    weightVecsizes[weightType].emplace_back(weights.size());
-    if (weightType == gen::WeightType::kScaleWeights && groupInfo.group->isWellFormed()) {
-      if(groupInfo.group->nIdsContained() == 9) {
-	weights = orderedScaleWeights(weights, dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
-	label.append(
-		     "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
-		     " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
-		     " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
-      } else {
-	label.append( "Scale weight size is ");
-	label.append( std::to_string(groupInfo.group->nIdsContained()));
-	//label.append( ". Very fishy!!!");
-      }
+    auto& weights = allWeights.at(groupInfo.index);
+    if (weightType == gen::WeightType::kScaleWeights)
+      if (groupInfo.group->isWellFormed()) {
+      weights = orderedScaleWeights(weights, dynamic_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group));
+      label.append(
+ 		   "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
+ 		   " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
+ 		   " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
+    } else {
+      size_t nstore = std::min<size_t>(gen::ScaleWeightGroupInfo::MIN_SCALE_VARIATIONS, weights.size());
+      weights = std::vector(weights.begin(), weights.begin()+nstore);
+      label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) + " elements of weights vector, unordered");
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights && groupInfo.group->isWellFormed()) {
       weights = getPreferredPSweights(weights, dynamic_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group));
       label.append("PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2");
-    }
-    if(weightlabels[weightType] == "") 
+    } 
+    //else
+    //  label.append(groupInfo.group->description());
+    lheWeightTables[weightType].insert(lheWeightTables[weightType].end(), weights.begin(), weights.end());
+    weightVecsizes[weightType].emplace_back(weights.size());
+
+    if (weightlabels[weightType].empty())
       weightlabels[weightType].append("[idx in AltSetSizes array] Name [start idx in weight array];\n");
     weightlabels[weightType].append(label);
     typeCount[weightType]++;
@@ -341,25 +339,11 @@ std::vector<double> LHEWeightsTableProducer::orderedScaleWeights(const std::vect
 std::vector<double> LHEWeightsTableProducer::getPreferredPSweights(const std::vector<double>& psWeights, 
 								   const gen::PartonShowerWeightGroupInfo* pswV) const {
   std::vector<double> psTosave;
-  
-  double baseline = psWeights.at(pswV->weightIndexFromLabel("Baseline"));//at 1
-
-  if(psWeights.at(pswV->weightIndexFromLabel("isrDefHi")) >= 0)
-    psTosave.emplace_back( psWeights.at(pswV->weightIndexFromLabel("isrDefHi"))/baseline ); // at 6
-  else psTosave.emplace_back(1.);
-
-  if(psWeights.at(pswV->weightIndexFromLabel("isrDefLo")) >= 0)
-    psTosave.emplace_back( psWeights.at(pswV->weightIndexFromLabel("isrDefLo"))/baseline ); // at 6
-  else psTosave.emplace_back(1.);
-
-  if(psWeights.at(pswV->weightIndexFromLabel("fsrDefHi")) >= 0)
-    psTosave.emplace_back( psWeights.at(pswV->weightIndexFromLabel("fsrDefHi"))/baseline ); // at 6
-  else psTosave.emplace_back(1.);
-
-  if(psWeights.at(pswV->weightIndexFromLabel("fsrDefLo")) >= 0)
-    psTosave.emplace_back( psWeights.at(pswV->weightIndexFromLabel("fsrDefLo"))/baseline ); // at 6
-  else psTosave.emplace_back(1.);
-
+  double baseline = psWeights.at(pswV->weightIndexFromLabel("Baseline"));
+  psTosave.emplace_back(psWeights.at(pswV->variationIndex(true, true, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV->variationIndex(false, true, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV->variationIndex(true, false, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV->variationIndex(false, false, gen::PSVarType::def))/baseline);
   return psTosave;
 }
 
