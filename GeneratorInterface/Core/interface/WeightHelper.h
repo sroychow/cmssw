@@ -42,11 +42,12 @@ namespace gen {
     int addWeightToProduct(
         std::unique_ptr<GenWeightProduct>& product, double weight, std::string name, int weightNum, int groupIndex);
     int findContainingWeightGroup(std::string wgtId, int weightIndex, int previousGroupIndex);
+    void setDebug(bool value) { debug_ = value; }
 
   protected:
     // TODO: Make this only print from one thread a la
     // https://github.com/kdlong/cmssw/blob/master/PhysicsTools/NanoAOD/plugins/GenWeightsTableProducer.cc#L1069
-    bool debug_ = true;  //true;
+    bool debug_ = false;
     const unsigned int FIRST_PSWEIGHT_ENTRY = 2;
     const unsigned int DEFAULT_PSWEIGHT_LENGTH = 46;
     std::string model_;

@@ -74,19 +74,26 @@ public:
     iLumi.getByToken(genWeightInfoToken_, genWeightInfoHandle);
     
     std::unordered_map<gen::WeightType, int> storePerType;
-    for (size_t i = 0; i < weightgroups_.size(); i++)
+    for (size_t i = 0; i < weightgroups_.size(); i++) {
+      std::cout << i << " maxPerType " << maxGroupsPerType_.at(i) << std::endl;
       storePerType[weightgroups_.at(i)] = maxGroupsPerType_.at(i);
+    }
     
     WeightGroupsToStore weightsToStore;
     for (auto weightType : gen::allWeightTypes) {
       if (foundLheWeights) { 
+        std::cout << "At least found the product\n";
  	    auto lheWeights = weightDataPerType(lheWeightInfoHandle, weightType, storePerType[weightType]);
-        for (auto& w : lheWeights)
+        for (auto& w : lheWeights) {
+          std::cout << "Found an lhe group with name " << w.group->name() << std::endl;
           weightsToStore.at(inLHE).push_back({w.index, std::move(w.group)});
+        }
       }
       auto genWeights = weightDataPerType(genWeightInfoHandle, weightType, storePerType[weightType]);
-      for (auto& w : genWeights)
+      for (auto& w : genWeights) {
+        std::cout << "Found a gen group with name " << w.group->name() << std::endl;
         weightsToStore.at(inGen).push_back({w.index, std::move(w.group)});
+      }
     }
     return std::make_shared<WeightGroupsToStore>(weightsToStore);
   }
@@ -279,11 +286,11 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     auto& weights = allWeights.at(groupInfo.index);
     if (weightType == gen::WeightType::kScaleWeights)
       if (groupInfo.group->isWellFormed()) {
-      weights = orderedScaleWeights(weights, static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get()));
-      label.append(
- 		   "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
- 		   " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
- 		   " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
+        weights = orderedScaleWeights(weights, static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get()));
+        label.append(
+ 	         "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
+ 	         " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
+ 	         " [7] is mur=2 muf=1 ; [8] is mur=2 muf=2)");
     } else {
       size_t nstore = std::min<size_t>(gen::ScaleWeightGroupInfo::MIN_SCALE_VARIATIONS, weights.size());
       weights = std::vector(weights.begin(), weights.begin()+nstore);
@@ -307,12 +314,11 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
 WeightGroupDataContainer LHEWeightsTableProducer::weightDataPerType(edm::Handle<GenWeightInfoProduct>& weightsHandle,
 								    gen::WeightType weightType,
 								    int& maxStore) const {
-  WeightGroupDataContainer groups;
-  std::vector<gen::WeightGroupData> allgroups;
+  std::vector<gen::WeightGroupData> groups;
   if (weightType == gen::WeightType::kPdfWeights && pdfIds_.size() > 0) {
-    allgroups = weightsHandle->pdfGroupsWithIndicesByLHAIDs(pdfIds_);
+    groups = weightsHandle->pdfGroupsWithIndicesByLHAIDs(pdfIds_);
   } else
-    allgroups = weightsHandle->weightGroupsAndIndicesByType(weightType);
+    groups = weightsHandle->weightGroupsAndIndicesByType(weightType);
   
   int toStore = maxStore;
   if (maxStore < 0 || static_cast<int>(groups.size()) <= maxStore) {
