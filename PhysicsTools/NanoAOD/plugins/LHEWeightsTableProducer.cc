@@ -52,9 +52,9 @@ public:
                                              int& maxStore) const;
 
   std::vector<double> orderedScaleWeights(const std::vector<double>& scaleWeights,
-                                          const gen::ScaleWeightGroupInfo* scaleGroup) const;
+                                          const gen::ScaleWeightGroupInfo& scaleGroup) const;
 
-  std::vector<double> getPreferredPSweights(const std::vector<double>& psWeights, const gen::PartonShowerWeightGroupInfo* pswV) const;
+  std::vector<double> preferredPSweights(const std::vector<double>& psWeights, const gen::PartonShowerWeightGroupInfo& pswV) const;
 
   //Lumiblock
   std::shared_ptr<WeightGroupsToStore> globalBeginLuminosityBlock(edm::LuminosityBlock const& iLumi,
@@ -139,11 +139,11 @@ protected:
   const std::vector<int> maxGroupsPerType_;
   const std::vector<int> pdfIds_;
   const std::unordered_map<gen::WeightType, std::string> weightTypeNames_ = {
-    {gen::WeightType::kScaleWeights, "LHEScale"},
-    {gen::WeightType::kPdfWeights, "LHEPdf"},
-    {gen::WeightType::kMEParamWeights, "MEParam"},
-    {gen::WeightType::kPartonShowerWeights, "GENPartonShower"},
-    {gen::WeightType::kUnknownWeights, "Unknown"},
+    {gen::WeightType::kScaleWeights, "LHEScaleWeight"},
+    {gen::WeightType::kPdfWeights, "LHEPdfWeight"},
+    {gen::WeightType::kMEParamWeights, "MEParamWeight"},
+    {gen::WeightType::kPartonShowerWeights, "PSWeight"},
+    {gen::WeightType::kUnknownWeights, "UnknownWeight"},
   };
   //std::unordered_map<std::string, int> weightGroupIndices_;
   int lheWeightPrecision_;
@@ -241,7 +241,7 @@ void LHEWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
     std::string wname = wg.second;
     auto& weightVec = lheWeightTables[wg.first];
     counter.incLHE(genWeight, weightVec, wname);
-    auto outTable = std::make_unique<nanoaod::FlatTable>(weightVec.size(), wname + "Weight", false);
+    auto outTable = std::make_unique<nanoaod::FlatTable>(weightVec.size(), wname, false);
     outTable->addColumn<float>("", weightVec, weightlabels[wg.first], 
 			       nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
 
@@ -272,7 +272,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     //std::string entryName = typeName;
     gen::WeightType weightType = groupInfo.group->weightType();
     std::string name = weightTypeNames_.at(weightType);
-    std::string label = "[" + std::to_string(typeCount[weightType]) + "] " + groupInfo.group->name();
+    std::string label = "[" + std::to_string(typeCount[weightType]) + "] " + groupInfo.group->description();
     label.append("[");
     label.append(std::to_string(lheWeightTables[weightType].size()));//to append the start index of this set
     label.append("]; ");
@@ -280,7 +280,8 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     //std::cout << "Group name is " << groupInfo.group->name() << " is it wellFormed? " << groupInfo.group->isWellFormed() << std::endl;
     if (weightType == gen::WeightType::kScaleWeights) {
       if (groupInfo.group->isWellFormed() && false) {
-        weights = orderedScaleWeights(weights, static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get()));
+        const auto scaleGroup = *static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get());
+        weights = orderedScaleWeights(weights, scaleGroup);
         label.append(
             "[1] is mur=0.5 muf=1; [2] is mur=0.5 muf=2; [3] is mur=1 muf=0.5 ;"
             " [4] is mur=1 muf=1; [5] is mur=1 muf=2; [6] is mur=2 muf=0.5;"
@@ -291,7 +292,8 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
         label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) + " elements of weights vector, unordered");
       }
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights && groupInfo.group->isWellFormed()) {
-      weights = getPreferredPSweights(weights, static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get()));
+      const auto psGroup = *static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get());
+      weights = preferredPSweights(weights, psGroup);
       label.append("PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2");
     } 
     //else
@@ -333,35 +335,30 @@ WeightGroupDataContainer LHEWeightsTableProducer::weightDataPerType(edm::Handle<
 }
 
 std::vector<double> LHEWeightsTableProducer::orderedScaleWeights(const std::vector<double>& scaleWeights,
-								 const gen::ScaleWeightGroupInfo* scaleGroup) const {
+								 const gen::ScaleWeightGroupInfo& scaleGroup) const {
   std::vector<double> weights;
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR05muF05Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR05muF1Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR05muF2Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR1muF05Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->centralIndex()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR1muF2Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR2muF05Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR2muF1Index()));
-  weights.emplace_back(scaleWeights.at(scaleGroup->muR2muF2Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR05muF05Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR05muF1Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR05muF2Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR1muF05Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.centralIndex()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR1muF2Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR2muF05Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR2muF1Index()));
+  weights.emplace_back(scaleWeights.at(scaleGroup.muR2muF2Index()));
   
   return weights;
 }
 
-std::vector<double> LHEWeightsTableProducer::getPreferredPSweights(const std::vector<double>& psWeights, 
-								   const gen::PartonShowerWeightGroupInfo* pswV) const {
+std::vector<double> LHEWeightsTableProducer::preferredPSweights(const std::vector<double>& psWeights, 
+								   const gen::PartonShowerWeightGroupInfo& pswV) const {
   std::vector<double> psTosave;
   
-  std::cout << "Adding baseline " << pswV->weightIndexFromLabel("Baseline") << std::endl;
-  double baseline = psWeights.at(pswV->weightIndexFromLabel("Baseline"));
-  std::cout << " Adding 1, 1, def " << pswV->variationIndex(true, true, gen::PSVarType::def) << std::endl;
-  psTosave.emplace_back(psWeights.at(pswV->variationIndex(true, true, gen::PSVarType::def))/baseline);
-  std::cout << " Adding 0, 1, def " << pswV->variationIndex(false, true, gen::PSVarType::def) << std::endl;
-  psTosave.emplace_back(psWeights.at(pswV->variationIndex(false, true, gen::PSVarType::def))/baseline);
-  std::cout << " Adding 1, 0, def " << pswV->variationIndex(true, false, gen::PSVarType::def) << std::endl;
-  psTosave.emplace_back(psWeights.at(pswV->variationIndex(true, false, gen::PSVarType::def))/baseline);
-  std::cout << " Adding 0, 0, def " << pswV->variationIndex(false, false, gen::PSVarType::def) << std::endl;
-  psTosave.emplace_back(psWeights.at(pswV->variationIndex(false, false, gen::PSVarType::def))/baseline);
+  double baseline = psWeights.at(pswV.weightIndexFromLabel("Baseline"));
+  psTosave.emplace_back(psWeights.at(pswV.variationIndex(true, true, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV.variationIndex(false, true, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV.variationIndex(true, false, gen::PSVarType::def))/baseline);
+  psTosave.emplace_back(psWeights.at(pswV.variationIndex(false, false, gen::PSVarType::def))/baseline);
   return psTosave;
 }
 
