@@ -58,12 +58,14 @@ std::optional<gen::WeightGroupData> GenWeightInfoProduct::pdfGroupWithIndexByLHA
   std::vector<gen::WeightGroupData> pdfGroups = weightGroupsAndIndicesByType(gen::WeightType::kPdfWeights);
 
   auto matchingPdfSet = std::find_if(pdfGroups.begin(), pdfGroups.end(), [lhaid](gen::WeightGroupData& data) {
-    auto pdfGroup = std::make_unique<gen::PdfWeightGroupInfo>(*static_cast<gen::PdfWeightGroupInfo*>(data.group.release()));
+    auto pdfGroup =
+        std::make_unique<gen::PdfWeightGroupInfo>(*static_cast<gen::PdfWeightGroupInfo*>(data.group.release()));
     return pdfGroup->containsLhapdfId(lhaid);
   });
 
-  return matchingPdfSet == pdfGroups.end() ? std::nullopt :
-      std::optional<gen::WeightGroupData>({matchingPdfSet->index, std::move(matchingPdfSet->group)});
+  return matchingPdfSet == pdfGroups.end()
+             ? std::nullopt
+             : std::optional<gen::WeightGroupData>({matchingPdfSet->index, std::move(matchingPdfSet->group)});
 }
 
 std::vector<gen::WeightGroupData> GenWeightInfoProduct::pdfGroupsWithIndicesByLHAIDs(
@@ -73,7 +75,8 @@ std::vector<gen::WeightGroupData> GenWeightInfoProduct::pdfGroupsWithIndicesByLH
 
   for (auto lhaid : lhaids) {
     auto matchingPdfSet = std::find_if(pdfGroups.begin(), pdfGroups.end(), [lhaid](gen::WeightGroupData& data) {
-      auto pdfGroup = std::make_unique<gen::PdfWeightGroupInfo>(*static_cast<gen::PdfWeightGroupInfo*>(data.group.release()));
+      auto pdfGroup =
+          std::make_unique<gen::PdfWeightGroupInfo>(*static_cast<gen::PdfWeightGroupInfo*>(data.group.release()));
       return pdfGroup->containsLhapdfId(lhaid);
     });
     if (matchingPdfSet != pdfGroups.end()) {
@@ -93,4 +96,6 @@ std::vector<int> GenWeightInfoProduct::weightGroupIndicesByType(gen::WeightType 
   return matchingGroupIndices;
 }
 
-void GenWeightInfoProduct::addWeightGroupInfo(std::unique_ptr<gen::WeightGroupInfo> info) { weightGroupsInfo_.push_back(std::move(info)); }
+void GenWeightInfoProduct::addWeightGroupInfo(std::unique_ptr<gen::WeightGroupInfo> info) {
+  weightGroupsInfo_.push_back(std::move(info));
+}

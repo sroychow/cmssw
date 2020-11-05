@@ -67,7 +67,7 @@ Implementation:
 //
 
 class ExternalLHEProducer
-  : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
+    : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
   ~ExternalLHEProducer() override;
@@ -124,15 +124,15 @@ private:
 // constructors and destructor
 //
 ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
-  : scriptName_((iConfig.getParameter<edm::FileInPath>("scriptName")).fullPath()),
-    outputFile_(iConfig.getParameter<std::string>("outputFile")),
-    args_(iConfig.getParameter<std::vector<std::string>>("args")),
-    npars_(iConfig.getParameter<uint32_t>("numberOfParameters")),
-    nEvents_(iConfig.getUntrackedParameter<uint32_t>("nEvents")),
-    storeXML_(iConfig.getUntrackedParameter<bool>("storeXML")) {
+    : scriptName_((iConfig.getParameter<edm::FileInPath>("scriptName")).fullPath()),
+      outputFile_(iConfig.getParameter<std::string>("outputFile")),
+      args_(iConfig.getParameter<std::vector<std::string>>("args")),
+      npars_(iConfig.getParameter<uint32_t>("numberOfParameters")),
+      nEvents_(iConfig.getUntrackedParameter<uint32_t>("nEvents")),
+      storeXML_(iConfig.getUntrackedParameter<bool>("storeXML")) {
   if (npars_ != args_.size())
     throw cms::Exception("ExternalLHEProducer")
-      << "Problem with configuration: " << args_.size() << " script arguments given, expected " << npars_;
+        << "Problem with configuration: " << args_.size() << " script arguments given, expected " << npars_;
 
   if (iConfig.exists("nPartonMapping")) {
     auto& processMap(iConfig.getParameterSetVector("nPartonMapping"));
@@ -147,7 +147,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
         order = 1;
       else
         throw cms::Exception("ExternalLHEProducer")
-	  << "Invalid order specification for process " << processId << ": " << orderStr;
+            << "Invalid order specification for process " << processId << ": " << orderStr;
 
       unsigned np(cfg.getParameter<unsigned>("np"));
 
@@ -178,13 +178,13 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   nextEvent();
   if (!partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure)
-      << "No lhe event found in ExternalLHEProducer::produce().  "
-      << "The likely cause is that the lhe file contains fewer events than were requested, which is possible "
-      << "in case of phase space integration or uneweighting efficiency problems.";
+        << "No lhe event found in ExternalLHEProducer::produce().  "
+        << "The likely cause is that the lhe file contains fewer events than were requested, which is possible "
+        << "in case of phase space integration or uneweighting efficiency problems.";
   }
 
   std::unique_ptr<LHEEventProduct> product(
-					   new LHEEventProduct(*partonLevel->getHEPEUP(), partonLevel->originalXWGTUP()));
+      new LHEEventProduct(*partonLevel->getHEPEUP(), partonLevel->originalXWGTUP()));
   if (partonLevel->getPDF()) {
     product->setPDF(*partonLevel->getPDF());
   }
@@ -211,20 +211,20 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
       np = procDef.second;
     } catch (std::out_of_range&) {
       throw cms::Exception("ExternalLHEProducer")
-	<< "Unexpected IDPRUP encountered: " << partonLevel->getHEPEUP()->IDPRUP;
+          << "Unexpected IDPRUP encountered: " << partonLevel->getHEPEUP()->IDPRUP;
     }
 
     switch (order) {
-    case 0:
-      product->setNpLO(np);
-      product->setNpNLO(-1);
-      break;
-    case 1:
-      product->setNpLO(-1);
-      product->setNpNLO(np);
-      break;
-    default:
-      break;
+      case 0:
+        product->setNpLO(np);
+        product->setNpNLO(-1);
+        break;
+      case 1:
+        product->setNpLO(-1);
+        product->setNpNLO(np);
+        break;
+      default:
+        break;
     }
   }
 
@@ -273,9 +273,9 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
 
   if (!rng.isAvailable()) {
     throw cms::Exception("Configuration")
-      << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
+        << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
            "which is not present in the configuration file.  You must add the service\n"
-      "in the configuration file if you want to run ExternalLHEProducer";
+           "in the configuration file if you want to run ExternalLHEProducer";
   }
   std::ostringstream randomStream;
   randomStream << rng->mySeed();
@@ -369,9 +369,9 @@ void ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es
   nextEvent();
   if (partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure)
-      << "Error in ExternalLHEProducer::endRunProduce().  "
-      << "Event loop is over, but there are still lhe events to process."
-      << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
+        << "Error in ExternalLHEProducer::endRunProduce().  "
+        << "Event loop is over, but there are still lhe events to process."
+        << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
   }
 
   reader_.reset();
@@ -442,11 +442,11 @@ void ExternalLHEProducer::executeScript() {
 
   if ((fd_flags = fcntl(filedes[1], F_GETFD, NULL)) == -1) {
     throw cms::Exception("ExternalLHEProducer")
-      << "Failed to get pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
+        << "Failed to get pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
   }
   if (fcntl(filedes[1], F_SETFD, fd_flags | FD_CLOEXEC) == -1) {
     throw cms::Exception("ExternalLHEProducer")
-      << "Failed to set pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
+        << "Failed to set pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
   }
 
   argc = 1 + args_.size();
@@ -478,7 +478,7 @@ void ExternalLHEProducer::executeScript() {
 
   if (pid == -1) {
     throw cms::Exception("ForkException")
-      << "Unable to fork a child (errno=" << errno << ", " << strerror(errno) << ")";
+        << "Unable to fork a child (errno=" << errno << ", " << strerror(errno) << ")";
   }
 
   close(filedes[1]);
@@ -488,7 +488,7 @@ void ExternalLHEProducer::executeScript() {
   }
   if ((rc2 == sizeof(int)) && rc) {
     throw cms::Exception("ExternalLHEProducer")
-      << "Failed to execute script (errno=" << rc << ", " << strerror(rc) << ")";
+        << "Failed to execute script (errno=" << rc << ", " << strerror(rc) << ")";
   }
   close(filedes[0]);
 
@@ -500,7 +500,7 @@ void ExternalLHEProducer::executeScript() {
         continue;
       } else {
         throw cms::Exception("ExternalLHEProducer")
-	  << "Failed to read child status (errno=" << errno << ", " << strerror(errno) << ")";
+            << "Failed to read child status (errno=" << errno << ", " << strerror(errno) << ")";
       }
     }
     if (WIFSIGNALED(status)) {
@@ -543,7 +543,7 @@ std::unique_ptr<std::string> ExternalLHEProducer::readOutput() {
                                               << " (errno=" << errno << ", " << strerror(errno) << ").";
   }
 
-  return std::unique_ptr<std::string>(new std::string(ss.str()));
+  return std::make_unique<std::string>(ss.str());
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
