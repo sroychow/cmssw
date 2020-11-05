@@ -27,6 +27,7 @@
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 
 #include "LHESource.h"
+#include <boost/bind.hpp>
 
 using namespace lhef;
 
@@ -145,13 +146,13 @@ void LHESource::readEvent_(edm::EventPrincipal& eventPrincipal) {
   }
   std::for_each(partonLevel_->weights().begin(),
                 partonLevel_->weights().end(),
-                std::bind(&LHEEventProduct::addWeight, product.get(), std::placeholders::_1));
+                boost::bind(&LHEEventProduct::addWeight, product.get(), _1));
   product->setScales(partonLevel_->scales());
   product->setNpLO(partonLevel_->npLO());
   product->setNpNLO(partonLevel_->npNLO());
   std::for_each(partonLevel_->getComments().begin(),
                 partonLevel_->getComments().end(),
-                std::bind(&LHEEventProduct::addComment, product.get(), std::placeholders::_1));
+                boost::bind(&LHEEventProduct::addComment, product.get(), _1));
 
   std::unique_ptr<edm::WrapperBase> edp(new edm::Wrapper<LHEEventProduct>(std::move(product)));
   eventPrincipal.put(lheProvenanceHelper_.eventProductBranchDescription_,

@@ -50,6 +50,7 @@ private:
   void nextEvent();
 
   void putRunInfoProduct(edm::RunPrincipal&);
+  void putWeightInfoProduct(edm::RunPrincipal&);
   void fillRunInfoProduct(lhef::LHERunInfo const&, LHERunInfoProduct&);
 
   std::unique_ptr<lhef::LHEReader> reader_;
