@@ -27,13 +27,14 @@
 #include "GeneratorInterface/LHEInterface/interface/LHEReader.h"
 
 #include "LHESource.h"
+#include <boost/bind.hpp>
 
 using namespace lhef;
 
 LHESource::LHESource(const edm::ParameterSet &params,
                      const edm::InputSourceDescription &desc) :
   ProducerSourceFromFiles(params, desc, false),
-  reader_(new LHEReader(fileNames(), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
+  reader_(new LHEReader(fileNames(0), params.getUntrackedParameter<unsigned int>("skipEvents", 0))),
   lheProvenanceHelper_(edm::TypeID(typeid(LHEEventProduct)), edm::TypeID(typeid(LHERunInfoProduct)), productRegistryUpdate()),
   phid_()
 {

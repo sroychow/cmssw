@@ -10,6 +10,7 @@
   <use name="DataFormats/METReco"/>
   <use name="DataFormats/JetReco"/>
   <use name="PhysicsTools/UtilAlgos"/>
+  <use name="FWCore/SharedMemory"/>
   <use name="SimDataFormats/GeneratorProducts"/>
   <use name="lhapdf"/>
   <flags   EDM_PLUGIN="1"/>

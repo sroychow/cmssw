@@ -18,19 +18,18 @@ Implementation:
 
 // system include files
 #include <cstdio>
+#include <memory>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-#include <string>
-#include <system_error>
-#include <unistd.h>
-#include <vector>
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include "tbb/task_arena.h"
+
+#include "boost/bind.hpp"
 
 #include "boost/ptr_container/ptr_deque.hpp"
 
@@ -42,8 +41,6 @@ Implementation:
 #include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-
-#include "FWCore/Concurrency/interface/FunctorTask.h"
 
 #include "FWCore/ParameterSet/interface/FileInPath.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -70,9 +67,10 @@ Implementation:
 //
 
 class ExternalLHEProducer
-    : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
+  : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
+  ~ExternalLHEProducer() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -93,13 +91,12 @@ private:
   // ----------member data ---------------------------
   std::string scriptName_;
   std::string outputFile_;
-  const std::vector<std::string> args_;
+  std::vector<std::string> args_;
   uint32_t npars_;
   uint32_t nEvents_;
   bool storeXML_;
   unsigned int nThreads_{1};
   std::string outputContents_;
-  bool generateConcurrently_{false};
 
   // Used only if nPartonMapping is in the configuration
   std::map<unsigned, std::pair<unsigned, unsigned>> nPartonMapping_{};
@@ -112,15 +109,11 @@ private:
   boost::ptr_deque<LHERunInfoProduct> runInfoProducts;
   bool wasMerged;
 
-  class FileCloseSentry {
+  class FileCloseSentry : private boost::noncopyable {
   public:
     explicit FileCloseSentry(int fd) : fd_(fd){};
 
     ~FileCloseSentry() { close(fd_); }
-
-    //Make this noncopyable
-    FileCloseSentry(const FileCloseSentry&) = delete;
-    FileCloseSentry& operator=(const FileCloseSentry&) = delete;
 
   private:
     int fd_;
@@ -131,16 +124,15 @@ private:
 // constructors and destructor
 //
 ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
-    : scriptName_((iConfig.getParameter<edm::FileInPath>("scriptName")).fullPath()),
-      outputFile_(iConfig.getParameter<std::string>("outputFile")),
-      args_(iConfig.getParameter<std::vector<std::string>>("args")),
-      npars_(iConfig.getParameter<uint32_t>("numberOfParameters")),
-      nEvents_(iConfig.getUntrackedParameter<uint32_t>("nEvents")),
-      storeXML_(iConfig.getUntrackedParameter<bool>("storeXML")),
-      generateConcurrently_(iConfig.getUntrackedParameter<bool>("generateConcurrently")) {
+  : scriptName_((iConfig.getParameter<edm::FileInPath>("scriptName")).fullPath()),
+    outputFile_(iConfig.getParameter<std::string>("outputFile")),
+    args_(iConfig.getParameter<std::vector<std::string>>("args")),
+    npars_(iConfig.getParameter<uint32_t>("numberOfParameters")),
+    nEvents_(iConfig.getUntrackedParameter<uint32_t>("nEvents")),
+    storeXML_(iConfig.getUntrackedParameter<bool>("storeXML")) {
   if (npars_ != args_.size())
     throw cms::Exception("ExternalLHEProducer")
-        << "Problem with configuration: " << args_.size() << " script arguments given, expected " << npars_;
+      << "Problem with configuration: " << args_.size() << " script arguments given, expected " << npars_;
 
   if (iConfig.exists("nPartonMapping")) {
     auto& processMap(iConfig.getParameterSetVector("nPartonMapping"));
@@ -155,7 +147,7 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
         order = 1;
       else
         throw cms::Exception("ExternalLHEProducer")
-            << "Invalid order specification for process " << processId << ": " << orderStr;
+	  << "Invalid order specification for process " << processId << ": " << orderStr;
 
       unsigned np(cfg.getParameter<unsigned>("np"));
 
@@ -172,6 +164,8 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig)
   produces<GenWeightInfoProduct, edm::Transition::BeginLuminosityBlock>();
 }
 
+ExternalLHEProducer::~ExternalLHEProducer() {}
+
 //
 // member functions
 //
@@ -182,17 +176,17 @@ void ExternalLHEProducer::preallocThreads(unsigned int iThreads) { nThreads_ = i
 // ------------ method called to produce the data  ------------
 void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   nextEvent();
-  if (!partonLevel_) {
+  if (!partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure)
-        << "No lhe event found in ExternalLHEProducer::produce().  "
-        << "The likely cause is that the lhe file contains fewer events than were requested, which is possible "
-        << "in case of phase space integration or uneweighting efficiency problems.";
+      << "No lhe event found in ExternalLHEProducer::produce().  "
+      << "The likely cause is that the lhe file contains fewer events than were requested, which is possible "
+      << "in case of phase space integration or uneweighting efficiency problems.";
   }
 
   std::unique_ptr<LHEEventProduct> product(
-      new LHEEventProduct(*partonLevel_->getHEPEUP(), partonLevel_->originalXWGTUP()));
-  if (partonLevel_->getPDF()) {
-    product->setPDF(*partonLevel_->getPDF());
+					   new LHEEventProduct(*partonLevel->getHEPEUP(), partonLevel->originalXWGTUP()));
+  if (partonLevel->getPDF()) {
+    product->setPDF(*partonLevel->getPDF());
   }
   std::for_each(partonLevel->weights().begin(),
                 partonLevel->weights().end(),
@@ -204,11 +198,11 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
   product->setScales(partonLevel->scales());
   if (nPartonMapping_.empty()) {
-    product->setNpLO(partonLevel_->npLO());
-    product->setNpNLO(partonLevel_->npNLO());
+    product->setNpLO(partonLevel->npLO());
+    product->setNpNLO(partonLevel->npNLO());
   } else {
     // overwrite npLO and npNLO values by user-specified mapping
-    unsigned processId(partonLevel_->getHEPEUP()->IDPRUP);
+    unsigned processId(partonLevel->getHEPEUP()->IDPRUP);
     unsigned order(0);
     unsigned np(0);
     try {
@@ -217,51 +211,51 @@ void ExternalLHEProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
       np = procDef.second;
     } catch (std::out_of_range&) {
       throw cms::Exception("ExternalLHEProducer")
-          << "Unexpected IDPRUP encountered: " << partonLevel_->getHEPEUP()->IDPRUP;
+	<< "Unexpected IDPRUP encountered: " << partonLevel->getHEPEUP()->IDPRUP;
     }
 
     switch (order) {
-      case 0:
-        product->setNpLO(np);
-        product->setNpNLO(-1);
-        break;
-      case 1:
-        product->setNpLO(-1);
-        product->setNpNLO(np);
-        break;
-      default:
-        break;
+    case 0:
+      product->setNpLO(np);
+      product->setNpNLO(-1);
+      break;
+    case 1:
+      product->setNpLO(-1);
+      product->setNpNLO(np);
+      break;
+    default:
+      break;
     }
   }
 
-  std::for_each(partonLevel_->getComments().begin(),
-                partonLevel_->getComments().end(),
-                std::bind(&LHEEventProduct::addComment, product.get(), std::placeholders::_1));
+  std::for_each(partonLevel->getComments().begin(),
+                partonLevel->getComments().end(),
+                boost::bind(&LHEEventProduct::addComment, product.get(), _1));
 
   iEvent.put(std::move(product));
 
-  if (runInfo_) {
-    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo_->getHEPRUP()));
-    std::for_each(runInfo_->getHeaders().begin(),
-                  runInfo_->getHeaders().end(),
-                  std::bind(&LHERunInfoProduct::addHeader, product.get(), std::placeholders::_1));
-    std::for_each(runInfo_->getComments().begin(),
-                  runInfo_->getComments().end(),
-                  std::bind(&LHERunInfoProduct::addComment, product.get(), std::placeholders::_1));
+  if (runInfo) {
+    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
+    std::for_each(runInfo->getHeaders().begin(),
+                  runInfo->getHeaders().end(),
+                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
+    std::for_each(runInfo->getComments().begin(),
+                  runInfo->getComments().end(),
+                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
 
-    if (!runInfoProducts_.empty()) {
-      runInfoProducts_.front()->mergeProduct(*product);
+    if (!runInfoProducts.empty()) {
+      runInfoProducts.front().mergeProduct(*product);
       if (!wasMerged) {
-        runInfoProducts_.pop_front();
-        runInfoProducts_.emplace_front(product.release());
+        runInfoProducts.pop_front();
+        runInfoProducts.push_front(product.release());
         wasMerged = true;
       }
     }
 
-    runInfo_.reset();
+    runInfo.reset();
   }
 
-  partonLevel_.reset();
+  partonLevel.reset();
   return;
 }
 
@@ -279,139 +273,25 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
 
   if (!rng.isAvailable()) {
     throw cms::Exception("Configuration")
-        << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
+      << "The ExternalLHEProducer module requires the RandomNumberGeneratorService\n"
            "which is not present in the configuration file.  You must add the service\n"
-           "in the configuration file if you want to run ExternalLHEProducer";
+      "in the configuration file if you want to run ExternalLHEProducer";
   }
   std::ostringstream randomStream;
   randomStream << rng->mySeed();
   args_.insert(args_.begin() + 2, randomStream.str());
 
   args_.insert(args_.begin() + 3, std::to_string(nThreads_));
-  /*
-  std::vector<std::string> infiles;
-  auto const seed = rng->mySeed();
-  if (generateConcurrently_) {
-    infiles.resize(nThreads_);
-    auto const nEventsAve = nEvents_ / nThreads_;
-    unsigned int const overflow = nThreads_ - (nEvents_ % nThreads_);
-    std::exception_ptr except;
-    std::atomic<char> exceptSet{0};
 
-    tbb::this_task_arena::isolate([this, &except, &infiles, &exceptSet, nEventsAve, overflow, seed]() {
-      tbb::empty_task* waitTask = new (tbb::task::allocate_root()) tbb::empty_task;
-      waitTask->set_ref_count(1 + nThreads_);
-
-      for (unsigned int t = 0; t < nThreads_; ++t) {
-        uint32_t nEvents = nEventsAve;
-        if (nEvents_ % nThreads_ != 0 and t >= overflow) {
-          nEvents += 1;
-        }
-        auto task = edm::make_functor_task(tbb::task::allocate_root(),
-                                           [t, this, &infiles, seed, nEvents, &except, &exceptSet, waitTask]() {
-                                             CMS_SA_ALLOW try {
-                                               using namespace std::filesystem;
-                                               using namespace std::string_literals;
-                                               auto out = path("thread"s + std::to_string(t)) / path(outputFile_);
-                                               infiles[t] = out.native();
-                                               executeScript(makeArgs(nEvents, 1, seed + t), t);
-                                             } catch (...) {
-                                               char expected = 0;
-                                               if (exceptSet.compare_exchange_strong(expected, 1)) {
-                                                 except = std::current_exception();
-                                                 exceptSet.store(2);
-                                               }
-                                             }
-                                             waitTask->decrement_ref_count();
-                                           });
-        tbb::task::spawn(*task);
-      }
-      waitTask->wait_for_all();
-      tbb::task::destroy(*waitTask);
-    });
-    if (exceptSet != 0) {
-      std::rethrow_exception(except);
-    }
-  } else {
-    infiles = std::vector<std::string>(1, outputFile_);
-    executeScript(makeArgs(nEvents_, nThreads_, seed), 0);
+  for (unsigned int iArg = 0; iArg < args_.size(); iArg++) {
+    LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args_[iArg];
   }
+
+  executeScript();
 
   //fill LHEXMLProduct (streaming read directly into compressed buffer to save memory)
   std::unique_ptr<LHEXMLStringProduct> p(new LHEXMLStringProduct);
 
-  //store the XML file only if explictly requested
-  if (storeXML_) {
-    std::string file;
-    if (generateConcurrently_) {
-      using namespace std::filesystem;
-      file = (path("thread0") / path(outputFile_)).native();
-    } else {
-      file = outputFile_;
-    }
-    std::ifstream instream(file);
-    if (!instream) {
-      throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_ << ".";
-    }
-    instream.seekg(0, instream.end);
-    int insize = instream.tellg();
-    instream.seekg(0, instream.beg);
-    p->fillCompressedContent(instream, 0.25 * insize);
-    instream.close();
-  }
-  run.put(std::move(p), "LHEScriptOutput");
-
-  // LHE C++ classes translation
-  // (read back uncompressed file from disk in streaming mode again to save memory)
-
-  unsigned int skip = 0;
-  reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
-
-  nextEvent();
-  if (runInfoLast_) {
-    runInfo_ = runInfoLast_;
-
-    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo_->getHEPRUP()));
-    std::for_each(runInfo_->getHeaders().begin(),
-                  runInfo_->getHeaders().end(),
-                  std::bind(&LHERunInfoProduct::addHeader, product.get(), std::placeholders::_1));
-    std::for_each(runInfo_->getComments().begin(),
-                  runInfo_->getComments().end(),
-                  std::bind(&LHERunInfoProduct::addComment, product.get(), std::placeholders::_1));
-
-    // keep a copy around in case of merging
-    runInfoProducts_.emplace_back(new LHERunInfoProduct(*product));
-    wasMerged = false;
-
-    run.put(std::move(product));
-
-    runInfo_.reset();
-  }
-
-  nextEvent();
-  if (runInfoLast) {
-    runInfo = runInfoLast;
-
-    std::unique_ptr<LHERunInfoProduct> product(new LHERunInfoProduct(*runInfo->getHEPRUP()));
-    std::for_each(runInfo->getHeaders().begin(),
-                  runInfo->getHeaders().end(),
-                  boost::bind(&LHERunInfoProduct::addHeader, product.get(), _1));
-    std::for_each(runInfo->getComments().begin(),
-                  runInfo->getComments().end(),
-                  boost::bind(&LHERunInfoProduct::addComment, product.get(), _1));
-
-    // keep a copy around in case of merging
-    runInfoProducts.push_back(new LHERunInfoProduct(*product));
-    wasMerged = false;
-
-    run.put(std::move(product));
-
-    weightHelper_.setHeaderLines(runInfo->findHeader("initrwgt"));
-    weightHelper_.parseWeights();
-
-    runInfo.reset();
-  }
-*/
   //store the XML file only if explictly requested
   if (storeXML_) {
     std::ifstream instream(outputFile_);
@@ -481,58 +361,25 @@ void ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& 
 
 // ------------ method called when ending the processing of a run  ------------
 void ExternalLHEProducer::endRunProduce(edm::Run& run, edm::EventSetup const& es) {
-  if (!runInfoProducts_.empty()) {
-    std::unique_ptr<LHERunInfoProduct> product(runInfoProducts_.front().release());
-    runInfoProducts_.pop_front();
+  if (!runInfoProducts.empty()) {
+    std::unique_ptr<LHERunInfoProduct> product(runInfoProducts.pop_front().release());
     run.put(std::move(product));
   }
 
   nextEvent();
-  if (partonLevel_) {
+  if (partonLevel) {
     throw edm::Exception(edm::errors::EventGenerationFailure)
-        << "Error in ExternalLHEProducer::endRunProduce().  "
-        << "Event loop is over, but there are still lhe events to process."
-        << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
+      << "Error in ExternalLHEProducer::endRunProduce().  "
+      << "Event loop is over, but there are still lhe events to process."
+      << "This could happen if lhe file contains more events than requested.  This is never expected to happen.";
   }
 
   reader_.reset();
-  if (generateConcurrently_) {
-    for (unsigned int t = 0; t < nThreads_; ++t) {
-      using namespace std::filesystem;
-      using namespace std::string_literals;
-      auto out = path("thread"s + std::to_string(t)) / path(outputFile_);
-      if (unlink(out.c_str())) {
-        throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << out
-                                                  << " (errno=" << errno << ", " << strerror(errno) << ").";
-      }
-    }
-  } else {
-    if (unlink(outputFile_.c_str())) {
-      throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_
-                                                << " (errno=" << errno << ", " << strerror(errno) << ").";
-    }
+
+  if (unlink(outputFile_.c_str())) {
+    throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_
+                                              << " (errno=" << errno << ", " << strerror(errno) << ").";
   }
-}
-
-std::vector<std::string> ExternalLHEProducer::makeArgs(uint32_t nEvents,
-                                                       unsigned int nThreads,
-                                                       std::uint32_t seed) const {
-  std::vector<std::string> args;
-  args.reserve(3 + args_.size());
-
-  args.push_back(args_.front());
-  args.push_back(std::to_string(nEvents));
-
-  args.push_back(std::to_string(seed));
-
-  args.push_back(std::to_string(nThreads));
-  std::copy(args_.begin() + 1, args_.end(), std::back_inserter(args));
-
-  for (unsigned int iArg = 0; iArg < args.size(); iArg++) {
-    LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args[iArg];
-  }
-
-  return args;
 }
 
 void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
@@ -544,7 +391,7 @@ void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi
 }
 
 // ------------ Close all the open file descriptors ------------
-int ExternalLHEProducer::closeDescriptors(int preserve) const {
+int ExternalLHEProducer::closeDescriptors(int preserve) {
   int maxfd = 1024;
   int fd;
 #ifdef __linux__
@@ -581,11 +428,12 @@ int ExternalLHEProducer::closeDescriptors(int preserve) const {
 }
 
 // ------------ Execute the script associated with this producer ------------
-void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, int id) const {
+void ExternalLHEProducer::executeScript() {
   // Fork a script, wait until it finishes.
 
   int rc = 0, rc2 = 0;
   int filedes[2], fd_flags;
+  unsigned int argc;
 
   if (pipe(filedes)) {
     throw cms::Exception("Unable to create a new pipe");
@@ -594,19 +442,19 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
 
   if ((fd_flags = fcntl(filedes[1], F_GETFD, NULL)) == -1) {
     throw cms::Exception("ExternalLHEProducer")
-        << "Failed to get pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
+      << "Failed to get pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
   }
   if (fcntl(filedes[1], F_SETFD, fd_flags | FD_CLOEXEC) == -1) {
     throw cms::Exception("ExternalLHEProducer")
-        << "Failed to set pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
+      << "Failed to set pipe file descriptor flags (errno=" << rc << ", " << strerror(rc) << ")";
   }
 
-  unsigned int argc = 1 + args.size();
+  argc = 1 + args_.size();
   // TODO: assert that we have a reasonable number of arguments
   char** argv = new char*[argc + 1];
   argv[0] = strdup(scriptName_.c_str());
   for (unsigned int i = 1; i < argc; i++) {
-    argv[i] = strdup(args[i - 1].c_str());
+    argv[i] = strdup(args_[i - 1].c_str());
   }
   argv[argc] = nullptr;
 
@@ -614,14 +462,6 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
   if (pid == 0) {
     // The child process
     if (!(rc = closeDescriptors(filedes[1]))) {
-      if (generateConcurrently_) {
-        using namespace std::filesystem;
-        using namespace std::string_literals;
-        std::error_code ec;
-        auto newDir = path("thread"s + std::to_string(id));
-        create_directory(newDir, ec);
-        current_path(newDir, ec);
-      }
       execvp(argv[0], argv);  // If execv returns, we have an error.
       rc = errno;
     }
@@ -631,14 +471,14 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
   }
 
   // Free the arg vector ASAP
-  for (unsigned int i = 0; i < args.size() + 1; i++) {
+  for (unsigned int i = 0; i < args_.size() + 1; i++) {
     free(argv[i]);
   }
   delete[] argv;
 
   if (pid == -1) {
     throw cms::Exception("ForkException")
-        << "Unable to fork a child (errno=" << errno << ", " << strerror(errno) << ")";
+      << "Unable to fork a child (errno=" << errno << ", " << strerror(errno) << ")";
   }
 
   close(filedes[1]);
@@ -648,7 +488,7 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
   }
   if ((rc2 == sizeof(int)) && rc) {
     throw cms::Exception("ExternalLHEProducer")
-        << "Failed to execute script (errno=" << rc << ", " << strerror(rc) << ")";
+      << "Failed to execute script (errno=" << rc << ", " << strerror(rc) << ")";
   }
   close(filedes[0]);
 
@@ -660,7 +500,7 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
         continue;
       } else {
         throw cms::Exception("ExternalLHEProducer")
-            << "Failed to read child status (errno=" << errno << ", " << strerror(errno) << ")";
+	  << "Failed to read child status (errno=" << errno << ", " << strerror(errno) << ")";
       }
     }
     if (WIFSIGNALED(status)) {
@@ -674,6 +514,36 @@ void ExternalLHEProducer::executeScript(std::vector<std::string> const& args, in
   if (rc) {
     throw cms::Exception("ExternalLHEProducer") << "Child failed with exit code " << rc << ".";
   }
+}
+
+// ------------ Read the output script ------------
+#define BUFSIZE 4096
+std::unique_ptr<std::string> ExternalLHEProducer::readOutput() {
+  int fd;
+  ssize_t n;
+  char buf[BUFSIZE];
+
+  if ((fd = open(outputFile_.c_str(), O_RDONLY)) == -1) {
+    throw cms::Exception("OutputOpenError") << "Unable to open script output file " << outputFile_
+                                            << " (errno=" << errno << ", " << strerror(errno) << ").";
+  }
+
+  std::stringstream ss;
+  while ((n = read(fd, buf, BUFSIZE)) > 0 || (n == -1 && errno == EINTR)) {
+    if (n > 0)
+      ss.write(buf, n);
+  }
+  if (n == -1) {
+    throw cms::Exception("OutputOpenError") << "Unable to read from script output file " << outputFile_
+                                            << " (errno=" << errno << ", " << strerror(errno) << ").";
+  }
+
+  if (unlink(outputFile_.c_str())) {
+    throw cms::Exception("OutputDeleteError") << "Unable to delete original script output file " << outputFile_
+                                              << " (errno=" << errno << ", " << strerror(errno) << ").";
+  }
+
+  return std::unique_ptr<std::string>(new std::string(ss.str()));
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
@@ -690,8 +560,6 @@ void ExternalLHEProducer::fillDescriptions(edm::ConfigurationDescriptions& descr
   desc.add<uint32_t>("numberOfParameters");
   desc.addUntracked<uint32_t>("nEvents");
   desc.addUntracked<bool>("storeXML", false);
-  desc.addUntracked<bool>("generateConcurrently", false)
-      ->setComment("If true, run the script concurrently in separate processes.");
 
   edm::ParameterSetDescription nPartonMappingDesc;
   nPartonMappingDesc.add<unsigned>("idprup");
@@ -703,29 +571,20 @@ void ExternalLHEProducer::fillDescriptions(edm::ConfigurationDescriptions& descr
 }
 
 void ExternalLHEProducer::nextEvent() {
-  if (partonLevel_)
+  if (partonLevel)
     return;
 
   if (not reader_) {
     return;
   }
-
-  partonLevel_ = reader_->next();
-  if (!partonLevel_) {
-    //see if we have another file to read;
-    bool newFileOpened;
-    do {
-      newFileOpened = false;
-      partonLevel_ = reader_->next(&newFileOpened);
-    } while (newFileOpened && !partonLevel_);
-  }
-  if (!partonLevel_)
+  partonLevel = reader_->next();
+  if (!partonLevel)
     return;
 
-  std::shared_ptr<lhef::LHERunInfo> runInfoThis = partonLevel_->getRunInfo();
-  if (runInfoThis != runInfoLast_) {
-    runInfo_ = runInfoThis;
-    runInfoLast_ = runInfoThis;
+  std::shared_ptr<lhef::LHERunInfo> runInfoThis = partonLevel->getRunInfo();
+  if (runInfoThis != runInfoLast) {
+    runInfo = runInfoThis;
+    runInfoLast = runInfoThis;
   }
 }
 
