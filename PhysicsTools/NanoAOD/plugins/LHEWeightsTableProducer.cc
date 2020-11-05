@@ -200,7 +200,7 @@ void LHEWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
   // table for gen info, always available
   auto outGeninfo = std::make_unique<nanoaod::FlatTable>(1, "genWeight", true);
   outGeninfo->setDoc("generator weight");
-  outGeninfo->addColumnValue<float>("", genInfo.weight(), "generator weight", nanoaod::FlatTable::FloatColumn);
+  outGeninfo->addColumnValue<float>("", genInfo.weight(), "generator weight");
   iEvent.put(std::move(outGeninfo), "GENWeight");
   //this will take care of sum of genWeights
   counter.incGenOnly(genWeight);
@@ -242,13 +242,12 @@ void LHEWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
     auto& weightVec = lheWeightTables[wg.first];
     counter.incLHE(genWeight, weightVec, wname);
     auto outTable = std::make_unique<nanoaod::FlatTable>(weightVec.size(), wname, false);
-    outTable->addColumn<float>("", weightVec, weightlabels[wg.first], 
-			       nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+    outTable->addColumn<float>("", weightVec, weightlabels[wg.first], lheWeightPrecision_);
 
     //now add the vector containing the sizes of alt sets
     auto outTableSizes = std::make_unique<nanoaod::FlatTable>(weightVecsizes[wg.first].size(), wname + "_AltSetSizes", false);
     outTableSizes->addColumn<float>("", weightVecsizes[wg.first], "Sizes of weight arrays for weight type:" + wname, 
-			       nanoaod::FlatTable::FloatColumn, lheWeightPrecision_);
+				    lheWeightPrecision_);
     iEvent.put(std::move(outTable), wname);
     iEvent.put(std::move(outTableSizes), wname + "sizes");
   }
