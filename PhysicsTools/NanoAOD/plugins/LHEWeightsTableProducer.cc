@@ -301,6 +301,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
         label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) +
                      " elements of weights vector, unordered");
       }
+    // TODO: Handle storeAllWeights and !isWellFormed
     } else if (!storeAllPSweights_ && weightType == gen::WeightType::kPartonShowerWeights &&
                groupInfo.group->isWellFormed()) {
       const auto psGroup = *static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get());
@@ -379,7 +380,6 @@ void LHEWeightsTableProducer::streamEndRunSummary(edm::StreamID id,
                                                   edm::Run const&,
                                                   edm::EventSetup const&,
                                                   CounterMap* runCounterMap) const {
-  Counter& counter = *streamCache(id)->get();
   //this takes care for mergeing all the weight sums
   runCounterMap->mergeSumMap(*streamCache(id));
 }

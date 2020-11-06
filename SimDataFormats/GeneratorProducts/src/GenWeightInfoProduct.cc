@@ -3,6 +3,7 @@
 
 #include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
+#include "FWCore/Utilities/interface/Exception.h"
 
 GenWeightInfoProduct::GenWeightInfoProduct(edm::OwnVector<gen::WeightGroupInfo>& weightGroups) {
   weightGroupsInfo_ = weightGroups;
@@ -27,12 +28,12 @@ std::unique_ptr<const gen::WeightGroupInfo> GenWeightInfoProduct::containingWeig
     if (weightGroup.indexInRange(index))
       return std::unique_ptr<const gen::WeightGroupInfo>(weightGroup.clone());
   }
-  throw std::domain_error("Failed to find containing weight group");
+  throw cms::Exception("GenWeightInfoProduct") << "No weight group found containing the weight index requested";
 }
 
 std::unique_ptr<const gen::WeightGroupInfo> GenWeightInfoProduct::orderedWeightGroupInfo(int weightGroupIndex) const {
   if (weightGroupIndex >= static_cast<int>(weightGroupsInfo_.size()))
-    throw std::range_error("Weight index out of range!");
+    throw cms::Exception("GenWeightInfoProduct") << "Weight index requested is outside the range of weights in the product";
   return std::unique_ptr<const gen::WeightGroupInfo>(weightGroupsInfo_[weightGroupIndex].clone());
 }
 
