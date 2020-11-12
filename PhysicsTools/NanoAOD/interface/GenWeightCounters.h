@@ -46,22 +46,24 @@ namespace genCounter {
       //incPSOnly(w0, wPS);
     }
 
-    void mergeSumMap(const Counter& other) {
-      num_ += other.num_;
-      sumw_ += other.sumw_;
-      sumw2_ += other.sumw2_;
-      //if weightMap_ for "this" is empty, create map elements with empty
-      //vectors before merging
-      if (weightSumMap_.empty() && !other.weightSumMap_.empty()) {
-        for (auto& wmap : other.weightSumMap_) {
-          std::vector<long double> temp;
-          weightSumMap_.insert({wmap.first, temp});
+      void mergeSumMap(const Counter& other) {
+        num_ += other.num_;
+        sumw_ += other.sumw_;
+        sumw2_ += other.sumw2_;
+        //if weightMap_ for "this" is empty, create map elements with empty
+        //vectors before merging
+        if(weightSumMap_.empty() && !other.weightSumMap_.empty()) {
+          for(auto& wmap : other.weightSumMap_) {
+            std::vector<long double> temp;
+            weightSumMap_.insert({wmap.first, temp});
+          }
+        }
+
+        for(auto& wmap : weightSumMap_) {
+          if (other.weightSumMap_.find(wmap.first) != other.weightSumMap_.end())
+            mergeSumVectors(wmap.second, other.weightSumMap_.at(wmap.first));
         }
       }
-      for (auto& wmap : weightSumMap_) {
-        mergeSumVectors(wmap.second, other.weightSumMap_.at(wmap.first));
-      }
-    }
 
     //private:
     // the counters
@@ -77,8 +79,9 @@ namespace genCounter {
     std::string active_label = "";
 
     void mergeSumMap(const CounterMap& other) {
-      for (const auto& y : other.countermap)
+      for (const auto& y : other.countermap) {
         countermap[y.first].mergeSumMap(y.second);
+      }
       active_el = nullptr;
     }
 

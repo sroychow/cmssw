@@ -35,6 +35,9 @@ namespace gen {
     std::unique_ptr<GenWeightProduct> weightProduct(std::vector<T> weights, float w0);
 
     void setModel(std::string model) { model_ = model; }
+    void setGuessPSWeightIdx(bool guessPSWeightIdx) {
+      PartonShowerWeightGroupInfo::setGuessPSWeightIdx(guessPSWeightIdx);
+    }
     void addUnassociatedGroup() {
       weightGroups_.push_back(std::make_unique<UnknownWeightGroupInfo>("unassociated"));
       weightGroups_.back().setDescription("Weights with missing or invalid header meta data");
@@ -63,6 +66,7 @@ namespace gen {
     void updateScaleInfo(gen::ScaleWeightGroupInfo& scaleGroup, const ParsedWeight& weight);
     void updateMEParamInfo(const ParsedWeight& weight, int index);
     void updatePdfInfo(gen::PdfWeightGroupInfo& pdfGroup, const ParsedWeight& weight);
+    void updatePartonShowerInfo(gen::PartonShowerWeightGroupInfo& psGroup, const ParsedWeight& weight);
     void cleanupOrphanCentralWeight();
     bool splitPdfWeight(ParsedWeight& weight);
 
