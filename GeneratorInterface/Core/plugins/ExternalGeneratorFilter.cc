@@ -13,7 +13,6 @@
 #include "SimDataFormats/GeneratorProducts/interface/ExternalGeneratorEventInfo.h"
 #include "SimDataFormats/GeneratorProducts/interface/ExternalGeneratorLumiInfo.h"
 
-#include "FWCore/SharedMemory/interface/BufferInfo.h"
 #include "FWCore/SharedMemory/interface/ReadBuffer.h"
 #include "FWCore/SharedMemory/interface/WriteBuffer.h"
 #include "FWCore/SharedMemory/interface/ControllerChannel.h"
