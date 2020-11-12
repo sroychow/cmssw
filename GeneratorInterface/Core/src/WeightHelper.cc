@@ -87,10 +87,10 @@ namespace gen {
     try {
       muR = std::stof(muRText);
       muF = std::stof(muFText);
-    } catch (...) {
+    } catch (std::invalid_argument& e) {
       if (debug_)
         std::cout << "Tried to convert (" << muR << ", " << muF << ") to a int" << std::endl;
-      scaleGroup.setIsWellFormed(false);
+      scaleGroup.setWeightIsCorrupt();
       return;
       /// do something
     }
@@ -102,9 +102,9 @@ namespace gen {
       try {
         int dynNum = std::stoi(dynNumText);
         scaleGroup.setDyn(weight.index, weight.id, muR, muF, dynNum, dynType);
-      } catch (...) {
+      } catch (std::invalid_argument& e) {
         std::cout << "Tried to convert (" << dynNumText << ")  a int" << std::endl;
-        scaleGroup.setIsWellFormed(false);
+        scaleGroup.setWeightIsCorrupt();
         /// do something here
       }
     }
@@ -113,8 +113,8 @@ namespace gen {
       std::string lhaidText = searchAttributes("pdf", weight);
       try {
         scaleGroup.setLhaid(std::stoi(lhaidText));
-      } catch (...) {
-        scaleGroup.setLhaid(-2);
+      } catch (std::invalid_argument& e) {
+        scaleGroup.setLhaid(-1);
         // do something here
       }
     }
@@ -156,6 +156,13 @@ namespace gen {
     }
     // after setup parent info, add lhaid
     pdfGroup.addLhaid(lhaid);
+  }
+
+  void WeightHelper::updatePartonShowerInfo(gen::PartonShowerWeightGroupInfo& psGroup, const ParsedWeight& weight) {
+    if (psGroup.containedIds().size() == DEFAULT_PSWEIGHT_LENGTH)
+      psGroup.setIsWellFormed(true);
+    if (weight.content.find(":") != std::string::npos && weight.content.find("=") != std::string::npos)
+      psGroup.setNameIsPythiaSyntax(true);
   }
 
   bool WeightHelper::splitPdfWeight(ParsedWeight& weight) {
@@ -253,8 +260,6 @@ namespace gen {
   void WeightHelper::printWeights() {
     // checks
     for (auto& wgt : weightGroups_) {
-      if (!wgt.isWellFormed())
-        std::cout << "\033[1;31m";
       std::cout << std::boolalpha << wgt.name() << " (" << wgt.firstId() << "-" << wgt.lastId()
                 << "): " << wgt.isWellFormed() << std::endl;
       if (wgt.weightType() == gen::WeightType::kScaleWeights) {
@@ -285,26 +290,18 @@ namespace gen {
         std::cout << wgt.description() << "\n";
       } else if (wgt.weightType() == gen::WeightType::kPartonShowerWeights) {
         auto& wgtPS = dynamic_cast<gen::PartonShowerWeightGroupInfo&>(wgt);
-        if (wgtPS.containedIds().size() == DEFAULT_PSWEIGHT_LENGTH)
-          wgtPS.setIsWellFormed(true);
-
-        wgtPS.cacheWeightIndicesByLabel();
         std::vector<std::string> labels = wgtPS.weightLabels();
-        if (labels.size() > FIRST_PSWEIGHT_ENTRY && labels.at(FIRST_PSWEIGHT_ENTRY).find(':') != std::string::npos &&
-            labels.at(FIRST_PSWEIGHT_ENTRY).find('=') != std::string::npos) {
-          wgtPS.setNameIsPythiaSyntax(true);
-        }
-        std::cout << "Name is pythiaSynax? " << wgtPS.nameIsPythiaSyntax() << std::endl;
+        wgtPS.cacheWeightIndicesByLabel();
+        wgtPS.printVariables();
       }
-      if (!wgt.isWellFormed())
-        std::cout << "\033[0m";
     }
   }
 
   std::unique_ptr<WeightGroupInfo> WeightHelper::buildGroup(ParsedWeight& weight) {
-    if (debug_)
-      std::cout << "Building group for weight group " << weight.groupname << " weight content is " << weight.content;
-
+    if (debug_) {
+      std::cout << "Building group for weight group " << weight.groupname << " weight content is " << weight.content
+                << std::endl;
+    }
     if (isScaleWeightGroup(weight))
       return std::make_unique<ScaleWeightGroupInfo>(weight.groupname);
     else if (isPdfWeightGroup(weight))
@@ -342,9 +339,10 @@ namespace gen {
       group.addContainedId(weight.index, weight.id, weight.content);
       if (group.weightType() == gen::WeightType::kScaleWeights)
         updateScaleInfo(dynamic_cast<gen::ScaleWeightGroupInfo&>(group), weight);
-      else if (group.weightType() == gen::WeightType::kPdfWeights) {
+      else if (group.weightType() == gen::WeightType::kPdfWeights)
         updatePdfInfo(dynamic_cast<gen::PdfWeightGroupInfo&>(group), weight);
-      }
+      else if (group.weightType() == gen::WeightType::kPartonShowerWeights)
+        updatePartonShowerInfo(dynamic_cast<gen::PartonShowerWeightGroupInfo&>(group), weight);
     }
     cleanupOrphanCentralWeight();
   }
