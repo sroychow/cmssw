@@ -1,6 +1,15 @@
 import FWCore.ParameterSet.Config as cms
 
-lheWeightsTable = cms.EDProducer(
+genWeights = cms.EDProducer("GenWeightProductProducer",
+    genInfo = cms.InputTag("generator"),
+    genLumiInfoHeader = cms.InputTag("generator"))
+
+lheWeights = cms.EDProducer("LHEWeightProductProducer",
+    lheSourceLabels = cms.vstring(["externalLHEProducer", "source"]),
+    failIfInvalidXML = cms.untracked.bool(True)
+)
+
+genWeightsTable = cms.EDProducer(
     "LHEWeightsTableProducer",
     lheWeights = cms.VInputTag(["externalLHEProducer", "source", "lheWeights"]),
     lheWeightPrecision = cms.int32(14),
@@ -15,5 +24,7 @@ lheWeightsTable = cms.EDProducer(
     #pdfIds = cms.untracked.vint32([91400, 306000, 260000]),                                                              
     #unknownOnlyIfEmpty = cms.untracked.vstring(['scale', 'PDF']),                                                        
     #unknownOnlyIfAllEmpty = cms.untracked.bool(False),
-    storeAllPSweights = cms.bool(False)
+    keepAllPSWeights = cms.bool(False)
 )
+
+genWeightsTables = cms.Sequence(lheWeights*genWeights*genWeightsTable)
