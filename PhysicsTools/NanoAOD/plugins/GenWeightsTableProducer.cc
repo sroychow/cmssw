@@ -286,7 +286,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
     auto& weights = allWeights.at(groupInfo.index);
     //std::cout << "Group name is " << groupInfo.group->name() << " is it wellFormed? " << groupInfo.group->isWellFormed() << std::endl;
     if (weightType == gen::WeightType::kScaleWeights) {
-      if (groupInfo.group->isWellFormed() && false) {
+      if (groupInfo.group->isWellFormed()) {
         const auto scaleGroup = *static_cast<const gen::ScaleWeightGroupInfo*>(groupInfo.group.get());
         std::cout << "They're well formed, will be ordered as expected\n";
         weights = orderedScaleWeights(weights, scaleGroup);
