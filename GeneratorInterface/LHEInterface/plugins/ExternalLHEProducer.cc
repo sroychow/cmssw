@@ -72,7 +72,7 @@ Implementation:
 // class declaration
 //
 
-class ExternalLHEProducer 
+class ExternalLHEProducer
     : public edm::one::EDProducer<edm::BeginRunProducer, edm::EndRunProducer, edm::BeginLuminosityBlockProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
@@ -436,7 +436,6 @@ std::vector<std::string> ExternalLHEProducer::makeArgs(uint32_t nEvents,
 
   return args;
 }
-
 
 void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();

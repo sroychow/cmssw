@@ -301,7 +301,7 @@ void LHEWeightsTableProducer::addWeightGroupToTable(std::map<gen::WeightType, st
         label.append("WARNING: Unexpected format found. Contains first " + std::to_string(nstore) +
                      " elements of weights vector, unordered");
       }
-    // TODO: Handle storeAllWeights and !isWellFormed
+      // TODO: Handle storeAllWeights and !isWellFormed
     } else if (!keepAllPSWeights_ && weightType == gen::WeightType::kPartonShowerWeights &&
                groupInfo.group->isWellFormed()) {
       const auto psGroup = *static_cast<const gen::PartonShowerWeightGroupInfo*>(groupInfo.group.get());
