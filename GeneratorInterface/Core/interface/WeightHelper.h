@@ -110,7 +110,7 @@ namespace gen {
         i++;
       }
     }
-    return std::move(weightProduct);
+    return weightProduct;
   }
 }  // namespace gen
 
