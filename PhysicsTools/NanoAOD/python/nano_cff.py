@@ -102,12 +102,8 @@ for modifier in run2_miniAOD_80XLegacy, run2_nanoAOD_94X2016: # to be updated wh
 lheInfoTable = cms.EDProducer("LHETablesProducer",
     lheInfo = cms.VInputTag(cms.InputTag("externalLHEProducer"), cms.InputTag("source")),
     precision = cms.int32(14),
-<<<<<<< HEAD
-    storeLHEParticles = cms.bool(True)
-=======
     storeLHEParticles = cms.bool(True),
     storeAllLHEInfo = cms.bool(False),  
->>>>>>> kdlong/GenWeightRefactor_master
 )
 
 l1bits=cms.EDProducer("L1TriggerResultsConverter", src=cms.InputTag("gtStage2Digis"), legacyL1=cms.bool(False),
