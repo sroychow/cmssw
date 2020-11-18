@@ -1,5 +1,6 @@
 #include "GeneratorInterface/Core/interface/WeightHelper.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWCore/Utilities/interface/Exception.h"
 #include <regex>
 
 namespace gen {
@@ -253,8 +254,9 @@ namespace gen {
       counter++;
     }
     // Needs to be properly handled
-    throw std::range_error("Unmatched Generator weight! ID was " + wgtId + " index was " + std::to_string(weightIndex) +
-                           "\nNot found in any of " + std::to_string(weightGroups_.size()) + " weightGroups.");
+    cms::Exception("Unmatched Generator weight! ID was " + wgtId + " index was " + std::to_string(weightIndex) +
+                   "\nNot found in any of " + std::to_string(weightGroups_.size()) + " weightGroups.");
+    return -1;
   }
 
   void WeightHelper::printWeights() {
@@ -329,7 +331,7 @@ namespace gen {
       if (weight.wgtGroup_idx == numGroups) {
         weightGroups_.push_back(*buildGroup(weight));
       } else if (weight.wgtGroup_idx >= numGroups)
-        throw std::range_error("Invalid group index " + std::to_string(weight.wgtGroup_idx));
+        cms::Exception("Invalid group index " + std::to_string(weight.wgtGroup_idx));
 
       // split PDF groups
       if (splitPdfWeight(weight))
