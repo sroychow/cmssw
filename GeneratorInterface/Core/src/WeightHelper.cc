@@ -329,7 +329,7 @@ namespace gen {
       if (weight.wgtGroup_idx == numGroups) {
         weightGroups_.push_back(*buildGroup(weight));
       } else if (weight.wgtGroup_idx >= numGroups)
-        throw std::range_error("Invalid group index " + weight.wgtGroup_idx);
+        throw std::range_error("Invalid group index " + std::to_string(weight.wgtGroup_idx));
 
       // split PDF groups
       if (splitPdfWeight(weight))
