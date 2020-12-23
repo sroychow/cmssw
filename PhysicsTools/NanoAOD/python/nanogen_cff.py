@@ -5,9 +5,9 @@ from PhysicsTools.NanoAOD.met_cff import metMCTable
 from PhysicsTools.NanoAOD.genparticles_cff import *
 from PhysicsTools.NanoAOD.particlelevel_cff import *
 from PhysicsTools.NanoAOD.lheInfoTable_cfi import *
-from PhysicsTools.NanoAOD.genWeightsTable_cfi import *
 from PhysicsTools.NanoAOD.genVertex_cff import *
 from PhysicsTools.NanoAOD.common_cff import Var,CandVars
+from PhysicsTools.NanoAOD.genWeights_cff import *
 
 nanoMetadata = cms.EDProducer("UniqueStringProducer",
     strings = cms.PSet(
@@ -36,13 +36,14 @@ nanogenSequence = cms.Sequence(
     rivetProducerHTXS+
     particleLevelTables+
     metMCTable+
-    genWeightsTable+
+    genWeightsTables+
     lheInfoTable
 )
 
 def nanoGenCommonCustomize(process):
     process.rivetMetTable.extension = False
     process.lheInfoTable.storeLHEParticles = True
+    process.lheInfoTable.storeAllLHEInfo = True
     process.lheInfoTable.precision = 14
     process.genWeightsTable.keepAllPSWeights = True
     process.genJetFlavourAssociation.jets = process.genJetTable.src
