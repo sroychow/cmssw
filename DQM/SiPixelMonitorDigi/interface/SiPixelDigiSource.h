@@ -26,10 +26,92 @@
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "DQM/SiPixelMonitorDigi/interface/SiPixelDigiModule.h"
-#include <DQMServices/Core/interface/DQMOneEDAnalyzer.h>
+#include "DQMServices/Core/interface/DQMOneEDAnalyzer.h"
+#include "DataFormats/FEDRawData/interface/FEDNumbering.h"
 #include <cstdint>
 
-class SiPixelDigiSource : public DQMOneEDAnalyzer<edm::LuminosityBlockCache<bool>> {
+struct SiPixelDigiCounter {
+  int nBPIXDigis;
+  int nFPIXDigis;
+  int nDigisPerFed[40];
+  int NzeroROCs[2];
+  int NloEffROCs[2];
+
+  bool ROCMapToReset;
+
+  bool DoZeroRocsBMO1;
+  bool DoZeroRocsBMO2;
+  bool DoZeroRocsBMO3;
+
+  bool DoZeroRocsBMI1;
+  bool DoZeroRocsBMI2;
+  bool DoZeroRocsBMI3;
+
+  bool DoZeroRocsBPO1;
+  bool DoZeroRocsBPO2;
+  bool DoZeroRocsBPO3;
+
+  bool DoZeroRocsBPI1;
+  bool DoZeroRocsBPI2;
+  bool DoZeroRocsBPI3;
+
+  bool DoZeroRocsFPO1;
+  bool DoZeroRocsFPO2;
+
+  bool DoZeroRocsFMO1;
+  bool DoZeroRocsFMO2;
+
+  bool DoZeroRocsFPI1;
+  bool DoZeroRocsFPI2;
+
+  bool DoZeroRocsFMI1;
+  bool DoZeroRocsFMI2;
+  SiPixelDigiCounter() {
+    //all initialization which was done in BeginRun
+    nBPIXDigis = 0;
+    nFPIXDigis = 0;
+    for (int i = 0; i != 40; i++)
+      nDigisPerFed[i] = 0;
+    for (int i = 0; i < 2; i++)
+      NzeroROCs[i] = 0;
+    for (int i = 0; i < 2; i++)
+      NloEffROCs[i] = 0;//resetting also Zero and low eff. ROC counters
+    //this magic number derives by the way the endcap occupancy is filled, there are always 672 empty bins by construction
+    NzeroROCs[1] = -672;
+    NloEffROCs[1] = -672;
+    ROCMapToReset = true;
+
+    DoZeroRocsBMO1 = true;
+    DoZeroRocsBMO2 = true;
+    DoZeroRocsBMO3 = true;
+
+    DoZeroRocsBMI1 = true;
+    DoZeroRocsBMI2 = true;
+    DoZeroRocsBMI3 = true;
+
+    DoZeroRocsBPO1 = true;
+    DoZeroRocsBPO2 = true;
+    DoZeroRocsBPO3 = true;
+
+    DoZeroRocsBPI1 = true;
+    DoZeroRocsBPI2 = true;
+    DoZeroRocsBPI3 = true;
+
+    DoZeroRocsFPO1 = true;
+    DoZeroRocsFPO2 = true;
+
+    DoZeroRocsFMO1 = true;
+    DoZeroRocsFMO2 = true;
+
+    DoZeroRocsFPI1 = true;
+    DoZeroRocsFPI2 = true;
+
+    DoZeroRocsFMI1 = true;
+    DoZeroRocsFMI2 = true;
+  }
+};
+
+class SiPixelDigiSource : public DQMOneEDAnalyzer<edm::LuminosityBlockCache<SiPixelDigiCounter>> {
 public:
   explicit SiPixelDigiSource(const edm::ParameterSet& conf);
   ~SiPixelDigiSource() override;
@@ -39,8 +121,8 @@ public:
   void analyze(const edm::Event&, const edm::EventSetup&) override;
   void dqmBeginRun(const edm::Run&, edm::EventSetup const&) override;
   void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
-  std::shared_ptr<bool> globalBeginLuminosityBlock(const edm::LuminosityBlock& lumi,
-                                                   const edm::EventSetup& iSetup) const override;
+  std::shared_ptr<SiPixelDigiCounter> globalBeginLuminosityBlock(const edm::LuminosityBlock& lumi,
+                                                                 const edm::EventSetup& iSetup) const override;
   void globalEndLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
   virtual void buildStructure(edm::EventSetup const&);
@@ -117,8 +199,7 @@ private:
   int nL4M3;
   int nL4M4;
   int nBigEvents;
-  int nBPIXDigis;
-  int nFPIXDigis;
+
   MonitorElement* bigEventRate;
   MonitorElement* pixEvtsPerBX;
   MonitorElement* pixEventRate;
@@ -174,39 +255,7 @@ private:
   std::vector<MonitorElement*> meNDigisCHANEndcapDps_;
   std::vector<MonitorElement*> meNDigisCHANEndcapDms_;
 
-  int NzeroROCs[2];
-  int NloEffROCs[2];
-
-  bool ROCMapToReset;
   //the following long list of bools is to patch the ZeroOccupancy ROC filling in a way that a substructure (like BPix/BmO/Layer1) is counted only once as it should be (in the past for each module in the substructure the same number of ZeroOccupancy rocs was added)
-
-  bool DoZeroRocsBMO1;
-  bool DoZeroRocsBMO2;
-  bool DoZeroRocsBMO3;
-
-  bool DoZeroRocsBMI1;
-  bool DoZeroRocsBMI2;
-  bool DoZeroRocsBMI3;
-
-  bool DoZeroRocsBPO1;
-  bool DoZeroRocsBPO2;
-  bool DoZeroRocsBPO3;
-
-  bool DoZeroRocsBPI1;
-  bool DoZeroRocsBPI2;
-  bool DoZeroRocsBPI3;
-
-  bool DoZeroRocsFPO1;
-  bool DoZeroRocsFPO2;
-
-  bool DoZeroRocsFMO1;
-  bool DoZeroRocsFMO2;
-
-  bool DoZeroRocsFPI1;
-  bool DoZeroRocsFPI2;
-
-  bool DoZeroRocsFMI1;
-  bool DoZeroRocsFMI2;
 
   int bigEventSize;
   bool isUpgrade;
@@ -217,13 +266,12 @@ private:
   int I_fedId[1856];
   int I_linkId1[1856];
   int I_linkId2[1856];
-  int nDigisPerFed[40];
+
   int nDigisPerChan[1152];
   int nDigisPerDisk[6];
   int numberOfDigis[336];
   int nDigisA;
   int nDigisB;
-
   //define Token(-s)
   edm::EDGetTokenT<edm::DetSetVector<PixelDigi>> srcToken_;
   edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> trackerTopoToken_;
@@ -231,6 +279,7 @@ private:
   edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> trackerGeomTokenBeginRun_;
   int noOfLayers;
   int noOfDisks;
+  mutable std::shared_ptr<SiPixelDigiCounter> latestCounters_;
 };
 
 #endif
