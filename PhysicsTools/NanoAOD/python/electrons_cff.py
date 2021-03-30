@@ -33,11 +33,6 @@ slimmedElectronsUpdated = cms.EDProducer("PATElectronUpdater",
     miniIsoParamsE = PhysicsTools.PatAlgos.producersLayer1.electronProducer_cfi.patElectrons.miniIsoParamsE, # so they're in sync
 )
 run2_miniAOD_80XLegacy.toModify( slimmedElectronsUpdated, computeMiniIso = True )
-# bypass the update to 106X in 106X to only pick up the IP sign fix
-#run2_egamma_2016.toModify(slimmedElectronsUpdated, src = cms.InputTag("slimmedElectrons"))
-#run2_egamma_2017.toModify(slimmedElectronsUpdated, src = cms.InputTag("slimmedElectrons"))
-#run2_egamma_2018.toModify(slimmedElectronsUpdated, src = cms.InputTag("slimmedElectrons"))
-#run2_nanoAOD_106Xv1.toModify(slimmedElectronsUpdated, src = cms.InputTag("slimmedElectrons"))
 ####because run2_egamma_2017 and run2_egamma_2018 can modify things further, need the following line to resort back
 for modifier in run2_miniAOD_80XLegacy,run2_nanoAOD_94X2016,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_102Xv1:
     modifier.toModify(slimmedElectronsUpdated, src = cms.InputTag("slimmedElectronsTo106X"))
@@ -126,15 +121,16 @@ bitmapVIDForEleHEEP.WorkingPoints = cms.vstring(
 )
 _bitmapVIDForEleHEEP_docstring = _get_bitmapVIDForEle_docstring(electron_id_modules_WorkingPoints_nanoAOD.modules,bitmapVIDForEleHEEP.WorkingPoints)
 
-
-    
-
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018,run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1:
     modifier.toModify(bitmapVIDForEle, src = "slimmedElectronsUpdated")
     modifier.toModify(bitmapVIDForEleSpring15, src = "slimmedElectronsUpdated")
     modifier.toModify(bitmapVIDForEleSum16, src = "slimmedElectronsUpdated")
     modifier.toModify(bitmapVIDForEleHEEP, src = "slimmedElectronsUpdated")
 
+run2_nanoAOD_106Xv2.toModify(bitmapVIDForEle, src = "slimmedElectrons")
+run2_nanoAOD_106Xv2.toModify(bitmapVIDForEleSpring15, src = "slimmedElectrons")
+run2_nanoAOD_106Xv2.toModify(bitmapVIDForEleSum16, src = "slimmedElectrons")
+run2_nanoAOD_106Xv2.toModify(bitmapVIDForEleHEEP, src = "slimmedElectrons")
 
 isoForEle = cms.EDProducer("EleIsoValueMapProducer",
     src = cms.InputTag("slimmedElectrons"),
@@ -144,6 +140,7 @@ isoForEle = cms.EDProducer("EleIsoValueMapProducer",
     EAFile_MiniIso = cms.FileInPath("RecoEgamma/ElectronIdentification/data/Fall17/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_94X.txt"),
     EAFile_PFIso = cms.FileInPath("RecoEgamma/ElectronIdentification/data/Fall17/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_94X.txt"),
 )
+
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018, run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1:
     modifier.toModify(isoForEle, src = "slimmedElectronsUpdated")
 
@@ -154,6 +151,8 @@ run2_nanoAOD_94X2016.toModify(isoForEle,
                                 EAFile_MiniIso = "RecoEgamma/ElectronIdentification/data/Spring15/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_25ns.txt",
                                 EAFile_PFIso = "RecoEgamma/ElectronIdentification/data/Summer16/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_80X.txt")
 
+run2_nanoAOD_106Xv2.toModify(isoForEle, src = "slimmedElectrons")
+
 ptRatioRelForEle = cms.EDProducer("ElectronJetVarProducer",
     srcJet = cms.InputTag("updatedJets"),
     srcLep = cms.InputTag("slimmedElectrons"),
@@ -162,9 +161,13 @@ ptRatioRelForEle = cms.EDProducer("ElectronJetVarProducer",
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018, run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1:
     modifier.toModify(ptRatioRelForEle, srcLep = "slimmedElectronsUpdated")
 
+run2_nanoAOD_106Xv2.toModify(ptRatioRelForEle, srcLep = "slimmedElectrons")
+
 seedGainEle = cms.EDProducer("ElectronSeedGainProducer", src = cms.InputTag("slimmedElectrons"))
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018, run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1:
     modifier.toModify(seedGainEle, src = "slimmedElectronsUpdated")
+
+run2_nanoAOD_106Xv2.toModify(seedGainEle, src = "slimmedElectrons")
 
 import RecoEgamma.EgammaTools.calibratedEgammas_cff
 
@@ -201,6 +204,8 @@ for modifier in run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2:
 run2_nanoAOD_102Xv1.toModify(calibratedPatElectronsNano,
     correctionFile = cms.string("EgammaAnalysis/ElectronTools/data/ScalesSmearings/Run2018_Step2Closure_CoarseEtaR9Gain_v2")
 )
+#Since the dxy prob is fixed for this era
+run2_nanoAOD_106Xv2.toModify(calibratedPatElectronsNano, src = "slimmedElectrons")
 
 slimmedElectronsWithUserData = cms.EDProducer("PATElectronUserDataEmbedder",
     src = cms.InputTag("slimmedElectrons"),
@@ -256,6 +261,8 @@ slimmedElectronsWithUserData = cms.EDProducer("PATElectronUserDataEmbedder",
 
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018, run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1,run2_nanoAOD_94X2016:
     modifier.toModify(slimmedElectronsWithUserData, src = "slimmedElectronsUpdated")
+
+run2_nanoAOD_106Xv2.toModify(slimmedElectronsWithUserData, src = "slimmedElectrons")
 
 ###Not to update with S+S vars as they already exist for run2_nanoAOD_94X2016 era
 for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018, run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_102Xv1,run2_nanoAOD_106Xv1:
@@ -573,3 +580,6 @@ run2_nanoAOD_102Xv1.toReplaceWith(electronSequence, _withTo106XAndUpdateAnd102XS
 _withUpdate_sequence = electronSequence.copy()
 _withUpdate_sequence.replace(bitmapVIDForEle, slimmedElectronsUpdated + bitmapVIDForEle)
 run2_nanoAOD_106Xv1.toReplaceWith(electronSequence, _withUpdate_sequence)
+
+_with106Xv2_sequence = electronSequence.copyAndExclude([slimmedElectronsUpdated])
+run2_nanoAOD_106Xv2.toReplaceWith(electronSequence, _with106Xv2_sequence)
