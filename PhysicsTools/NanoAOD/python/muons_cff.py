@@ -180,7 +180,7 @@ for modifier in  run2_miniAOD_80XLegacy, run2_nanoAOD_94X2016, run2_nanoAOD_94XM
 
 run2_nanoAOD_102Xv1.toModify(muonTable.variables, puppiIsoId = None)
 
-(run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toModify(muonTable, isStandalone = None)
+(run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toModify(muonTable.variables, isStandalone = None)
 
 muonsMCMatchForTable = cms.EDProducer("MCMatcher",       # cut on deltaR, deltaPt/Pt; pick best by deltaR
     src         = muonTable.src,                         # final reco collection
