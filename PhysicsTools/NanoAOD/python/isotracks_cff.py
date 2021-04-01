@@ -39,6 +39,7 @@ isoTrackTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
         fromPV = Var("fromPV", int, doc="isolated track comes from PV"),
         pdgId = Var("pdgId",int,doc="PDG id of PF cand"),
         isHighPurityTrack = Var("isHighPurityTrack",bool,doc="track is high purity"),
+        charge = Var("charge", int, doc="electric charge"),
     ),
     externalVariables = cms.PSet(
         miniPFRelIso_chg = ExtVar("isoForIsoTk:miniIsoChg",float,doc="mini PF relative isolation, charged component",precision=10),
@@ -47,6 +48,7 @@ isoTrackTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
     ),
 )
 
+(run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toModify(isoTrackTable, charge = None)
 isoTrackSequence = cms.Sequence(finalIsolatedTracks + isoForIsoTk + isFromLostTrackForIsoTk)
 isoTrackTables = cms.Sequence(isoTrackTable)
 
