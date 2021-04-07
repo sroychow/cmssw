@@ -66,6 +66,13 @@ run2_miniAOD_80XLegacy.toModify(nanoDQM.vplots.Flag, plots = _Flag_plots_80x)
 
 run2_miniAOD_80XLegacy.toModify(nanoDQM.vplots, IsoTrack = None)
 
+#remove new plots from old campaign
+_Muon_noIsStandalone = [plot for plot in nanoDQM.vplots.Muon.plots if plot.name.value() != 'isStandalone']
+(run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toModify(nanoDQM.vplots.Muon, plots = _Muon_noIsStandalone)
+_Isotk_nocharge = [plot for plot in nanoDQM.vplots.IsoTrack.plots if plot.name.value() != 'charge']
+(run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toModify(nanoDQM.vplots.IsoTrack, plots = _Isotk_nocharge)
+
+
 ## MC
 nanoDQMMC = nanoDQM.clone()
 nanoDQMMC.vplots.Electron.sels.Prompt = cms.string("genPartFlav == 1")
