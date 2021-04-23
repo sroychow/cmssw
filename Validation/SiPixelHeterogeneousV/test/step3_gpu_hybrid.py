@@ -26,7 +26,7 @@ process.load('DQMOffline.Configuration.DQMOfflineMC_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1),
+    input = cms.untracked.int32(-1),
     output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
 )
 
@@ -128,11 +128,17 @@ print(moduleLabelsInSequences(process.raw2digi_steplegacy))
 print("RECO step modules in legacy:")
 print(moduleLabelsInSequences(process.reconstruction_steplegacy))
 
-process.econtent=cms.EDAnalyzer('EventContentAnalyzer')
-process.dump = cms.Path(process.econtent)
+##Now clone the Validation step
+from Validation.SiPixelPhase1ConfigV.SiPixelPhase1OfflineDQM_sourceV_cff import *
+
+
+
+
+#process.econtent=cms.EDAnalyzer('EventContentAnalyzer')
+#process.dump = cms.Path(process.econtent)
 
 # Schedule definition
-process.schedule = cms.Schedule(process.raw2digi_step,process.raw2digi_steplegacy,process.reconstruction_step,process.reconstruction_steplegacy,process.prevalidation_step,process.validation_step,process.dqmoffline_step,process.dqmofflineOnPAT_step,process.RECOSIMoutput_step,process.DQMoutput_step,process.dump)
+process.schedule = cms.Schedule(process.raw2digi_step,process.raw2digi_steplegacy,process.reconstruction_step,process.reconstruction_steplegacy,process.prevalidation_step,process.validation_step,process.validation_legacy,process.dqmoffline_step,process.dqmofflineOnPAT_step,process.RECOSIMoutput_step,process.DQMoutput_step)#,process.dump)
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 

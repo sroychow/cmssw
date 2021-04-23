@@ -22,13 +22,13 @@ process.load('Configuration.StandardSequences.Harvesting_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1),
+    input = cms.untracked.int32(100),
     output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
 )
 
 # Input source
 process.source = cms.Source("DQMRootSource",
-    fileNames = cms.untracked.vstring('file:step3_RAW2DIGI_RECO_VALIDATION_DQM_inDQM.root')
+    fileNames = cms.untracked.vstring('file:step3_inDQM.root')
 )
 
 process.options = cms.untracked.PSet(
@@ -38,10 +38,11 @@ process.options = cms.untracked.PSet(
     SkipEvent = cms.untracked.vstring(),
     allowUnscheduled = cms.obsolete.untracked.bool,
     canDeleteEarly = cms.untracked.vstring(),
+    deleteNonConsumedUnscheduledModules = cms.untracked.bool(True),
     emptyRunLumiMode = cms.obsolete.untracked.string,
     eventSetup = cms.untracked.PSet(
         forceNumberOfConcurrentIOVs = cms.untracked.PSet(
-
+            allowAnyLabel_=cms.required.untracked.uint32
         ),
         numberOfConcurrentIOVs = cms.untracked.uint32(1)
     ),
@@ -75,17 +76,17 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2018_realistic', '
 
 # Path and EndPath definitions
 process.genHarvesting = cms.Path(process.postValidation_gen)
-process.dqmHarvestingFakeHLT = cms.Path(process.DQMOffline_SecondStep_FakeHLT+process.DQMOffline_Certification)
+process.validationprodHarvesting = cms.Path(process.hltpostvalidation_prod+process.postValidation_gen)
 process.validationHarvestingHI = cms.Path(process.postValidationHI)
 process.dqmHarvestingExtraHLT = cms.Path(process.DQMOffline_SecondStep_ExtraHLT+process.DQMOffline_Certification)
 process.alcaHarvesting = cms.Path()
-process.validationHarvestingNoHLT = cms.Path(process.postValidation+process.postValidation_gen)
 process.validationHarvestingFS = cms.Path(process.recoMuonPostProcessors+process.postValidationTracking+process.MuIsoValPostProcessor+process.calotowersPostProcessor+process.hcalSimHitsPostProcessor+process.hcaldigisPostProcessor+process.hcalrechitsPostProcessor+process.electronPostValidationSequence+process.photonPostProcessor+process.pfJetClient+process.pfMETClient+process.pfJetResClient+process.pfElectronClient+process.rpcRecHitPostValidation_step+process.makeBetterPlots+process.bTagCollectorSequenceMCbcl+process.METPostProcessor+process.L1GenPostProcessor+process.bdHadronTrackPostProcessor+process.siPixelPhase1OfflineDQM_harvestingV+process.MuonGEMHitsPostProcessors+process.MuonGEMDigisPostProcessors+process.MuonGEMRecHitsPostProcessors+process.postValidation_gen)
 process.validationpreprodHarvesting = cms.Path(process.postValidation_preprod+process.hltpostvalidation_preprod+process.postValidation_gen)
-process.validationprodHarvesting = cms.Path(process.hltpostvalidation_prod+process.postValidation_gen)
+process.validationHarvestingNoHLT = cms.Path(process.postValidation+process.postValidation_gen)
 process.validationHarvesting = cms.Path(process.postValidation+process.hltpostvalidation+process.postValidation_gen)
 process.validationpreprodHarvestingNoHLT = cms.Path(process.postValidation_preprod+process.postValidation_gen)
 process.dqmHarvestingPOGMC = cms.Path(process.DQMOffline_SecondStep_PrePOGMC)
+process.dqmHarvestingFakeHLT = cms.Path(process.DQMOffline_SecondStep_FakeHLT+process.DQMOffline_Certification)
 process.validationHarvestingMiniAOD = cms.Path(process.JetPostProcessor+process.METPostProcessorHarvesting+process.postValidationMiniAOD)
 process.dqmHarvesting = cms.Path(process.DQMOffline_SecondStep+process.DQMOffline_Certification)
 process.postValidation_trackingOnly_step = cms.Path(process.postValidation_trackingOnly)
@@ -96,6 +97,7 @@ process.dqmsave_step = cms.Path(process.DQMSaver)
 process.schedule = cms.Schedule(process.postValidation_trackingOnly_step,process.DQMHarvestPixelTracking_step,process.dqmsave_step)
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
+
 
 
 # Customisation from command line
