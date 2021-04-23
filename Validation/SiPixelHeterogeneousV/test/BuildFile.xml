@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<use name="boost_serialization"/>
+<use name="cuda"/>
+<use name="CalibTracker/SiPixelESProducers"/>
+<use name="DataFormats/SiPixelDetId"/>
+<use name="FWCore/Framework"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/Utilities"/>
+<use name="FWCore/ServiceRegistry"/>
+<use name="Geometry/CommonDetUnit"/>
+<use name="Geometry/Records"/>
+<use name="Geometry/TrackerGeometryBuilder"/>
+<use name="Geometry/CommonTopologies"/>
+<use name="DataFormats/GeometryVector"/>
+<use name="DataFormats/Common"/>
+<use name="DataFormats/SiPixelDigi"/>
+<use name="DataFormats/TrackerCommon"/>
+<use name="DataFormats/SiPixelCluster"/>
+<use name="DataFormats/TrackerRecHit2D"/>
+<use name="CommonTools/UtilAlgos"/>
+<library file="DetidTreeAnalyzer.cc" name="DetidTreeAnalyzer">
+  <flags EDM_PLUGIN="1"/>
+  <flags CXXFLAGS="-g3"/>
+</library>
+
