@@ -200,8 +200,6 @@
 	<class name="LHERunInfoProduct::Header" ClassVersion="10">
   <version ClassVersion="10" checksum="1310911082"/>
  </class>
- <class name="GenWeightInfoProduct"/>
- <class name="GenWeightProduct"/>
  <class name="LHEXMLStringProduct" ClassVersion="11">
   <version ClassVersion="10" checksum="4158740350"/>
   <version ClassVersion="11" checksum="3778311764"/>

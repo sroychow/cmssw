@@ -433,7 +433,7 @@ std::vector<std::string> ExternalLHEProducer::makeArgs(uint32_t nEvents,
 void ExternalLHEProducer::beginLuminosityBlockProduce(edm::LuminosityBlock& lumi, edm::EventSetup const& es) {
   auto weightInfoProduct = std::make_unique<GenWeightInfoProduct>();
   for (auto& weightGroup : weightHelper_.weightGroups()) {
-    weightInfoProduct->addWeightGroupInfo(std::unique_ptr<gen::WeightGroupInfo>(weightGroup.clone()));
+    weightInfoProduct->addWeightGroupInfo(weightGroup);
   }
   lumi.put(std::move(weightInfoProduct));
 }
