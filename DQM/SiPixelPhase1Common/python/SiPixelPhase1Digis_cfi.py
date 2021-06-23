@@ -201,6 +201,8 @@ SiPixelPhase1DigisAnalyzer = DQMEDAnalyzer('SiPixelPhase1Digis',
         triggerflags = trigger.SiPixelPhase1Triggers
 )
 
+pixelOnlySiPixelPhase1DigisAnalyzer = SiPixelPhase1DigisAnalyzer.clone()
+
 SiPixelPhase1DigisHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1DigisConf,
         geometry = SiPixelPhase1Geometry

@@ -96,6 +96,13 @@ SiPixelPhase1TrackResidualsAnalyzer = DQMEDAnalyzer('SiPixelPhase1TrackResiduals
         triggerflags = trigger.SiPixelPhase1Triggers
 )
 
+pixelOnlySiPixelPhase1TrackResidualsAnalyzer = SiPixelPhase1TrackResidualsAnalyzer.clone(
+        trajectoryInput = cms.string("pixelTracks"),
+        Tracks        = cms.InputTag("pixelTracks"),
+        vertices = cms.InputTag("pixelVertices"),
+)
+
+
 SiPixelPhase1TrackResidualsHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1TrackResidualsConf,
         geometry = SiPixelPhase1Geometry

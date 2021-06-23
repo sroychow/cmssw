@@ -590,6 +590,13 @@ SiPixelPhase1TrackClustersAnalyzer = DQMEDAnalyzer('SiPixelPhase1TrackClusters',
         triggerflags = trigger.SiPixelPhase1Triggers
 )
 
+pixelOnlySiPixelPhase1TrackClustersAnalyzer = SiPixelPhase1TrackClustersAnalyzer.clone(
+    clusters = cms.InputTag("siPixelClustersPreSplitting"),
+    clusterShapeCache = cms.InputTag("siPixelClusterShapeCachePreSplitting"),
+    tracks = cms.InputTag("pixelTracks"),
+    vertices = cms.InputTag("pixelVertices"),
+)
+
 SiPixelPhase1TrackClustersHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1TrackClustersConf,
         geometry = SiPixelPhase1Geometry

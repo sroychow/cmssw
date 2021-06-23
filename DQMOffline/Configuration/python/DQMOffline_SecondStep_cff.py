@@ -180,7 +180,8 @@ DQMHarvestTracking = cms.Sequence( TrackingOfflineDQMClient *
 DQMHarvestTrackingZeroBias = cms.Sequence( TrackingOfflineDQMClientZeroBias *
                                            dqmFastTimerServiceClient )
 
-DQMHarvestPixelTracking = cms.Sequence( pixelTrackingEffFromHitPattern *
+DQMHarvestPixelTracking = cms.Sequence( pixelOnlysiPixelPhase1OfflineDQM_harvesting *
+                                        pixelTrackingEffFromHitPattern *
                                         pixelVertexResolutionClient )
 
 DQMHarvestOuterTracker = cms.Sequence(

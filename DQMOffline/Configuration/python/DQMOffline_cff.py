@@ -161,7 +161,8 @@ from DQMOffline.RecoB.PixelVertexMonitor_cff import *
 from DQM.SiOuterTracker.OuterTrackerSourceConfig_cff import *
 from Validation.RecoTau.DQMSequences_cfi import *
 
-DQMOfflinePixelTracking = cms.Sequence( pixelTracksMonitoring *
+DQMOfflinePixelTracking = cms.Sequence( pixelTrackingOnlysiPixelPhase1OfflineDQM_source *
+                                        pixelTracksMonitoring *
                                         pixelPVMonitor )
 
 DQMOuterTracker = cms.Sequence( DQMOfflineDCS *

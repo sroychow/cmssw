@@ -36,6 +36,16 @@ siPixelPhase1OfflineDQM_source = cms.Sequence(SiPixelPhase1RawDataAnalyzer
                                             + SiPixelPhase1TrackEfficiencyAnalyzer
                                             )
 
+pixelTrackingOnlysiPixelPhase1OfflineDQM_source = cms.Sequence(pixelOnlySiPixelPhase1RawDataAnalyzer
+                                            + pixelOnlySiPixelPhase1DigisAnalyzer
+                                            + SiPixelPhase1DeadFEDChannelsAnalyzer
+                                            + pixelOnlySiPixelPhase1ClustersAnalyzer
+                                            + pixelOnlySiPixelPhase1RecHitsAnalyzer
+                                            #+ pixelOnlySiPixelPhase1TrackResidualsAnalyzer
+                                            + pixelOnlySiPixelPhase1TrackClustersAnalyzer
+                                            #+ SiPixelPhase1TrackEfficiencyAnalyzer
+                                            )
+
 
 #Cosmics config
 

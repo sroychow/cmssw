@@ -224,6 +224,10 @@ SiPixelPhase1RecHitsAnalyzer = DQMEDAnalyzer('SiPixelPhase1RecHits',
         triggerflags = trigger.SiPixelPhase1Triggers
 )
 
+pixelOnlySiPixelPhase1RecHitsAnalyzer = SiPixelPhase1RecHitsAnalyzer.clone(
+        src = cms.InputTag("pixelTracks"),
+)
+
 SiPixelPhase1RecHitsHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1RecHitsConf,
         geometry = SiPixelPhase1Geometry

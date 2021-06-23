@@ -298,6 +298,9 @@ SiPixelPhase1ClustersAnalyzer = DQMEDAnalyzer('SiPixelPhase1Clusters',
         triggerflags = trigger.SiPixelPhase1Triggers
 )
 
+pixelOnlySiPixelPhase1ClustersAnalyzer = SiPixelPhase1ClustersAnalyzer.clone(
+    pixelSrc = cms.InputTag("siPixelClustersPreSplitting"),
+)
 SiPixelPhase1ClustersHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1ClustersConf,
         geometry = SiPixelPhase1Geometry

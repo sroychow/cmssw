@@ -87,8 +87,11 @@ SiPixelPhase1RawDataAnalyzer = DQMEDAnalyzer('SiPixelPhase1RawData',
         geometry = SiPixelPhase1Geometry,
         triggerflags = trigger.SiPixelPhase1Triggers
 )
+##pixelTracking only
+pixelOnlySiPixelPhase1RawDataAnalyzer = SiPixelPhase1RawDataAnalyzer.clone()
 
 SiPixelPhase1RawDataHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1RawDataConf,
         geometry = SiPixelPhase1Geometry
 )
+
