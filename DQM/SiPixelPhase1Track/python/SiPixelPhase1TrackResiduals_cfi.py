@@ -97,7 +97,7 @@ SiPixelPhase1TrackResidualsAnalyzer = DQMEDAnalyzer('SiPixelPhase1TrackResiduals
 )
 
 pixelOnlySiPixelPhase1TrackResidualsAnalyzer = SiPixelPhase1TrackResidualsAnalyzer.clone(
-        trajectoryInput = cms.string("pixelTracks"),
+        trajectoryInput = cms.string("refittedForPixelDQM"),
         Tracks        = cms.InputTag("pixelTracks"),
         vertices = cms.InputTag("pixelVertices"),
 )

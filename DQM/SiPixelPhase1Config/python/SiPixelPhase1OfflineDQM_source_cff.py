@@ -36,13 +36,19 @@ siPixelPhase1OfflineDQM_source = cms.Sequence(SiPixelPhase1RawDataAnalyzer
                                             + SiPixelPhase1TrackEfficiencyAnalyzer
                                             )
 
+
+#add the refitter to the sequence for pixel only wf.
+from DQM.SiPixelMonitorTrack.RefitterForPixelDQM import *
+refittedForPixelDQM.src=cms.InputTag("pixelTracks")
+
 pixelTrackingOnlysiPixelPhase1OfflineDQM_source = cms.Sequence(pixelOnlySiPixelPhase1RawDataAnalyzer
                                             + pixelOnlySiPixelPhase1DigisAnalyzer
                                             + SiPixelPhase1DeadFEDChannelsAnalyzer
                                             + pixelOnlySiPixelPhase1ClustersAnalyzer
                                             + pixelOnlySiPixelPhase1RecHitsAnalyzer
-                                            #+ pixelOnlySiPixelPhase1TrackResidualsAnalyzer
                                             + pixelOnlySiPixelPhase1TrackClustersAnalyzer
+                                            + refittedForPixelDQM
+                                            + pixelOnlySiPixelPhase1TrackResidualsAnalyzer
                                             #+ SiPixelPhase1TrackEfficiencyAnalyzer
                                             )
 
