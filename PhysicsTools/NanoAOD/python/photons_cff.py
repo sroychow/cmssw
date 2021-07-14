@@ -108,7 +108,6 @@ run2_nanoAOD_94XMiniAODv2.toModify(calibratedPatPhotonsNano,
     correctionFile = cms.string("EgammaAnalysis/ElectronTools/data/ScalesSmearings/Run2017_17Nov2017_v1_ele_unc")
 )
 
-
 run2_miniAOD_80XLegacy.toModify(calibratedPatPhotonsNano,
                                 correctionFile = cms.string("EgammaAnalysis/ElectronTools/data/ScalesSmearings/Legacy2016_07Aug2017_FineEtaR9_v3_ele_unc")
 )
@@ -144,7 +143,7 @@ slimmedPhotonsWithUserData = cms.EDProducer("PATPhotonUserDataEmbedder",
     )
 )
 
-for modifier in run2_egamma_2016, run2_egamma_2017, run2_egamma_2018, run2_miniAOD_80XLegacy, run2_nanoAOD_94XMiniAODv1, run2_nanoAOD_94XMiniAODv2, run2_nanoAOD_102Xv1:
+for modifier in run2_miniAOD_80XLegacy, run2_nanoAOD_94XMiniAODv1, run2_nanoAOD_94XMiniAODv2, run2_nanoAOD_102Xv1:
     modifier.toModify(slimmedPhotonsWithUserData.userFloats,
                       ecalEnergyErrPostCorrNew = cms.InputTag("calibratedPatPhotonsNano","ecalEnergyErrPostCorr"),
                       ecalEnergyPreCorrNew     = cms.InputTag("calibratedPatPhotonsNano","ecalEnergyPreCorr"),
@@ -233,7 +232,7 @@ photonTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
 
 
 #these eras need to make the energy correction, hence the "New"
-for modifier in run2_egamma_2016,run2_egamma_2017,run2_egamma_2018,run2_nanoAOD_94XMiniAODv1, run2_miniAOD_80XLegacy, run2_nanoAOD_102Xv1,run2_nanoAOD_94XMiniAODv2:
+for modifier in run2_nanoAOD_94XMiniAODv1, run2_miniAOD_80XLegacy, run2_nanoAOD_102Xv1,run2_nanoAOD_94XMiniAODv2:
     modifier.toModify(photonTable.variables,
         pt = Var("pt*userFloat('ecalEnergyPostCorrNew')/userFloat('ecalEnergyPreCorrNew')", float, precision=-1, doc="p_{T}"),
         energyErr = Var("userFloat('ecalEnergyErrPostCorrNew')",float,doc="energy error of the cluster from regression",precision=6),
@@ -297,7 +296,7 @@ for modifier in run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94
 
 
 ##adding 4 most imp scale & smearing variables to table
-for modifier in run2_nanoAOD_106Xv1,run2_nanoAOD_106Xv2,run2_egamma_2016,run2_egamma_2017,run2_egamma_2018,run2_miniAOD_80XLegacy, run2_nanoAOD_94XMiniAODv1, run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_102Xv1:
+for modifier in run2_nanoAOD_106Xv1,run2_nanoAOD_106Xv2,run2_miniAOD_80XLegacy, run2_nanoAOD_94XMiniAODv1, run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_102Xv1:
     modifier.toModify(photonTable.variables,
                       dEscaleUp=Var("userFloat('ecalEnergyPostCorrNew') - userFloat('energyScaleUpNew')", float, doc="ecal energy scale shifted 1 sigma up (adding gain/stat/syst in quadrature)", precision=8),
                       dEscaleDown=Var("userFloat('ecalEnergyPostCorrNew') - userFloat('energyScaleDownNew')", float, doc="ecal energy scale shifted 1 sigma down (adding gain/stat/syst in quadrature)", precision=8),
@@ -313,60 +312,37 @@ for modifier in run2_nanoAOD_94X2016,:
                       dEsigmaDown=Var("userFloat('ecalEnergyPostCorr') - userFloat('energySigmaDown')", float,  doc="ecal energy smearing value shifted 1 sigma up", precision=8),
     )
 
-photonSequence = cms.Sequence(
-        bitmapVIDForPho + \
-        bitmapVIDForPhoSpring16V2p2 + \
-        isoForPho + \
-        seedGainPho + \
-        slimmedPhotonsWithUserData + \
-        finalPhotons
-)
 
-photonTables = cms.Sequence ( photonTable)
-photonMC = cms.Sequence(photonsMCMatchForTable + photonMCTable)
+photonTask = cms.Task(bitmapVIDForPho,
+                      bitmapVIDForPhoSpring16V2p2,
+                      isoForPho,
+                      seedGainPho,
+                      slimmedPhotonsWithUserData,
+                      finalPhotons
+)
+photonSequence = cms.Sequence(photonTask)
+
+photonTablesTask = cms.Task(photonTable)
+photonTables = cms.Sequence(photonTablesTask)
+
+photonMCTask = cms.Task(photonsMCMatchForTable,photonMCTable)
+photonMC = cms.Sequence(photonMCTask)
 
 from RecoEgamma.EgammaIsolationAlgos.egmPhotonIsolationMiniAOD_cff import egmPhotonIsolation
 from RecoEgamma.PhotonIdentification.photonIDValueMapProducer_cff import photonIDValueMapProducer
 
 _withUpdatePho_sequence = photonSequence.copy() ###copy first for non-ULs else it just takes the UL sequence
 
-
-###UL to be done first
-_withUL16preVFPScale_sequence = photonSequence.copy()
-_withUL16preVFPScale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano  + slimmedPhotonsWithUserData)
-(run2_egamma_2016 & tracker_apv_vfp30_2016).toReplaceWith(photonSequence, _withUL16preVFPScale_sequence)
-
-_withUL16postVFPScale_sequence = photonSequence.copy()
-_withUL16postVFPScale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano  + slimmedPhotonsWithUserData)
-(run2_egamma_2016 & ~tracker_apv_vfp30_2016).toReplaceWith(photonSequence, _withUL16postVFPScale_sequence)
-
-_withUL17Scale_sequence = photonSequence.copy()
-_withUL17Scale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano  + slimmedPhotonsWithUserData)
-run2_egamma_2017.toReplaceWith(photonSequence, _withUL17Scale_sequence)
-
-_withUL18Scale_sequence = photonSequence.copy()
-_withUL18Scale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano  + slimmedPhotonsWithUserData)
-run2_egamma_2018.toReplaceWith(photonSequence, _withUL18Scale_sequence)
+for modifier in run2_miniAOD_80XLegacy, run2_nanoAOD_94XMiniAODv1, run2_nanoAOD_94XMiniAODv2, run2_nanoAOD_102Xv1, run2_nanoAOD_106Xv1, run2_nanoAOD_106Xv2:
+    _withCalibphotonTask = photonTask.copyAndAdd(calibratedPatPhotonsNano)
+    _withCalibphotonSequence = cms.Sequence(_withCalibphotonTask)
+    modifier.toReplaceWith(photonSequence, _withCalibphotonSequence)
 
 
-_updatePhoTo106X_sequence =cms.Sequence(egmPhotonIsolation + photonIDValueMapProducer + slimmedPhotonsTo106X)
-_withUpdatePho_sequence.insert(0,_updatePhoTo106X_sequence)
+_updatePhoTo106X_Task = photonTask.copyAndAdd(egmPhotonIsolation, photonIDValueMapProducer, slimmedPhotonsTo106X)
+_updatePhoTo106X_sequence = cms.Sequence(_updatePhoTo106X_Task)
 for modifier in run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016 ,run2_nanoAOD_102Xv1,run2_nanoAOD_94XMiniAODv1:
-    modifier.toReplaceWith(photonSequence, _withUpdatePho_sequence)
+    modifier.toReplaceWith(photonSequence, _updatePhoTo106X_sequence)
 
 
-_with80XScale_sequence = _withUpdatePho_sequence.copy()
-_with80XScale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano  + slimmedPhotonsWithUserData)
-run2_miniAOD_80XLegacy.toReplaceWith(photonSequence, _with80XScale_sequence)
 
-_with94Xv1Scale_sequence = _withUpdatePho_sequence.copy()
-_with94Xv1Scale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano + slimmedPhotonsWithUserData)
-run2_nanoAOD_94XMiniAODv1.toReplaceWith(photonSequence, _with94Xv1Scale_sequence)
-
-_with94Xv2Scale_sequence = _withUpdatePho_sequence.copy()
-_with94Xv2Scale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano + slimmedPhotonsWithUserData)
-run2_nanoAOD_94XMiniAODv2.toReplaceWith(photonSequence, _with94Xv2Scale_sequence)
-
-_with102Xv1Scale_sequence = photonSequence.copy()
-_with102Xv1Scale_sequence.replace(slimmedPhotonsWithUserData, calibratedPatPhotonsNano + slimmedPhotonsWithUserData)
-run2_nanoAOD_102Xv1.toReplaceWith(photonSequence, _with102Xv1Scale_sequence)

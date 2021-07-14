@@ -288,7 +288,8 @@ def nanoAOD_activateVID(process):
     switchOnVIDPhotonIdProducer(process,DataFormat.MiniAOD) # do not call this to avoid resetting photon IDs in VID, if called before inside makePuppiesFromMiniAOD
     for modname in photon_id_modules_WorkingPoints_nanoAOD.modules:
         setupAllVIDIdsInModule(process,modname,setupVIDPhotonSelection)
-    process.photonSequence.insert(process.photonSequence.index(bitmapVIDForPho),process.egmPhotonIDSequence)
+
+    process.photonSequence += cms.Sequence(process.egmPhotonIDSequence) 
     for modifier in run2_miniAOD_80XLegacy,run2_nanoAOD_94XMiniAODv1,run2_nanoAOD_94XMiniAODv2,run2_nanoAOD_94X2016,run2_nanoAOD_102Xv1:
         modifier.toModify(process.photonMVAValueMapProducer, src = "slimmedPhotonsTo106X")
         modifier.toModify(process.egmPhotonIDs, physicsObjectSrc = "slimmedPhotonsTo106X")
