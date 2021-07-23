@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 from __future__ import print_function
 import sys
 from ROOT import *
@@ -15,19 +14,24 @@ from getGTfromDQMFile_V2 import getGTfromDQMFile
 
 def setRunDirectory(runNumber):
     # Don't forget to add an entry when there is a new era
-    dirDict = { 325799:['Data2018', 'HIRun2018'],\
-                315252:['Data2018', 'Run2018'],\
-                308336:['Data2018', 'Commissioning2018'],\
-                294644:['Data2017', 'Run2017'],\
-                290123:['Data2017', 'Commissioning2017'],\
-                284500:['Data2016', 'PARun2016'],\
-                271024:['Data2016', 'Run2016'],\
-                264200:['Data2016', 'Commissioning2016'],\
-                246907:['Data2015', 'Run2015'],\
-                232881:['Data2015', 'Commissioning2015'],\
-                211658:['Data2013', 'Run2013'],\
-                209634:['Data2013', 'HIRun2013'],\
-                190450:['Data2012', 'Run2012']}
+    dirDict = { 
+        343006:['Data2021', 'Commissioning2021'],
+        335443:['Data2020', 'Commissioning2020'],\
+        328588:['Data2019', 'Commissioning2019'],\
+        325799:['Data2018', 'HIRun2018'],\
+        315252:['Data2018', 'Run2018'],\
+        308336:['Data2018', 'Commissioning2018'],\
+        294644:['Data2017', 'Run2017'],\
+        290123:['Data2017', 'Commissioning2017'],\
+        284500:['Data2016', 'PARun2016'],\
+        271024:['Data2016', 'Run2016'],\
+        264200:['Data2016', 'Commissioning2016'],\
+        246907:['Data2015', 'Run2015'],\
+        232881:['Data2015', 'Commissioning2015'],\
+        211658:['Data2013', 'Run2013'],\
+        209634:['Data2013', 'HIRun2013'],\
+        190450:['Data2012', 'Run2012']
+    }
     runKey=0
     for key in sorted(dirDict):
         if runNumber > key:
@@ -42,8 +46,8 @@ def downloadOfflineDQMhisto(run, Run_type,rereco):
     print('Processing '+ Run_type + ' in '+DataOfflineDir+"...")
     File_Name = ''
     print('Directory to fetch the DQM file from: https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/')
-    url = 'https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'
-    os.popen("curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET "+url+" > index.html") 
+    url = 'https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'    
+    os.popen("curl -k --cert /tmp/x509up_u133079  --key /tmp/x509up_u133079 -X GET "+url+" > index.html") 
     f=codecs.open("index.html", 'r')
     index = f.readlines()
     if any(str(Run_Number[i]) in s for s in index):
@@ -60,7 +64,7 @@ def downloadOfflineDQMhisto(run, Run_type,rereco):
         sys.exit(0)
 
     print('Downloading DQM file:'+File_Name)
-    os.system('curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'+File_Name+' > /tmp/'+File_Name)
+    os.system('curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'+File_Name+' > /tmp/'+File_Name)
     
     return File_Name
 
@@ -73,7 +77,7 @@ def downloadOfflinePCLhisto(run, Run_type):
     File_Name = 'Temp'
     print('Directory to fetch the DQM file from: https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/')
     url = 'https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'
-    os.popen("curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET "+url+" > index.html") 
+    os.popen("curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET "+url+" > index.html") 
     f=codecs.open("index.html", 'r')
     index = f.readlines()
     if any(str(Run_Number[i]) in s for s in index):
@@ -85,7 +89,7 @@ def downloadOfflinePCLhisto(run, Run_type):
         sys.exit(0)
     if File_Name!='Temp':
         print('Downloading DQM file:'+File_Name)
-        os.system('curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'+File_Name+' > /tmp/'+File_Name)
+        os.system('curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OfflineData/'+DataOfflineDir+'/'+Run_type+'/000'+str(nnn)+'xx/'+File_Name+' > /tmp/'+File_Name)
     
     return File_Name
 
@@ -100,10 +104,10 @@ def downloadnlineDQMhisto(run, Run_type):
     deadRocMap = False
     ##################online file########    
     url1 = 'https://cmsweb.cern.ch/dqm/online/data/browse/Original/000'+str(nnnOnline)+'xxxx/000'+str(nnn)+'xx/'
-    os.popen("curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET "+url1+" > index_online.html")
+    os.popen("curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET "+url1+" > index_online.html")
     
     url2 = 'https://cmsweb.cern.ch/dqm/offline/data/browse/ROOT/OnlineData/original/000'+str(nnnOnline)+'xxxx/000'+str(nnn)+'xx/'
-    os.popen("curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET "+url2+" > index_online_backup.html")
+    os.popen("curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET "+url2+" > index_online_backup.html")
     f_online_backup=codecs.open("index_online_backup.html", 'r')
     index_online_backup = f_online_backup.readlines()
 
@@ -128,7 +132,7 @@ def downloadnlineDQMhisto(run, Run_type):
     print('Downloading DQM file:'+File_Name_online)
 
 
-    os.system('curl -k --cert /data/users/cctrkdata/current/auth/proxy/proxy.cert --key /data/users/cctrkdata/current/auth/proxy/proxy.cert -X GET https://cmsweb.cern.ch/dqm/online/data/browse/Original/000'+str(nnnOnline)+'xxxx/000'+str(nnn)+'xx/'+File_Name_online+' > /tmp/'+File_Name_online)
+    os.system('curl -k --cert /tmp/x509up_u133079 --key /tmp/x509up_u133079 -X GET https://cmsweb.cern.ch/dqm/online/data/browse/Original/000'+str(nnnOnline)+'xxxx/000'+str(nnn)+'xx/'+File_Name_online+' > /tmp/'+File_Name_online)
 
     os.remove('index_online.html')
     os.remove('index_online_backup.html')
@@ -157,6 +161,9 @@ Run_type = sys.argv[1]
 Run_Number = [int(x) for x in sys.argv[2:]]
 CMSSW_BASE = str(os.popen('echo ${CMSSW_BASE}').read().strip())
 rereco=False
+OUTPUTDIR="./"
+#OUTPUTDIR="/eos/cms/store/group/tracker-cctrack/www/TrackerMapsReloaded/files/data/users/event_display/"
+
 
 ###########Check if user enter the right run type######################
 if Run_type == 'Cosmics' or Run_type == 'StreamExpress' or Run_type == 'StreamExpressCosmics' or Run_type == 'ZeroBias' or Run_type == 'StreamHIExpress' or Run_type == 'HIMinimumBias1' or re.match('ZeroBias([0-9]+?)',Run_type) or re.match('HIMinimumBias([0-9]+?)',Run_type):
@@ -174,7 +181,8 @@ for i in range(len(Run_Number)):
     nnnOut = Run_Number[i]/1000
 
     filepath = '/tmp/'
-    File_Name = downloadOfflineDQMhisto(Run_Number[i], Run_type, rereco)
+    File_Name = "DQM_V0001_R000315777__Cosmics__Run2018A-PromptReco-v1__DQMIO.root"
+    #downloadOfflineDQMhisto(Run_Number[i], Run_type, rereco)		
     if Run_type=="StreamExpress" or Run_type=="StreamHIExpress":
         File_Name_PCL = downloadOfflinePCLhisto(Run_Number[i], Run_type)
     deadRocMap, File_Name_online = downloadnlineDQMhisto(Run_Number[i], Run_type)
@@ -191,7 +199,7 @@ for i in range(len(Run_Number)):
     check_command = 'check_runcomplete '+filepath+File_Name
     Check_output = subprocess.call(check_command, shell=True)
 
-
+    '''
     if Check_output == 0:
         print('Using DQM file: '+File_Name)
     else:
@@ -211,9 +219,9 @@ for i in range(len(Run_Number)):
                 print('-------->   Remember to re-run the script later!!!!!')
             else:
                 sys.exit(0)
-    
-###################Start making TkMaps################
-
+    '''
+    ###################Start making TkMaps################
+    print("Creating dir for:{}".format(Run_Number[i]))
     checkfolder = os.path.exists(str(Run_Number[i]))
     if checkfolder == True:
         shutil.rmtree(str(Run_Number[i]))
@@ -221,18 +229,20 @@ for i in range(len(Run_Number)):
     else:
         os.makedirs(str(Run_Number[i])+'/'+Run_type)
         
-#######Getting GT##############
+    #######Getting GT##############
     ####After switch production to 10_X_X release, the clean up section need to be reviewed and modified  ##########
-    globalTag = getGT(filepath+File_Name, str(Run_Number[i]), 'globalTag_Step1')
+    #globalTag = getGT(filepath+File_Name, str(Run_Number[i]), 'globalTag_Step1')
+    globalTag = getGT(filepath+File_Name, str(Run_Number[i]), 'Globaltag')
+    print(globalTag)
     ####################################################
-
+    
 
     
     print(" Creating the TrackerMap.... ")
 
     detIdInfoFileName = 'TkDetIdInfo_Run'+str(Run_Number[i])+'_'+Run_type+'.root'
     workPath = os.popen('pwd').readline().strip()
-
+    
     os.chdir(str(Run_Number[i])+'/'+Run_type)
    
 
@@ -304,10 +314,11 @@ for i in range(len(Run_Number)):
     os.system('cmsRun ${CMSSW_BASE}/src/DQM/SiStripMonitorClient/test/mergeBadChannel_Template_cfg.py globalTag='+globalTag+' runNumber='+str(Run_Number[i])+' dqmFile='+filepath+'/'+File_Name)
     shutil.move('MergedBadComponents.log','MergedBadComponents_run'+str(Run_Number[i])+'.txt')
 
-    os.system("mkdir -p /data/users/event_display/TkCommissioner_runs/"+DataLocalDir+"/"+dest+" 2> /dev/null")
+    os.system("mkdir -p {}/{}/{} 2>/dev/null".format(OUTPUTDIR,DataLocalDir,dest))
 
 
-    shutil.copyfile(detIdInfoFileName,'/data/users/event_display/TkCommissioner_runs/'+DataLocalDir+'/'+dest+'/'+detIdInfoFileName)
+    shutil.copyfile(detIdInfoFileName, "{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, detIdInfoFileName))
+    #'/data/users/event_display/TkCommissioner_runs/'+DataLocalDir+'/'+dest+'/'+detIdInfoFileName)
 
     os.remove(detIdInfoFileName)
     os.remove('MergedBadComponentsTkMap_Canvas.root')
@@ -315,15 +326,16 @@ for i in range(len(Run_Number)):
 ##############counting dead pixel#######################
     print("countig dead pixel ROCs" )
     if (Run_Number[i] < 290124) :
-
         os.system('${CMSSW_BASE}/src/DQM/SiStripMonitorClient/scripts/DeadROCCounter.py '+filepath+'/'+File_Name)
     else: 
         os.system('${CMSSW_BASE}/src/DQM/SiStripMonitorClient/scripts/DeadROCCounter_Phase1.py '+filepath+'/'+File_Name)
 
     if rereco:
-        os.system('mkdir -p /data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco 2> /dev/null')
+        #os.system('mkdir -p /data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco 2> /dev/null')
+        os.system("mkdir -p {}/{}/{}/{}/{}/ReReco 2>/dev/null".format(OUTPUTDIR,DataLocalDir,dest, str(nnnOut), str(Run_Number[i])))
     else:
-        os.system('mkdir -p /data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type+' 2> /dev/null')
+        #os.system('mkdir -p /data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type+' 2> /dev/null')
+        os.system("mkdir -p {}/{}/{}/{}/{}/{} 2>/dev/null".format(OUTPUTDIR,DataLocalDir,dest, str(nnnOut), str(Run_Number[i]), Run_type))
     
     shutil.move('PixZeroOccROCs_run'+str(Run_Number[i])+'.txt',workPath+'/PixZeroOccROCs_run'+str(Run_Number[i])+'.txt')
 
@@ -359,9 +371,11 @@ for i in range(len(Run_Number)):
         full_stripfile_name = os.path.join('.', file_name)
         if (os.path.isfile(full_stripfile_name)):
             if rereco:
-                shutil.copy(full_stripfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco')
+                #shutil.copy(full_stripfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco')
+                shutil.copy(full_stripfile_name, "{}/{}/{}/{}/{}/ReReco".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i])))
             else:
-                shutil.copy(full_stripfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type)
+                #shutil.copy(full_stripfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type)
+                shutil.copy(full_stripfile_name, "{}/{}/{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i]), Run_type))
 
 
 
@@ -383,9 +397,11 @@ for i in range(len(Run_Number)):
         full_pixelfile_name = os.path.join('./OUT/', file_name)
         if (os.path.isfile(full_pixelfile_name)):
             if rereco:
-                shutil.copy(full_pixelfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco')
+                #shutil.copy(full_pixelfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/ReReco')
+                shutil.copy(full_pixelfile_name, "{}/{}/{}/{}/{}/ReReco".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i])))
             else:
-                shutil.copy(full_pixelfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type)
+                #shutil.copy(full_pixelfile_name, '/data/users/event_display/'+DataLocalDir+'/'+dest+'/'+str(nnnOut)+'/'+str(Run_Number[i])+'/'+Run_type)
+                shutil.copy(full_pixelfile_name, "{}/{}/{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i]), Run_type))
 
 
     shutil.rmtree('OUT')
@@ -395,7 +411,8 @@ for i in range(len(Run_Number)):
     pixelTreeFileName = 'PixelPhase1Tree_Run'+str(Run_Number[i])+'_'+Run_type+'.root'
     os.system('${CMSSW_BASE}/src/DQM/SiStripMonitorClient/scripts/PhaseITreeProducer.py ' + filepath+'/'+File_Name + ' ' + pixelTreeFileName)
 
-    shutil.copyfile(pixelTreeFileName,'/data/users/event_display/TkCommissioner_runs/'+DataLocalDir+'/'+dest+'/'+pixelTreeFileName)
+    #shutil.copyfile(pixelTreeFileName,'/data/users/event_display/TkCommissioner_runs/'+DataLocalDir+'/'+dest+'/'+pixelTreeFileName)
+    shutil.copy(pixelTreeFileName, "{}/{}/{}/{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i]), Run_type, pixelTreeFileName))
     os.remove(pixelTreeFileName)
     if File_Name:
         os.remove(filepath+File_Name)

@@ -147,11 +147,13 @@ print("#Pixel Barrel Summary", file=out_file)
 for l in range(1,5):
     if countBadROCBarrel(fin, l, out_file) == 1:
         print("DQM histogram for Layer", str(l), " is empty!", file=out_file)
-print("BPix tot", '{0:4d} {1:4d} {2:4.1f}'.format(bpix_tot_deadROC, bpix_tot_ineffROC, round(float(bpix_tot_totalentries)/bpix_tot_Nrocspopulated,1)), file=out_file)
+if bpix_tot_Nrocspopulated > 0:
+    print("BPix tot", '{0:4d} {1:4d} {2:4.1f}'.format(bpix_tot_deadROC, bpix_tot_ineffROC, round(float(bpix_tot_totalentries)/bpix_tot_Nrocspopulated,1)), file=out_file)
 print("#Pixel Forward Summary", file=out_file)
 for ring in range(1,3):
     if countBadROCForward(fin, ring, out_file) == 1:
         print("DQM histogram for Ring", str(ring), " is empty!", file=out_file)
-print("FPix tot", '{0:4d} {1:4d} {2:4.1f}'.format(fpix_tot_deadROC, fpix_tot_ineffROC, round(float(fpix_tot_totalentries)/fpix_tot_Nrocspopulated,1)), file=out_file)
+if fpix_tot_Nrocspopulated > 0:
+    print("FPix tot", '{0:4d} {1:4d} {2:4.1f}'.format(fpix_tot_deadROC, fpix_tot_ineffROC, round(float(fpix_tot_totalentries)/fpix_tot_Nrocspopulated,1)), file=out_file)
 print("Number of clusters=", int(hnpixclus_bpix.GetEntries() + hnpixclus_fpix.GetEntries()), file=out_file)
 out_file.close()	
