@@ -161,8 +161,8 @@ Run_type = sys.argv[1]
 Run_Number = [int(x) for x in sys.argv[2:]]
 CMSSW_BASE = str(os.popen('echo ${CMSSW_BASE}').read().strip())
 rereco=False
-OUTPUTDIR="./"
-#OUTPUTDIR="/eos/cms/store/group/tracker-cctrack/www/TrackerMapsReloaded/files/data/users/event_display/"
+#OUTPUTDIR="./"
+OUTPUTDIR="/eos/cms/store/group/tracker-cctrack/www/TrackerMapsReloaded/files/data/users/event_display/"
 
 
 ###########Check if user enter the right run type######################
@@ -181,8 +181,7 @@ for i in range(len(Run_Number)):
     nnnOut = Run_Number[i]/1000
 
     filepath = '/tmp/'
-    File_Name = "DQM_V0001_R000315777__Cosmics__Run2018A-PromptReco-v1__DQMIO.root"
-    #downloadOfflineDQMhisto(Run_Number[i], Run_type, rereco)		
+    File_Name = downloadOfflineDQMhisto(Run_Number[i], Run_type, rereco)		
     if Run_type=="StreamExpress" or Run_type=="StreamHIExpress":
         File_Name_PCL = downloadOfflinePCLhisto(Run_Number[i], Run_type)
     deadRocMap, File_Name_online = downloadnlineDQMhisto(Run_Number[i], Run_type)
@@ -317,7 +316,7 @@ for i in range(len(Run_Number)):
     os.system("mkdir -p {}/{}/{} 2>/dev/null".format(OUTPUTDIR,DataLocalDir,dest))
 
 
-    shutil.copyfile(detIdInfoFileName, "{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, detIdInfoFileName))
+    shutil.copyfile(detIdInfoFileName, "{}/{}/{}/{}/{}/{}/{}".format(OUTPUTDIR, DataLocalDir, dest, str(nnnOut), str(Run_Number[i]), Run_type, detIdInfoFileName))
     #'/data/users/event_display/TkCommissioner_runs/'+DataLocalDir+'/'+dest+'/'+detIdInfoFileName)
 
     os.remove(detIdInfoFileName)
