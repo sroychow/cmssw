@@ -8,8 +8,6 @@
 //
 // Author: Alessandro Rossi, Suvankar Roy Chowdhury
 //
-#include "DataFormats/Math/interface/approx_atan2.h"
-#include "CUDADataFormats/Common/interface/Product.h"
 #include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 // for string manipulations
@@ -37,9 +35,10 @@ private:
 // constructors
 //
 
-SiPixelPhase1MonitorRecHitsSoAGPU::SiPixelPhase1MonitorRecHitsSoAGPU(const edm::ParameterSet& iConfig) : SiPixelPhase1MonitorRecHitsSoABase(iConfig)
-{
-  tokenHitsGPU_ = consumes<cms::cuda::Product<TrackingRecHit2DGPU>>(iConfig.getParameter<edm::InputTag>("pixelHitsSrc"));
+SiPixelPhase1MonitorRecHitsSoAGPU::SiPixelPhase1MonitorRecHitsSoAGPU(const edm::ParameterSet& iConfig)
+    : SiPixelPhase1MonitorRecHitsSoABase(iConfig) {
+  tokenHitsGPU_ =
+      consumes<cms::cuda::Product<TrackingRecHit2DGPU>>(iConfig.getParameter<edm::InputTag>("pixelHitsSrc"));
   clusterToken_ = consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("pixelClusterSrc"));
 }
 
@@ -48,18 +47,15 @@ SiPixelPhase1MonitorRecHitsSoAGPU::SiPixelPhase1MonitorRecHitsSoAGPU(const edm::
 //
 void SiPixelPhase1MonitorRecHitsSoAGPU::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   const auto& rhsoaHandle = iEvent.getHandle(tokenHitsGPU_);
-  if (!rhsoaHandle.isValid()) {
-    edm::LogWarning("SiPixelPhase1MonitorRecHitsSoAGPU") << "No CUDA RecHits found \n returning!" << std::endl;
+  if (!rhsoaHandle.isValid())
     return;
-  }
   const auto& rho = iEvent.get(tokenHitsGPU_);
-  cms::cuda::ScopedContextAnalyze ctx{rho};    
+  cms::cuda::ScopedContextAnalyze ctx{rho};
   const auto& rhsoa = ctx.get(rho);
   auto m_nHits = rhsoa.nHits();
   hnHits->Fill(m_nHits);
   if (m_nHits == 0)
     return;
-  edm::LogWarning("SiPixelPhase1MonitorRecHitsSoAGPU") << "Total RecHits : " << m_nHits << std::endl; 
   m_store32 = rhsoa.localCoordToHostAsync(ctx.stream());
   m_hitsModuleStart = rhsoa.hitsModuleStartToHostAsync(ctx.stream());
   auto xl = m_store32.get();
@@ -70,7 +66,7 @@ void SiPixelPhase1MonitorRecHitsSoAGPU::analyze(const edm::Event& iEvent, const 
   auto const& clusters = iEvent.get(clusterToken_);
 
   constexpr uint32_t maxHitsInModule = gpuClustering::maxHitsInModule();
-  
+
   for (auto DSViter = clusters.begin(); DSViter != clusters.end(); DSViter++) {
     unsigned int detid = DSViter->detId();
     DetId detIdObject(detid);
@@ -81,9 +77,10 @@ void SiPixelPhase1MonitorRecHitsSoAGPU::analyze(const edm::Event& iEvent, const 
     auto fc = m_hitsModuleStart[gind];
     auto lc = m_hitsModuleStart[gind + 1];
     auto nhits = lc - fc;
-    
+
     nhits = std::min(nhits, maxHitsInModule);
-    if (0 == nhits)      continue;
+    if (0 == nhits)
+      continue;
     auto jnd = [&](int k) { return fc + k; };
     for (auto const& clust : *DSViter) {
       assert(clust.originalId() >= 0);
@@ -92,19 +89,18 @@ void SiPixelPhase1MonitorRecHitsSoAGPU::analyze(const edm::Event& iEvent, const 
         continue;
       auto ij = jnd(clust.originalId());
       LocalPoint lp(xl[ij], yl[ij]);
-      
+
       GlobalPoint globalPos = gDetUnit->surface().toGlobal(lp);
 
-      float xG=globalPos.x();//in cm
-      float yG=globalPos.y();
-      float zG=globalPos.z();
-      float rG=globalPos.perp();
-      float fphi=short2phi(globalPos.phi());
-      //uint32_t charge=globalPos.charge(i);
-      //int16_t sizeX=globalPos.clusterSizeX(i);
-      //int16_t sizeY=globalPos.clusterSizeY(i);
-
-      fillHistosForRecHit(detid, xG, yG, zG, rG, fphi);
+      float xG = globalPos.x();  //in cm
+      float yG = globalPos.y();
+      float zG = globalPos.z();
+      float rG = globalPos.perp();
+      float fphi = globalPos.phi();
+      uint32_t charge = clust.charge();
+      int16_t sizeX = clust.sizeX();
+      int16_t sizeY = clust.sizeY();
+      fillHistosForRecHit(detid, xG, yG, zG, rG, fphi, charge, sizeX, sizeY);
     }
   }
 }
