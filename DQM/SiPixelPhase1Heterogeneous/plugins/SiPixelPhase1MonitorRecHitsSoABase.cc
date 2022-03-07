@@ -10,39 +10,21 @@
 //
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "CUDADataFormats/Common/interface/Product.h"
-#include "DataFormats/Common/interface/Handle.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
-// DQM Histograming
-#include "DQMServices/Core/interface/MonitorElement.h"
-#include "DQMServices/Core/interface/DQMEDAnalyzer.h"
-#include "DQMServices/Core/interface/DQMStore.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
-// for string manipulations
-#include <fmt/printf.h>
 // Geometry
-#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+#include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
-#include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "SiPixelPhase1MonitorRecHitsSoABase.h"
 
-SiPixelPhase1MonitorRecHitsSoABase::SiPixelPhase1MonitorRecHitsSoABase(const edm::ParameterSet& iConfig) 
-  : 
-  geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
-  topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>())
-{
+SiPixelPhase1MonitorRecHitsSoABase::SiPixelPhase1MonitorRecHitsSoABase(const edm::ParameterSet& iConfig)
+    : geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
+      topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()) {
   topFolderName_ = iConfig.getParameter<std::string>("TopFolderName");  //"SiPixelHeterogeneous/PixelRecHitsSoA";
-  onGPU_ = iConfig.getParameter<bool>("onGPU");
+  onGPU_ = iConfig.getParameter<bool>("onGPU");                         //unused now, but may be needed
 }
 
 //
@@ -61,8 +43,8 @@ void SiPixelPhase1MonitorRecHitsSoABase::dqmBeginRun(const edm::Run& iRun, const
 // -- Book Histograms
 //
 void SiPixelPhase1MonitorRecHitsSoABase::bookHistograms(DQMStore::IBooker& iBook,
-                                                  edm::Run const& iRun,
-                                                  edm::EventSetup const& iSetup) {
+                                                        edm::Run const& iRun,
+                                                        edm::EventSetup const& iSetup) {
   iBook.cd();
   iBook.setCurrentFolder(topFolderName_);
 
@@ -117,11 +99,9 @@ void SiPixelPhase1MonitorRecHitsSoABase::fillHistosForRecHit(const DetId& id, co
     hBsizey->Fill(sizeY);
     hBposXYL[tTopo_->pxbLayer(id)-1]->Fill(xG,yG);
     hBposZPL[tTopo_->pxbLayer(id)-1]->Fill(zG,fphi);
-    if(!onGPU_) {
-      hBchargeL[tTopo_->pxbLayer(id)-1]->Fill(charge);
-      hBsizexL[tTopo_->pxbLayer(id)-1]->Fill(sizeX);
-      hBsizeyL[tTopo_->pxbLayer(id)-1]->Fill(sizeY);
-    }
+    hBchargeL[tTopo_->pxbLayer(id)-1]->Fill(charge);
+    hBsizexL[tTopo_->pxbLayer(id)-1]->Fill(sizeX);
+    hBsizeyL[tTopo_->pxbLayer(id)-1]->Fill(sizeY);
     break;
   case PixelSubdetector::PixelEndcap:
     hFposXY->Fill(xG,yG);
@@ -131,11 +111,9 @@ void SiPixelPhase1MonitorRecHitsSoABase::fillHistosForRecHit(const DetId& id, co
     hFsizey->Fill(sizeY);
     hFposXYD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(xG,yG);
     hFposZPD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(zG,fphi);
-    if(!onGPU_) {
-      hFchargeD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(charge);
-      hFsizexD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeX);
-      hFsizeyD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeY);
-    }
+    hFchargeD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(charge);
+    hFsizexD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeX);
+    hFsizeyD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeY);
     break;
   }
 }
