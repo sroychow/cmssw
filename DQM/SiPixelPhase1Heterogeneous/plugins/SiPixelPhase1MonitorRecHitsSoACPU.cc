@@ -54,8 +54,8 @@ void SiPixelPhase1MonitorRecHitsSoACPU::analyze(const edm::Event& iEvent, const 
     float rG = soa2d->rGlobal(i);
     float fphi = short2phi(soa2d->iphi(i));
     uint32_t charge = soa2d->charge(i);
-    int16_t sizeX = std::ceil(float(std::abs(soa2d->clusterSizeX(i)))/8.);
-    int16_t sizeY = std::ceil(float(std::abs(soa2d->clusterSizeY(i)))/8.);
+    int16_t sizeX = std::ceil(float(std::abs(soa2d->clusterSizeX(i))) / 8.);
+    int16_t sizeY = std::ceil(float(std::abs(soa2d->clusterSizeY(i))) / 8.);
     fillHistosForRecHit(id, xG, yG, zG, rG, fphi, charge, sizeX, sizeY);
   }
 }
