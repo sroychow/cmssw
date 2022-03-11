@@ -14,5 +14,4 @@
 <use name="CUDADataFormats/Track"/>
 <use name="CUDADataFormats/Vertex"/>
 <use name="DataFormats/BeamSpot"/>
-<use name="DQM/SiPixelPhase1Heterogeneous"/>
 <flags EDM_PLUGIN="1"/>

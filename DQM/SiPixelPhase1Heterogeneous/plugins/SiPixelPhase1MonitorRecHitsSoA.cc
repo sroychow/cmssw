@@ -32,7 +32,6 @@
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 
-
 class SiPixelPhase1MonitorRecHitsSoA : public DQMEDAnalyzer {
 public:
   explicit SiPixelPhase1MonitorRecHitsSoA(const edm::ParameterSet&);
@@ -72,7 +71,6 @@ private:
   MonitorElement* hFchargeD[2][3];
   MonitorElement* hFsizexD[2][3];
   MonitorElement* hFsizeyD[2][3];
-
 };
 
 //
@@ -80,13 +78,10 @@ private:
 //
 
 SiPixelPhase1MonitorRecHitsSoA::SiPixelPhase1MonitorRecHitsSoA(const edm::ParameterSet& iConfig)
-  :geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
-   topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()), 
-   tokenSoAHitsCPU_(consumes<TrackingRecHit2DCPU>(iConfig.getParameter<edm::InputTag>("pixelHitsSrc"))),
-   topFolderName_(iConfig.getParameter<std::string>("TopFolderName"))
-{
-
-}
+    : geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
+      topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()),
+      tokenSoAHitsCPU_(consumes<TrackingRecHit2DCPU>(iConfig.getParameter<edm::InputTag>("pixelHitsSrc"))),
+      topFolderName_(iConfig.getParameter<std::string>("TopFolderName")) {}
 //
 // Begin Run
 //
@@ -94,8 +89,6 @@ void SiPixelPhase1MonitorRecHitsSoA::dqmBeginRun(const edm::Run& iRun, const edm
   tkGeom_ = &iSetup.getData(geomToken_);
   tTopo_ = &iSetup.getData(topoToken_);
 }
-
-
 
 //
 // -- Analyze
@@ -107,60 +100,59 @@ void SiPixelPhase1MonitorRecHitsSoA::analyze(const edm::Event& iEvent, const edm
     return;
   }
   auto const& rhsoa = *rhsoaHandle;
-  const TrackingRecHit2DSOAView* soa2d=rhsoa.view();  
+  const TrackingRecHit2DSOAView* soa2d = rhsoa.view();
 
   uint32_t nHits_ = soa2d->nHits();
   hnHits->Fill(nHits_);
-  auto detIds=tkGeom_->detUnitIds();
-  for(uint32_t i=0;i<nHits_;i++){
+  auto detIds = tkGeom_->detUnitIds();
+  for (uint32_t i = 0; i < nHits_; i++) {
     DetId id = detIds[soa2d->detectorIndex(i)];
-    float xG=soa2d->xGlobal(i);
-    float yG=soa2d->yGlobal(i);
-    float zG=soa2d->zGlobal(i);
-    float rG=soa2d->rGlobal(i);
-    float fphi=short2phi(soa2d->iphi(i));
-    uint32_t charge=soa2d->charge(i);
-    int16_t sizeX=std::ceil(float(std::abs(soa2d->clusterSizeX(i))/8.));
-    int16_t sizeY=std::ceil(float(std::abs(soa2d->clusterSizeY(i))/8.));
-    hBFposZP->Fill(zG,fphi);
-    int16_t ysign=yG>=0? 1:-1;
-    hBFposZR->Fill(zG,rG*ysign);
-    switch(id.subdetId()){
-    case PixelSubdetector::PixelBarrel:
-      hBposXY->Fill(xG,yG);
-      hBposZP->Fill(zG,fphi);
-      hBcharge->Fill(charge);
-      hBsizex->Fill(sizeX);
-      hBsizey->Fill(sizeY);
-      hBposXYL[tTopo_->pxbLayer(id)-1]->Fill(xG,yG);
-      hBposZPL[tTopo_->pxbLayer(id)-1]->Fill(zG,fphi);
-      hBchargeL[tTopo_->pxbLayer(id)-1]->Fill(charge);
-      hBsizexL[tTopo_->pxbLayer(id)-1]->Fill(sizeX);
-      hBsizeyL[tTopo_->pxbLayer(id)-1]->Fill(sizeY);
-      break;
-    case PixelSubdetector::PixelEndcap:
-      hFposXY->Fill(xG,yG);
-      hFposZP->Fill(zG,fphi);
-      hFcharge->Fill(charge);
-      hFsizex->Fill(sizeX);
-      hFsizey->Fill(sizeY);
-      hFposXYD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(xG,yG);
-      hFposZPD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(zG,fphi);
-      hFchargeD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(charge);
-      hFsizexD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeX);
-      hFsizeyD[tTopo_->pxfSide(id)-1][tTopo_->pxfDisk(id)-1]->Fill(sizeY);
-      break;
+    float xG = soa2d->xGlobal(i);
+    float yG = soa2d->yGlobal(i);
+    float zG = soa2d->zGlobal(i);
+    float rG = soa2d->rGlobal(i);
+    float fphi = short2phi(soa2d->iphi(i));
+    uint32_t charge = soa2d->charge(i);
+    int16_t sizeX = std::ceil(float(std::abs(soa2d->clusterSizeX(i)) / 8.));
+    int16_t sizeY = std::ceil(float(std::abs(soa2d->clusterSizeY(i)) / 8.));
+    hBFposZP->Fill(zG, fphi);
+    int16_t ysign = yG >= 0 ? 1 : -1;
+    hBFposZR->Fill(zG, rG * ysign);
+    switch (id.subdetId()) {
+      case PixelSubdetector::PixelBarrel:
+        hBposXY->Fill(xG, yG);
+        hBposZP->Fill(zG, fphi);
+        hBcharge->Fill(charge);
+        hBsizex->Fill(sizeX);
+        hBsizey->Fill(sizeY);
+        hBposXYL[tTopo_->pxbLayer(id) - 1]->Fill(xG, yG);
+        hBposZPL[tTopo_->pxbLayer(id) - 1]->Fill(zG, fphi);
+        hBchargeL[tTopo_->pxbLayer(id) - 1]->Fill(charge);
+        hBsizexL[tTopo_->pxbLayer(id) - 1]->Fill(sizeX);
+        hBsizeyL[tTopo_->pxbLayer(id) - 1]->Fill(sizeY);
+        break;
+      case PixelSubdetector::PixelEndcap:
+        hFposXY->Fill(xG, yG);
+        hFposZP->Fill(zG, fphi);
+        hFcharge->Fill(charge);
+        hFsizex->Fill(sizeX);
+        hFsizey->Fill(sizeY);
+        hFposXYD[tTopo_->pxfSide(id) - 1][tTopo_->pxfDisk(id) - 1]->Fill(xG, yG);
+        hFposZPD[tTopo_->pxfSide(id) - 1][tTopo_->pxfDisk(id) - 1]->Fill(zG, fphi);
+        hFchargeD[tTopo_->pxfSide(id) - 1][tTopo_->pxfDisk(id) - 1]->Fill(charge);
+        hFsizexD[tTopo_->pxfSide(id) - 1][tTopo_->pxfDisk(id) - 1]->Fill(sizeX);
+        hFsizeyD[tTopo_->pxfSide(id) - 1][tTopo_->pxfDisk(id) - 1]->Fill(sizeY);
+        break;
     }
-  }     
-  
+  }
 }
 
 //
 // -- Book Histograms
 //
 void SiPixelPhase1MonitorRecHitsSoA::bookHistograms(DQMStore::IBooker& iBook,
-                                                  edm::Run const& iRun,
-                                                  edm::EventSetup const& iSetup) {
+                                                    edm::Run const& iRun,
+                                                    edm::EventSetup const& iSetup) {
   iBook.cd();
   iBook.setCurrentFolder(topFolderName_);
 
