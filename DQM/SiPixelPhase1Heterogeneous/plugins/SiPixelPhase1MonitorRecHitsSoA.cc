@@ -9,16 +9,12 @@
 // Author: Suvankar Roy Chowdhury, Alessandro Rossi
 //
 #include "DataFormats/Math/interface/approx_atan2.h"
-#include "CUDADataFormats/Common/interface/Product.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
 // DQM Histograming
 #include "DQMServices/Core/interface/MonitorElement.h"
 #include "DQMServices/Core/interface/DQMEDAnalyzer.h"
