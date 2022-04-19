@@ -26,6 +26,8 @@ from PhysicsTools.NanoAOD.isotracks_cff import *
 from PhysicsTools.NanoAOD.protons_cff import *
 from PhysicsTools.NanoAOD.btagWeightTable_cff import *
 from PhysicsTools.NanoAOD.NanoAODEDMEventContent_cff import *
+from PhysicsTools.NanoAOD.fsrPhotons_cff import *
+from PhysicsTools.NanoAOD.softActivity_cff import *
 
 nanoMetadata = cms.EDProducer("UniqueStringProducer",
     strings = cms.PSet(
@@ -114,7 +116,7 @@ nanoSequence = cms.Sequence(nanoSequenceCommon + nanoSequenceOnlyData + nanoSequ
 nanoTableTaskFS = cms.Task(genParticleTask, particleLevelTask, jetMCTask, muonMCTask, electronMCTask, lowPtElectronMCTask, photonMCTask,
                             tauMCTask, boostedTauMCTask,
                             metMCTable, ttbarCatMCProducersTask, globalTablesMCTask, cms.Task(btagWeightTable), ttbarCategoryTableTask,
-                            genWeightsTableTask, genVertexTablesTask, genParticleTablesTask, particleLevelTablesTask)
+                            genWeightsTableTask, genVertexTablesTask, genParticleTablesTask, genProtonTablesTask, particleLevelTablesTask)
 
 nanoSequenceFS = cms.Sequence(nanoSequenceCommon + cms.Sequence(nanoTableTaskFS))
 
@@ -124,16 +126,18 @@ nanoSequenceMC.insert(nanoSequenceFS.index(nanoSequenceCommon)+1,nanoSequenceOnl
 
 # modifier which adds new tauIDs (currently only deepTauId2017v2p1 is being added)
 import RecoTauTag.RecoTau.tools.runTauIdMVA as tauIdConfig
-def nanoAOD_addTauIds(process):
-    updatedTauName = "slimmedTausUpdated"
-    tauIdEmbedder = tauIdConfig.TauIDEmbedder(process, debug = False, updatedTauName = updatedTauName,
-            toKeep = [ "deepTau2017v2p1" ])
-    tauIdEmbedder.runTauID()
-    _tauTask = patTauMVAIDsTask.copy()
-    _tauTask.add(process.rerunMvaIsolationTask)
-    _tauTask.add(finalTaus)
-    process.tauTask = _tauTask.copy()
-    return process
+def nanoAOD_addTauIds(process, idsToRun=[]):
+    if idsToRun: #no-empty list of tauIDs to run
+        updatedTauName = "slimmedTausUpdated"
+        tauIdEmbedder = tauIdConfig.TauIDEmbedder(process, debug = False,
+                                                  updatedTauName = updatedTauName,
+            toKeep = idsToRun)
+        tauIdEmbedder.runTauID()
+        _tauTask = patTauMVAIDsTask.copy()
+        _tauTask.add(process.rerunMvaIsolationTask)
+        _tauTask.add(finalTaus)
+        process.finalTaus.src = updatedTauName
+        #remember to adjust the selection and tables with added IDs
 
 def nanoAOD_addBoostedTauIds(process, idsToRun=[]):
     if idsToRun: #no-empty list of tauIDs to run
@@ -153,7 +157,6 @@ def nanoAOD_addBoostedTauIds(process, idsToRun=[]):
         process.boostedTauTask = _boostedTauTask.copy()
 
     return process
-
 
 from PhysicsTools.PatUtils.tools.runMETCorrectionsAndUncertainties import runMetCorAndUncFromMiniAOD
 def nanoAOD_recalibrateMETs(process,isData):
@@ -253,35 +256,8 @@ def nanoAOD_runMETfixEE2017(process,isData):
     process.nanoSequenceCommon.insert(2,process.fullPatMetSequenceFixEE2017)
 
 
-def nanoAOD_jetForT1met(process):
-    process.basicJetsForMetForT1METNano = cms.EDProducer("PATJetCleanerForType1MET",
-                                                          src = process.updatedJetsWithUserData.src,
-                                                          jetCorrEtaMax = cms.double(9.9),
-                                                          jetCorrLabel = cms.InputTag("L3Absolute"),
-                                                          jetCorrLabelRes = cms.InputTag("L2L3Residual"),
-                                                          offsetCorrLabel = cms.InputTag("L1FastJet"),
-                                                          skipEM = cms.bool(False),
-                                                          skipEMfractionThreshold = cms.double(0.9),
-                                                          skipMuonSelection = cms.string('isGlobalMuon | isStandAloneMuon'),
-                                                          skipMuons = cms.bool(True),
-                                                          type1JetPtThreshold = cms.double(0.0),
-                                                          calcMuonSubtrRawPtAsValueMap = cms.bool(True)
-                                                      )
-
-    process.jetTask.add(process.basicJetsForMetForT1METNano)
-    process.updatedJetsWithUserData.userFloats.muonSubtrRawPt = cms.InputTag("basicJetsForMetForT1METNano:MuonSubtrRawPt")
-    process.corrT1METJetTable.src = process.finalJets.src
-    process.corrT1METJetTable.cut = "pt<15 && abs(eta)<9.9"
-    process.metTablesTask.add(process.corrT1METJetTable)
-
-    for table in process.jetTable, process.corrT1METJetTable:
-        table.variables.muonSubtrFactor = Var("1-userFloat('muonSubtrRawPt')/(pt()*jecFactor('Uncorrected'))",float,doc="1-(muon-subtracted raw pt)/(raw pt)",precision=6)
-
-    return process
-
 def nanoAOD_customizeCommon(process):
 
-    process = nanoAOD_jetForT1met(process)
     process = nanoAOD_activateVID(process)
     # This function is defined in jetsAK4_CHS_cff.py
     process = nanoAOD_addDeepInfoAK4CHS(process,
