@@ -1,25 +1,26 @@
-#include "FWCore/Framework/interface/global/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/Run.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include <algorithm>
+#include <iostream>
+
 #include "DataFormats/NanoAOD/interface/FlatTable.h"
 #include "DataFormats/NanoAOD/interface/MergeableCounterTable.h"
-#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/Run.h"
+#include "FWCore/Framework/interface/global/EDProducer.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
-#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
-#include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
-#include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
-#include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
-#include "SimDataFormats/GeneratorProducts/interface/PartonShowerWeightGroupInfo.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/transform.h"
 #include "PhysicsTools/NanoAOD/interface/GenWeightCounters.h"
-#include <iostream>
-#include <algorithm>
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenLumiInfoHeader.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenWeightProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/PartonShowerWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/PdfWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/ScaleWeightGroupInfo.h"
+#include "SimDataFormats/GeneratorProducts/interface/WeightGroupInfo.h"
 
 namespace {
   typedef std::vector<gen::WeightGroupData> WeightGroupDataContainer;
@@ -44,7 +45,8 @@ public:
   void addWeightGroupToTable(std::vector<nanoaod::FlatTable>& weightTablevec,
                              const WeightGroupDataContainer& weightInfos,
                              WeightsContainer& allWeights) const;
-  // Need to either pass the handle or a pointer to avoid a copy and conversion to the base class
+  // Need to either pass the handle or a pointer to avoid a copy and conversion
+  // to the base class
   WeightGroupDataContainer weightDataPerType(edm::Handle<GenWeightInfoProduct>& weightsInfoHandle,
                                              gen::WeightType weightType,
                                              size_t maxStore) const;
@@ -59,7 +61,7 @@ public:
   std::pair<std::string, std::vector<double>> preferredPSweights(const std::vector<double>& psWeights,
                                                                  const gen::PartonShowerWeightGroupInfo& pswV) const;
 
-  //Lumiblock
+  // Lumiblock
   std::shared_ptr<WeightGroupsToStore> globalBeginLuminosityBlock(edm::LuminosityBlock const& iLumi,
                                                                   edm::EventSetup const&) const override {
     // Set equal to the max number of groups
@@ -100,8 +102,8 @@ public:
     edm::Handle<GenLumiInfoHeader> genLumiInfoHead;
     lumiBlock.getByToken(genLumiInfoHeadTag_, genLumiInfoHead);
     if (!genLumiInfoHead.isValid())
-      edm::LogWarning("LHETablesProducer")
-          << "No GenLumiInfoHeader product found, will not fill generator model string.\n";
+      edm::LogWarning("LHETablesProducer") << "No GenLumiInfoHeader product found, will not fill generator "
+                                              "model string.\n";
     counterMap->setLabel(genLumiInfoHead.isValid() ? genLumiInfoHead->configDescription() : "");
     std::string label = genLumiInfoHead.isValid() ? counterMap->getLabel() : "NULL";
   }
@@ -119,7 +121,8 @@ public:
   // write the total to the run
   void globalEndRunProduce(edm::Run& iRun, edm::EventSetup const& es, CounterMap const* runCounterMap) const override;
   // nothing to do here
-  //void globalEndRun(edm::Run const& iRun, edm::EventSetup const& es, CounterMap* runCounterMap) const override {}
+  // void globalEndRun(edm::Run const& iRun, edm::EventSetup const& es,
+  // CounterMap* runCounterMap) const override {}
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -174,9 +177,12 @@ GenWeightsTableProducer::GenWeightsTableProducer(edm::ParameterSet const& params
       nStoreUngroupedLhe_(params.getUntrackedParameter<int>("nStoreUngroupedLhe", 10)),
       nStoreUngroupedGen_(params.getUntrackedParameter<int>("nStoreUngroupedGen", 10)) {
   if (weightgroups_.size() != maxGroupsPerType_.size() || weightgroups_.size() != outputnames_.size())
-    throw std::invalid_argument("Inputs 'weightgroups', 'maxGroupsPerType', and 'outputNames' must have equal size" 
-            "! Found " + std::to_string(weightgroups_.size()) + "; " + 
-            std::to_string(maxGroupsPerType_.size()) + "; " + std::to_string(outputnames_.size()));
+    throw std::invalid_argument(
+        "Inputs 'weightgroups', 'maxGroupsPerType', and 'outputNames' must "
+        "have equal size"
+        "! Found " +
+        std::to_string(weightgroups_.size()) + "; " + std::to_string(maxGroupsPerType_.size()) + "; " +
+        std::to_string(outputnames_.size()));
 
   produces<nanoaod::FlatTable>("GENWeight");
   produces<nanoaod::MergeableCounterTable, edm::Transition::EndRun>();
@@ -185,7 +191,7 @@ GenWeightsTableProducer::GenWeightsTableProducer(edm::ParameterSet const& params
 }
 
 void GenWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, const edm::EventSetup& iSetup) const {
-  //access counter for weight sums
+  // access counter for weight sums
   Counter& counter = *streamCache(id)->get();
   edm::Handle<GenWeightProduct> lheWeightHandle;
   bool foundLheWeights = false;
@@ -204,7 +210,7 @@ void GenWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
   outGeninfo->setDoc("generator weight");
   outGeninfo->addColumnValue<float>("", genInfo.weight(), "generator weight");
   iEvent.put(std::move(outGeninfo), "GENWeight");
-  //this will take care of sum of genWeights
+  // this will take care of sum of genWeights
   counter.incGenOnly(genWeight);
 
   std::string& model_label = streamCache(id)->getLabel();
@@ -229,7 +235,7 @@ void GenWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
 
   auto const& weightInfos = *luminosityBlockCache(iEvent.getLuminosityBlock().index());
 
-  //create a container with dummy weight vector
+  // create a container with dummy weight vector
   auto weightTablevec = std::make_unique<std::vector<nanoaod::FlatTable>>();
   if (foundLheWeights) {
     if (ignoreLheGroups_) {
@@ -247,9 +253,9 @@ void GenWeightsTableProducer::produce(edm::StreamID id, edm::Event& iEvent, cons
 }
 
 // Sequentially add the weights, up to maxStore
-// Note that the order of the weights in the WeightsVector matches the order of weightgroups.
-// In very rare cases, this could be modified from the order in the LHE file. If this happens,
-// write a warning message in the table info
+// Note that the order of the weights in the WeightsVector matches the order of
+// weightgroups. In very rare cases, this could be modified from the order in
+// the LHE file. If this happens, write a warning message in the table info
 void GenWeightsTableProducer::fillTableIgnoringGroups(std::vector<nanoaod::FlatTable>& weightTablevec,
                                                       const WeightGroupDataContainer& weightInfos,
                                                       WeightsContainer& allWeights,
@@ -293,7 +299,9 @@ void GenWeightsTableProducer::fillTableIgnoringGroups(std::vector<nanoaod::FlatT
       if (matchingInfo.globalIndex != i) {
         warnings.append("Index ");
         warnings.append(std::to_string(i));
-        warnings.append(" does not match order in the LHE file or gen product (where it is entry ");
+        warnings.append(
+            " does not match order in the LHE file or gen product (where it is "
+            "entry ");
         warnings.append(std::to_string(matchingInfo.globalIndex));
         warnings.append(")");
       }
@@ -325,7 +333,7 @@ void GenWeightsTableProducer::addWeightGroupToTable(std::vector<nanoaod::FlatTab
 
   std::unordered_map<gen::WeightType, std::string> weightTypeNames_;
   for (size_t i = 0; i < weightgroups_.size(); i++) {
-      weightTypeNames_[weightgroups_[i]] = outputnames_[i];
+    weightTypeNames_[weightgroups_[i]] = outputnames_[i];
   }
 
   for (const auto& groupInfo : weightInfos) {
@@ -350,9 +358,13 @@ void GenWeightsTableProducer::addWeightGroupToTable(std::vector<nanoaod::FlatTab
           weights[i] = weights[i] / baseline;
         label = "PS weights (w_var / w_nominal)";
       } else
-        label.append("WARNING: Did not properly parse weight information. Verify order manually.");
+        label.append(
+            "WARNING: Did not properly parse weight information. Verify order "
+            "manually.");
     } else if (!groupInfo.group->isWellFormed())
-      label.append("WARNING: Did not properly parse weight information. Verify order manually.");
+      label.append(
+          "WARNING: Did not properly parse weight information. Verify order "
+          "manually.");
 
     if (typeCount[weightType] > 0) {
       entryName.append("AltSet");
@@ -390,7 +402,8 @@ WeightGroupsToStore GenWeightsTableProducer::groupsToStore(
       for (auto& typeAndCount : storePerType) {
         if (typeAndCount.first == gen::WeightType::kUnknownWeights && !storeUnknown)
           continue;
-        // Since the count isn't updated, the counts are effectively independent between LHE and GEN
+        // Since the count isn't updated, the counts are effectively independent
+        // between LHE and GEN
         auto groupsPerType = weightDataPerType(hand, typeAndCount.first, typeAndCount.second);
         // Only store unknown if at least one specified groups is empty
         if (!storeUnknown && !groupsToSearch.empty()) {
@@ -398,9 +411,10 @@ WeightGroupsToStore GenWeightsTableProducer::groupsToStore(
           if (it != std::end(groupsToSearch)) {
             if (groupsPerType.empty())
               storeUnknown = true;
-            // Remove from array to avoid repeating the check on GEN. NOTE, if parton
-            // shower weights are included as one of the ones to consider, this can
-            // cause unknown LHE weights to be stored, given the order of the loops
+            // Remove from array to avoid repeating the check on GEN. NOTE, if
+            // parton shower weights are included as one of the ones to
+            // consider, this can cause unknown LHE weights to be stored, given
+            // the order of the loops
             else
               groupsToSearch.erase(it);
           }
@@ -482,7 +496,7 @@ void GenWeightsTableProducer::streamEndRunSummary(edm::StreamID id,
                                                   edm::Run const&,
                                                   edm::EventSetup const&,
                                                   CounterMap* runCounterMap) const {
-  //this takes care for mergeing all the weight sums
+  // this takes care for mergeing all the weight sums
   runCounterMap->mergeSumMap(*streamCache(id));
 }
 
@@ -501,9 +515,9 @@ void GenWeightsTableProducer::globalEndRunProduce(edm::Run& iRun,
     out->addFloat("genEventSumw2" + label, "sum of gen (weight^2)" + doclabel, runCounter.sumw2_);
 
     double norm = runCounter.sumw_ ? 1.0 / runCounter.sumw_ : 1;
-    //Sum from map
+    // Sum from map
     for (auto& sumw : runCounter.weightSumMap_) {
-      //Normalize with genEventSumw
+      // Normalize with genEventSumw
       for (auto& val : sumw.second)
         val *= norm;
       out->addVFloat(sumw.first + "Sumw" + label,
@@ -527,17 +541,27 @@ void GenWeightsTableProducer::fillDescriptions(edm::ConfigurationDescriptions& d
   desc.addOptionalUntracked<std::vector<int>>("pdfIds");
   desc.add<int32_t>("lheWeightPrecision", -1)->setComment("Number of bits in the mantissa for LHE weights");
   desc.add<std::vector<std::string>>("unknownOnlyIfEmpty")
-      ->setComment("Only store weights in an Unknown WeightGroup if one of the specified groups is empty");
+      ->setComment(
+          "Only store weights in an Unknown WeightGroup if one of the "
+          "specified groups is empty");
   desc.add<bool>("keepAllPSWeights", false)
       ->setComment("True: stores all PS weights (usually 45); False: saves preferred 4");
   desc.addUntracked<bool>("ignoreLheGroups", false)
-      ->setComment("Ignore LHE groups and store the first n weights, regardless of type");
+      ->setComment(
+          "Ignore LHE groups and store the first n weights, regardless of "
+          "type");
   desc.addUntracked<bool>("ignoreGenGroups", false)
-      ->setComment("Ignore Gen groups and store the first n weights, regardless of type");
+      ->setComment(
+          "Ignore Gen groups and store the first n weights, regardless of "
+          "type");
   desc.addUntracked<int>("nStoreUngroupedLhe", 10)
-      ->setComment("Store the first n LHE weights (only relevant if ignoreLheGroups is true)");
+      ->setComment(
+          "Store the first n LHE weights (only relevant if ignoreLheGroups is "
+          "true)");
   desc.addUntracked<int>("nStoreUngroupedGen", 10)
-      ->setComment("Store the first n Gen weights (only relevant if ignoreGenGroups is true)");
+      ->setComment(
+          "Store the first n Gen weights (only relevant if ignoreGenGroups is "
+          "true)");
   descriptions.addDefault(desc);
 }
 
