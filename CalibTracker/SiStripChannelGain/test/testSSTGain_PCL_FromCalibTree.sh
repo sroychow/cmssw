@@ -1,8 +1,8 @@
 #!/bin/bash
 # Pass in name and status
 function die { echo $1: status $2 ;  exit $2; }
-REMOTE="/store/group/dpg_tracker_strip/comm_tracker/Strip/Calibration/calibrationtree/GR18"
-RUN="325310"
+REMOTE="/store/group/dpg_tracker_strip/comm_tracker/Strip/Calibration/calibrationtree/CMSSW_UNIT_TEST/G22/"
+RUN="361957"
 FILE="calibTree_${RUN}.root"
 COMMMAND=`xrdfs cms-xrd-global.cern.ch locate ${REMOTE}/${FILE}`
 STATUS=$?
