@@ -20,6 +20,7 @@
 // CMSSW includes
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelROCsStatusAndMapping.h"
+#include "CondFormats/SiPixelObjects/interface/SiPixelFrameConverter.h"
 #include "DataFormats/FEDRawData/interface/FEDNumbering.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "DataFormats/SiPixelDigi/interface/SiPixelDigiConstants.h"
@@ -189,12 +190,14 @@ namespace pixelgpudetails {
       case (26): {
         if constexpr (debug)
           printf("Gap word found (errorType = 26)\n");
+        //return false;
         errorFound = true;
         break;
       }
       case (27): {
         if constexpr (debug)
           printf("Dummy word found (errorType = 27)\n");
+        return false;
         errorFound = true;
         break;
       }
@@ -207,9 +210,10 @@ namespace pixelgpudetails {
       case (29): {
         if constexpr (debug)
           printf("Timeout on a channel (errorType = 29)\n");
-        if ((errorWord >> sipixelconstants::OMIT_ERR_shift) & sipixelconstants::OMIT_ERR_mask) {
+        if (!((errorWord >> sipixelconstants::OMIT_ERR_shift) & sipixelconstants::OMIT_ERR_mask)) {
           if constexpr (debug)
-            printf("...first errorType=29 error, this gets masked out\n");
+            printf("...2nd errorType=29 error, skip\n");
+          return false;
         }
         errorFound = true;
         break;
@@ -236,11 +240,26 @@ namespace pixelgpudetails {
         errorFound = true;
         break;
       }
+      case (37):
+      case (38):
       default:
         errorFound = false;
     };
 
     return errorFound ? errorType : 0;
+  }
+  template <bool debug = false>
+  __device__ uint32_t getErrRawIDSimple(uint8_t fedId,
+                                        uint32_t errWord,
+                                        uint32_t errorType,
+                                        const SiPixelROCsStatusAndMapping *cablingMap) {
+    uint32_t rID = 0xffffffff;
+    uint32_t roc = 1;
+    uint32_t link = sipixelconstants::getLink(errWord);
+    uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
+    if (rID_temp != gpuClustering::invalidModuleId)
+      rID = rID_temp;
+    return rID;
   }
 
   // error decoding and handling copied from EventFilter/SiPixelRawToDigi/src/ErrorChecker.cc
@@ -250,49 +269,19 @@ namespace pixelgpudetails {
     uint32_t rID = 0xffffffff;
 
     switch (errorType) {
-      case 25:
+      case 25: {
+        rID = getErrRawIDSimple(fedId, errWord, errorType, cablingMap);
+        break;
+      }
+      case 29: {
+        rID = getErrRawIDSimple(fedId, errWord, errorType, cablingMap);
+        break;
+      }
       case 30:
       case 31:
       case 36:
       case 40: {
-        uint32_t roc = 1;
-        uint32_t link = sipixelconstants::getLink(errWord);
-        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
-        if (rID_temp != gpuClustering::invalidModuleId)
-          rID = rID_temp;
-        break;
-      }
-      case 29: {
-        int chanNmbr = 0;
-        const int DB0_shift = 0;
-        const int DB1_shift = DB0_shift + 1;
-        const int DB2_shift = DB1_shift + 1;
-        const int DB3_shift = DB2_shift + 1;
-        const int DB4_shift = DB3_shift + 1;
-        const uint32_t DataBit_mask = ~(~uint32_t(0) << 1);
-
-        int CH1 = (errWord >> DB0_shift) & DataBit_mask;
-        int CH2 = (errWord >> DB1_shift) & DataBit_mask;
-        int CH3 = (errWord >> DB2_shift) & DataBit_mask;
-        int CH4 = (errWord >> DB3_shift) & DataBit_mask;
-        int CH5 = (errWord >> DB4_shift) & DataBit_mask;
-        int BLOCK_bits = 3;
-        int BLOCK_shift = 8;
-        uint32_t BLOCK_mask = ~(~uint32_t(0) << BLOCK_bits);
-        int BLOCK = (errWord >> BLOCK_shift) & BLOCK_mask;
-        int localCH = 1 * CH1 + 2 * CH2 + 3 * CH3 + 4 * CH4 + 5 * CH5;
-        if (BLOCK % 2 == 0)
-          chanNmbr = (BLOCK / 2) * 9 + localCH;
-        else
-          chanNmbr = ((BLOCK - 1) / 2) * 9 + 4 + localCH;
-        if ((chanNmbr < 1) || (chanNmbr > 36))
-          break;  // signifies unexpected result
-
-        uint32_t roc = 1;
-        uint32_t link = chanNmbr;
-        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
-        if (rID_temp != gpuClustering::invalidModuleId)
-          rID = rID_temp;
+        rID = getErrRawIDSimple(fedId, errWord, errorType, cablingMap);
         break;
       }
       case 37:
