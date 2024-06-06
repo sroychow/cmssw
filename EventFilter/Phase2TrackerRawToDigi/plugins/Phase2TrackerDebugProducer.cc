@@ -26,65 +26,53 @@ using namespace std;
 
 namespace Phase2Tracker {
 
-  Phase2TrackerDebugProducer::Phase2TrackerDebugProducer( const edm::ParameterSet& pset ) :
-    cabling_(0)
-  {
+  Phase2TrackerDebugProducer::Phase2TrackerDebugProducer(const edm::ParameterSet& pset) : cabling_(0) {
     // define product
-    produces< edmNew::DetSetVector<Phase2TrackerFEDFEDebug> >("Debugs");
+    produces<edmNew::DetSetVector<Phase2TrackerFEDFEDebug>>("Debugs");
     token_ = consumes<FEDRawDataCollection>(pset.getParameter<edm::InputTag>("ProductLabel"));
   }
-  
-  Phase2TrackerDebugProducer::~Phase2TrackerDebugProducer()
-  {
-  }
-  
-  void Phase2TrackerDebugProducer::beginJob( )
-  {
-  }
-  
-  void Phase2TrackerDebugProducer::beginRun( edm::Run const& run, edm::EventSetup const& es)
-  {
+
+  Phase2TrackerDebugProducer::~Phase2TrackerDebugProducer() {}
+
+  void Phase2TrackerDebugProducer::beginJob() {}
+
+  void Phase2TrackerDebugProducer::beginRun(edm::Run const& run, edm::EventSetup const& es) {
     // fetch cabling from event setup
     edm::ESHandle<Phase2TrackerCabling> c;
-    es.get<Phase2TrackerCablingRcd>().get( c );
+    es.get<Phase2TrackerCablingRcd>().get(c);
     cabling_ = c.product();
   }
-  
-  void Phase2TrackerDebugProducer::endJob()
-  {
-  }
-  
-  void Phase2TrackerDebugProducer::produce( edm::Event& event, const edm::EventSetup& es)
-  {
-    std::unique_ptr<edmNew::DetSetVector<Phase2TrackerFEDFEDebug>> debugs( new edmNew::DetSetVector<Phase2TrackerFEDFEDebug>() ); 
+
+  void Phase2TrackerDebugProducer::endJob() {}
+
+  void Phase2TrackerDebugProducer::produce(edm::Event& event, const edm::EventSetup& es) {
+    std::unique_ptr<edmNew::DetSetVector<Phase2TrackerFEDFEDebug>> debugs(
+        new edmNew::DetSetVector<Phase2TrackerFEDFEDebug>());
 
     // Retrieve FEDRawData collection
     edm::Handle<FEDRawDataCollection> buffers;
-    event.getByToken( token_, buffers );
+    event.getByToken(token_, buffers);
 
     // Analyze strip tracker FED buffers in data
     std::vector<int> feds = cabling_->listFeds();
     std::vector<int>::iterator fedIndex;
-    for(fedIndex = feds.begin(); fedIndex != feds.end(); ++fedIndex)
-    {
+    for (fedIndex = feds.begin(); fedIndex != feds.end(); ++fedIndex) {
       const FEDRawData& fed = buffers->FEDData(*fedIndex);
-      if(fed.size()==0) continue;
-	  // construct buffer
-	  Phase2Tracker::Phase2TrackerFEDBuffer buffer(fed.data(),fed.size());
+      if (fed.size() == 0)
+        continue;
+      // construct buffer
+      Phase2Tracker::Phase2TrackerFEDBuffer buffer(fed.data(), fed.size());
       // Skip FED if buffer is not a valid tracker FEDBuffer
-      if(buffer.isValid() == 0) 
-      { 
-        LogTrace("Phase2TrackerDebugProducer") << "[Phase2Tracker::Phase2TrackerDebugProducer::"<<__func__<<"]: \n";
+      if (buffer.isValid() == 0) {
+        LogTrace("Phase2TrackerDebugProducer") << "[Phase2Tracker::Phase2TrackerDebugProducer::" << __func__ << "]: \n";
         LogTrace("Phase2TrackerDebugProducer") << "Skipping invalid buffer for FED nr " << *fedIndex << endl;
-        continue; 
+        continue;
       }
       std::vector<Phase2TrackerFEDFEDebug> all_fed_debugs = buffer.trackerHeader().CBCStatus();
       std::vector<bool> fe_status = buffer.trackerHeader().frontendStatus();
       // loop on FE
-      for ( int ife = 0; ife < MAX_FE_PER_FED; ife++ )
-      {
-        if ( fe_status[ife] )
-        {
+      for (int ife = 0; ife < MAX_FE_PER_FED; ife++) {
+        if (fe_status[ife]) {
           // get fedid from cabling
           const Phase2TrackerModule mod = cabling_->findFedCh(std::make_pair(*fedIndex, ife));
           uint32_t detid = mod.getDetid();
@@ -92,9 +80,9 @@ namespace Phase2Tracker {
           edmNew::DetSetVector<Phase2TrackerFEDFEDebug>::FastFiller spct(*debugs, detid);
           spct.push_back(all_fed_debugs[ife]);
         }
-      } // end loop on FE
-    } // en loop on FED   
+      }  // end loop on FE
+    }    // en loop on FED
     // store debugs
-    event.put(std::move(debugs), "Debugs" );
-  } 
-}
+    event.put(std::move(debugs), "Debugs");
+  }
+}  // namespace Phase2Tracker

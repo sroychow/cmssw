@@ -8,15 +8,15 @@
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
 
 namespace Phase2Tracker {
-  
+
   class Phase2TrackerHeaderProducer : public edm::EDProducer {
-     public:
-        explicit Phase2TrackerHeaderProducer(const edm::ParameterSet&);
-        ~Phase2TrackerHeaderProducer();
-        void produce( edm::Event& event, const edm::EventSetup& es );
-  
-     private:
-        edm::EDGetTokenT<FEDRawDataCollection> token_;
+  public:
+    explicit Phase2TrackerHeaderProducer(const edm::ParameterSet&);
+    ~Phase2TrackerHeaderProducer();
+    void produce(edm::Event& event, const edm::EventSetup& es);
+
+  private:
+    edm::EDGetTokenT<FEDRawDataCollection> token_;
   };
 
-} // end Phase2tracker Namespace  
+}  // namespace Phase2Tracker

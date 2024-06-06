@@ -25,11 +25,10 @@
 
 namespace Phase2Tracker {
 
-  class Phase2TrackerDigiToRawProducer : public edm::EDProducer
-  {
+  class Phase2TrackerDigiToRawProducer : public edm::EDProducer {
   public:
     /// constructor
-    Phase2TrackerDigiToRawProducer( const edm::ParameterSet& pset );
+    Phase2TrackerDigiToRawProducer(const edm::ParameterSet& pset);
     /// default constructor
     ~Phase2TrackerDigiToRawProducer();
     virtual void beginJob() override;
@@ -39,10 +38,10 @@ namespace Phase2Tracker {
 
   private:
     edm::EDGetTokenT<edmNew::DetSetVector<Phase2TrackerCluster1D>> token_;
-    const Phase2TrackerCabling * cabling_;
+    const Phase2TrackerCabling* cabling_;
     const TrackerTopology* tTopo_;
     const TrackerGeometry* tGeom_;
-    std::map< int, std::pair<int,int> > stackMap_;
+    std::map<int, std::pair<int, int>> stackMap_;
   };
-}
-#endif // EventFilter_Phase2TrackerRawToDigi_Phase2TrackerDigiToRawProducer_H
+}  // namespace Phase2Tracker
+#endif  // EventFilter_Phase2TrackerRawToDigi_Phase2TrackerDigiToRawProducer_H

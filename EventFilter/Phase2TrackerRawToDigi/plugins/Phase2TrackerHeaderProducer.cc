@@ -2,7 +2,7 @@
 //
 // Package:    EventFilter/Phase2TrackerRawToDigi/Phase2TrackerHeaderProducer
 // Class:      Phase2TrackerHeaderProducer
-// 
+//
 /**\class Phase2TrackerHeaderProducer Phase2TrackerHeaderProducer.cc EventFilter/Phase2TrackerRawToDigi/plugins/Phase2TrackerHeaderProducer.cc
 
  Description: Producer for the phase 2 tracker header digi
@@ -25,44 +25,40 @@
 #include "EventFilter/Phase2TrackerRawToDigi/interface/utils.h"
 #include "EventFilter/Phase2TrackerRawToDigi/interface/Phase2TrackerFEDBuffer.h"
 #include "EventFilter/Phase2TrackerRawToDigi/interface/Phase2TrackerFEDHeader.h"
-#include "EventFilter/Phase2TrackerRawToDigi/plugins/Phase2TrackerHeaderProducer.h"   
+#include "EventFilter/Phase2TrackerRawToDigi/plugins/Phase2TrackerHeaderProducer.h"
 
 using namespace std;
 
 namespace Phase2Tracker {
 
-  typedef std::vector<Phase2TrackerHeaderDigi> header_map;  
+  typedef std::vector<Phase2TrackerHeaderDigi> header_map;
 
-  Phase2Tracker::Phase2TrackerHeaderProducer::Phase2TrackerHeaderProducer(const edm::ParameterSet& pset)
-  {
-     produces<header_map>("TrackerHeader");
-     token_ = consumes<FEDRawDataCollection>(pset.getParameter<edm::InputTag>("ProductLabel"));
+  Phase2Tracker::Phase2TrackerHeaderProducer::Phase2TrackerHeaderProducer(const edm::ParameterSet& pset) {
+    produces<header_map>("TrackerHeader");
+    token_ = consumes<FEDRawDataCollection>(pset.getParameter<edm::InputTag>("ProductLabel"));
   }
-  
-  Phase2Tracker::Phase2TrackerHeaderProducer::~Phase2TrackerHeaderProducer() 
-  {
-  }
-  
-  void Phase2Tracker::Phase2TrackerHeaderProducer::produce( edm::Event& event, const edm::EventSetup& es)    
-  {
-     // Retrieve FEDRawData collection
-     edm::Handle<FEDRawDataCollection> buffers;
-     event.getByToken( token_, buffers );
 
-     // fill collection
-     std::unique_ptr<header_map> hdigis( new header_map );
+  Phase2Tracker::Phase2TrackerHeaderProducer::~Phase2TrackerHeaderProducer() {}
 
-     size_t fedIndex;
-     for( fedIndex = Phase2Tracker::FED_ID_MIN; fedIndex < Phase2Tracker::CMS_FED_ID_MAX; ++fedIndex )
-     {
-       const FEDRawData& fed = buffers->FEDData(fedIndex);
-       if(fed.size()==0) continue;
-       // construct buffer
-       Phase2Tracker::Phase2TrackerFEDBuffer buffer(fed.data(),fed.size());
-       Phase2TrackerHeaderDigi head_digi = Phase2TrackerHeaderDigi(buffer.trackerHeader());
-       // store digis
-       hdigis->push_back(head_digi);
-     }
-     event.put(std::move(hdigis), "TrackerHeader" );
+  void Phase2Tracker::Phase2TrackerHeaderProducer::produce(edm::Event& event, const edm::EventSetup& es) {
+    // Retrieve FEDRawData collection
+    edm::Handle<FEDRawDataCollection> buffers;
+    event.getByToken(token_, buffers);
+
+    // fill collection
+    std::unique_ptr<header_map> hdigis(new header_map);
+
+    size_t fedIndex;
+    for (fedIndex = Phase2Tracker::FED_ID_MIN; fedIndex < Phase2Tracker::CMS_FED_ID_MAX; ++fedIndex) {
+      const FEDRawData& fed = buffers->FEDData(fedIndex);
+      if (fed.size() == 0)
+        continue;
+      // construct buffer
+      Phase2Tracker::Phase2TrackerFEDBuffer buffer(fed.data(), fed.size());
+      Phase2TrackerHeaderDigi head_digi = Phase2TrackerHeaderDigi(buffer.trackerHeader());
+      // store digis
+      hdigis->push_back(head_digi);
+    }
+    event.put(std::move(hdigis), "TrackerHeader");
   }
-} // end Phase2tracker Namespace  
+}  // namespace Phase2Tracker

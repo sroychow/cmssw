@@ -21,10 +21,9 @@
 
 namespace Phase2Tracker {
 
-  class Phase2TrackerStubProducer : public edm::EDProducer
-  {
+  class Phase2TrackerStubProducer : public edm::EDProducer {
   public:
-    Phase2TrackerStubProducer( const edm::ParameterSet& pset );
+    Phase2TrackerStubProducer(const edm::ParameterSet& pset);
     ~Phase2TrackerStubProducer();
     virtual void beginJob() override;
     virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
@@ -33,9 +32,9 @@ namespace Phase2Tracker {
 
   private:
     edm::EDGetTokenT<FEDRawDataCollection> token_;
-    const Phase2TrackerCabling * cabling_;
-    std::map< int, std::pair<int,int> > stackMap_;
+    const Phase2TrackerCabling* cabling_;
+    std::map<int, std::pair<int, int> > stackMap_;
     DetIdCollection detids_;
   };
-}
-#endif // EventFilter_Phase2TrackerRawToDigi_Phase2TrackerStubProducer_H
+}  // namespace Phase2Tracker
+#endif  // EventFilter_Phase2TrackerRawToDigi_Phase2TrackerStubProducer_H
