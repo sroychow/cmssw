@@ -14,45 +14,20 @@ namespace Phase2Tracker {
   public:
     Phase2TrackerFEDRawChannelUnpacker(const Phase2TrackerFEDChannel& channel);
     uint8_t stripIndex() const { return currentStrip_; }
-    bool stripOn() const { return bool((currentWord_ >> bitInWord_) & 0x1); }
+    bool stripOn() const { return bool(static_cast<uint8_t>(read_n_at_m_l2r(data_,1,currentOffset_*8+currentStrip_))); }
     bool hasData() const { return valuesLeft_; }
     Phase2TrackerFEDRawChannelUnpacker& operator++();
     Phase2TrackerFEDRawChannelUnpacker& operator++(int);
 
   private:
     const uint8_t* data_;
-    uint8_t currentOffset_;
+    uint16_t currentOffset_;
     uint8_t currentStrip_;
     uint16_t valuesLeft_;
-    uint8_t currentWord_;
-    uint8_t bitInWord_;
-  };  // end of Phase2TrackerFEDRawChannelUnpacker
+  }; // end of Phase2TrackerFEDRawChannelUnpacker
 
-  inline Phase2TrackerFEDRawChannelUnpacker::Phase2TrackerFEDRawChannelUnpacker(const Phase2TrackerFEDChannel& channel)
-      : data_(channel.data()),
-        currentOffset_(channel.offset()),
-        currentStrip_(0),
-        valuesLeft_((channel.length()) * 8 - STRIPS_PADDING),
-        currentWord_(channel.data()[currentOffset_ ^ 7]),
-        bitInWord_(0) {}
+} // end of Phase2Tracker namespace
 
-  inline Phase2TrackerFEDRawChannelUnpacker& Phase2TrackerFEDRawChannelUnpacker::operator++() {
-    bitInWord_++;
-    currentStrip_++;
-    if (bitInWord_ > 7) {
-      bitInWord_ = 0;
-      currentOffset_++;
-      currentWord_ = data_[currentOffset_ ^ 7];
-    }
-    valuesLeft_--;
-    return (*this);
-  }
-
-  inline Phase2TrackerFEDRawChannelUnpacker& Phase2TrackerFEDRawChannelUnpacker::operator++(int) {
-    ++(*this);
-    return *this;
-  }
-
-}  // namespace Phase2Tracker
+#endif // } end def EventFilter_Phase2TrackerRawToDigi_Phase2TrackerPhase2TrackerFEDRawChannelUnpacker_H
 
 #endif  // } end def EventFilter_Phase2TrackerRawToDigi_Phase2TrackerPhase2TrackerFEDRawChannelUnpacker_H

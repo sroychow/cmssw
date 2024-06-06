@@ -20,15 +20,15 @@ namespace Phase2Tracker {
     //dump buffer to stream
     void dump(std::ostream& os) const { printHex(buffer_, bufferSize_, os); }
 
-    //methods to get parts of the buffer
-    FEDDAQHeader daqHeader() const { return daqHeader_; }
-    FEDDAQTrailer daqTrailer() const { return daqTrailer_; }
-    size_t bufferSize() const { return bufferSize_; }
-    Phase2TrackerFEDHeader trackerHeader() const { return trackerHeader_; }
-    const Phase2TrackerFEDChannel& channel(const uint8_t internalPhase2TrackerFEDChannelNum) const {
-      return channels_[internalPhase2TrackerFEDChannelNum];
-    }
-    std::map<uint32_t, uint32_t> conditionData() const;
+      //methods to get parts of the buffer
+      FEDDAQHeader daqHeader() const { return daqHeader_; }
+      FEDDAQTrailer daqTrailer() const { return daqTrailer_; }
+      size_t bufferSize() const { return bufferSize_; }
+      Phase2TrackerFEDHeader trackerHeader() const { return trackerHeader_; }
+      const Phase2TrackerFEDChannel& channel(const uint32_t internalPhase2TrackerFEDChannelNum) const { return channels_[internalPhase2TrackerFEDChannelNum]; }
+      const Phase2TrackerFEDChannel& stubchannel(const uint32_t internalPhase2TrackerFEDChannelNum) const { return stub_channels_[internalPhase2TrackerFEDChannelNum]; }
+      std::map<uint32_t,uint32_t> conditionData();
+      int isValid() { return valid_; }
 
     //methods to get info from DAQ header from FEDDAQHeader class
     FEDDAQEventType daqEventType() const { return daqHeader_.eventType(); }
@@ -48,17 +48,19 @@ namespace Phase2Tracker {
     inline const uint8_t* getPointerToCondData() const { return condDataPointer_; }
     inline const uint8_t* getPointerToTriggerData() const { return triggerPointer_; }
 
-  private:
-    const uint8_t* buffer_;
-    const size_t bufferSize_;
-    std::vector<Phase2TrackerFEDChannel> channels_;
-    FEDDAQHeader daqHeader_;
-    FEDDAQTrailer daqTrailer_;
-    Phase2TrackerFEDHeader trackerHeader_;
-    const uint8_t* payloadPointer_;
-    const uint8_t* condDataPointer_;
-    const uint8_t* triggerPointer_;
-    void findChannels();
+    private:
+      const uint8_t* buffer_;
+      const size_t bufferSize_;
+      std::vector<Phase2TrackerFEDChannel> channels_;
+      std::vector<Phase2TrackerFEDChannel> stub_channels_;
+      FEDDAQHeader daqHeader_;
+      FEDDAQTrailer daqTrailer_;
+      Phase2TrackerFEDHeader trackerHeader_;
+      const uint8_t* payloadPointer_;
+      const uint8_t* condDataPointer_;
+      const uint8_t* triggerPointer_;
+      void findChannels();
+      int valid_;
 
     //////////////// Deprecated or dummy implemented methods ///////////////////
   public:

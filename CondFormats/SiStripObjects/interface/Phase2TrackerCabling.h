@@ -6,14 +6,16 @@
 #include <vector>
 #include <algorithm>
 
-class Phase2TrackerCabling {
-  typedef std::vector<Phase2TrackerModule> store;
-  typedef std::vector<Phase2TrackerModule>::const_iterator key;
-  typedef std::vector<key> cabling;
+class Phase2TrackerCabling
+{
+    typedef std::vector<Phase2TrackerModule> store;
 
-public:
-  // Constructor taking FED channel connection objects as input.
-  Phase2TrackerCabling(const std::vector<Phase2TrackerModule>& cons);
+  public:
+    typedef std::vector<Phase2TrackerModule>::const_iterator key;
+    typedef std::vector<key> cabling;
+
+    // Constructor taking FED channel connection objects as input.
+    Phase2TrackerCabling( const std::vector<Phase2TrackerModule>& cons );
 
   // Copy ocnstructor
   Phase2TrackerCabling(const Phase2TrackerCabling& src);
@@ -30,6 +32,9 @@ public:
   // get the list of modules
   const std::vector<Phase2TrackerModule>& connections() const { return connections_; }
 
+  // get ordered collections
+  const cabling orderedConnections(int) const;
+
   // find a connection for a given fed channel
   const Phase2TrackerModule& findFedCh(std::pair<unsigned int, unsigned int> fedch) const;
 
@@ -45,6 +50,9 @@ public:
   // return all the modules connected to a given HV group
   Phase2TrackerCabling filterByPowerGroup(uint32_t powerGroup) const;
 
+  // return all fedids
+  std::vector<int> listFeds() const;
+  
   // print a summary of the content
   std::string summaryDescription() const;
 
