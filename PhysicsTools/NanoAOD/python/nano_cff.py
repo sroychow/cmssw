@@ -35,6 +35,7 @@ linkedObjects = cms.EDProducer("PATObjectCrossLinker",
    electrons=cms.InputTag("finalElectrons"),
    taus=cms.InputTag("finalTaus"),
    photons=cms.InputTag("finalPhotons"),
+   vertices=cms.InputTag("slimmedSecondaryVertices")
 )
 
 simpleCleanerTable = cms.EDProducer("NanoAODSimpleCrossCleaner",
@@ -123,7 +124,7 @@ nanoSequenceOnlyData = cms.Sequence(protonTables + lhcInfoTable)
 
 nanoSequence = cms.Sequence(nanoSequenceCommon + nanoSequenceOnlyData + nanoSequenceOnlyFullSim)
 
-( run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel).toReplaceWith(nanoSequence, nanoSequence.copyAndExclude([nanoSequenceOnlyData]))
+( run2_nanoAOD_106Xv1 & ~run2_nanoAOD_devel | run2_nanoAOD_LowPU).toReplaceWith(nanoSequence, nanoSequence.copyAndExclude([nanoSequenceOnlyData]))
 
 nanoSequenceFS = cms.Sequence(genParticleSequence + genVertexTables + particleLevelSequence + nanoSequenceCommon + jetMC + muonMC + electronMC + lowPtElectronMC + photonMC + tauMC + boostedTauMC + metMC + ttbarCatMCProducers +  globalTablesMC + btagWeightTable + genWeightsTables + genVertexTable + genParticleTables + particleLevelTables + lheInfoTable  + ttbarCategoryTable )
 

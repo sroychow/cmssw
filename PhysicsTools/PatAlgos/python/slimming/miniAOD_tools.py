@@ -66,6 +66,11 @@ def miniAOD_customizeCommon(process):
                                     addPFClusterIso = cms.bool(True),
                                     ecalPFClusterIsoMap = cms.InputTag("reducedEgamma", "eleEcalPFClusIso"),
                                     hcalPFClusterIsoMap = cms.InputTag("reducedEgamma", "eleHcalPFClusIso"))
+    from Configuration.Eras.Modifier_run2_nanoAOD_LowPU_cff import run2_nanoAOD_LowPU
+    run2_nanoAOD_LowPU.toModify(process.patElectrons,
+                                addPFClusterIso = cms.bool(True),
+                                ecalPFClusterIsoMap = cms.InputTag("reducedEgamma", "eleEcalPFClusIso"),
+                                hcalPFClusterIsoMap = cms.InputTag("reducedEgamma", "eleHcalPFClusIso"))
 
     #add puppi isolation in miniAOD
     process.patElectrons.addPuppiIsolation = cms.bool(True)
@@ -111,6 +116,15 @@ def miniAOD_customizeCommon(process):
                                     addPFClusterIso = cms.bool(True),
                                     ecalPFClusterIsoMap = cms.InputTag("reducedEgamma", "ootPhoEcalPFClusIso"),
                                     hcalPFClusterIsoMap = cms.InputTag("reducedEgamma", "ootPhoHcalPFClusIso"))
+    from Configuration.Eras.Modifier_run2_nanoAOD_LowPU_cff import run2_nanoAOD_LowPU
+    run2_nanoAOD_LowPU.toModify(process.patPhotons,
+                                addPFClusterIso = cms.bool(True),
+                                ecalPFClusterIsoMap = cms.InputTag("reducedEgamma", "phoEcalPFClusIso"),
+                                hcalPFClusterIsoMap = cms.InputTag("reducedEgamma", "phoHcalPFClusIso"))
+    run2_nanoAOD_LowPU.toModify(process.patOOTPhotons,
+                                addPFClusterIso = cms.bool(True),
+                                ecalPFClusterIsoMap = cms.InputTag("reducedEgamma", "ootPhoEcalPFClusIso"),
+                                hcalPFClusterIsoMap = cms.InputTag("reducedEgamma", "ootPhoHcalPFClusIso"))
 
 
     process.patPhotons.photonSource = cms.InputTag("reducedEgamma","reducedGedPhotons")
@@ -326,6 +340,11 @@ def miniAOD_customizeCommon(process):
     run2_miniAOD_94XFall17.toModify(process.electronMVAValueMapProducer,
                                      keysForValueMaps = cms.InputTag('reducedEgamma','reducedGedGsfElectrons'),
                                      src = cms.InputTag("gedGsfElectronsFrom94XTo106X"))
+
+    run2_nanoAOD_LowPU.toModify(task, func=lambda t: t.add(process.gedGsfElectronsFrom94XTo106XTask))
+    run2_nanoAOD_LowPU.toModify(process.electronMVAValueMapProducer,
+                                 keysForValueMaps = cms.InputTag('reducedEgamma','reducedGedGsfElectrons'),
+                                 src = cms.InputTag("gedGsfElectronsFrom94XTo106X"))
 
     for idmod in electron_ids:
         setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection,None,False,task)

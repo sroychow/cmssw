@@ -54,6 +54,16 @@ nanotpSequenceMC = cms.Sequence(
         triggerObjectTables + l1bits
         )
 
+nanoAOD_addLowPUEleInfo_switch = cms.PSet(
+    nanoAOD_addLowPUEleInfo_switch = cms.untracked.bool(False),
+)
+run2_nanoAOD_LowPU.toModify(nanoAOD_addLowPUEleInfo_switch, nanoAOD_addLowPUEleInfo_switch = cms.untracked.bool(True))
+if nanoAOD_addLowPUEleInfo_switch.nanoAOD_addLowPUEleInfo_switch:
+    # add low PU electron ID variables
+    from PhysicsTools.NanoAOD.electronTP_LowPU_cff import *
+    nanotpSequence.insert(nanotpSequence.index(muonTable) + 1,  electronTPSequence_LowPU)
+    nanotpSequenceMC.insert(nanotpSequenceMC.index(muonTable) + 1,  electronTPSequenceMC_LowPU)
+
 def customizeNANOTP(process):
     finalIsolatedTracks.finalLeptons = ["finalLooseMuons"]
 
