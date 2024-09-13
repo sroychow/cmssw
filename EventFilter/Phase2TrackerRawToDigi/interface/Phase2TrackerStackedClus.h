@@ -1,32 +1,39 @@
+#ifndef EventFilter_Phase2TrackerRawToDigi_StackedClus_H
+#define EventFilter_Phase2TrackerRawToDigi_StackedClus_H
+
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "EventFilter/Phase2TrackerRawToDigi/interface/utils.h"
 
+// Contains a single Tracker cluster.
+
 namespace Phase2Tracker {
-  class stackedDigi {
+  class StackedClus {
   public:
-    stackedDigi() {}
-    stackedDigi(const Phase2TrackerCluster1D *, STACK_LAYER, int);
-    stackedDigi(int, int, int, STACK_LAYER, int);
-    stackedDigi(int, int, int, STACK_LAYER, int, int);
-    ~stackedDigi() {}
-    bool operator<(stackedDigi) const;
+    // layer is 0/1 for lower/upper sensor in module (lower is p-type for PS).
+    // moduletype is 0/1 for 2S/PS module.
+    StackedClus() {}
+    StackedClus(const Phase2TrackerCluster1D *, STACK_LAYER layer, int moduletype);
+    StackedClus(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype);
+    StackedClus(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype, int threshold);
+    ~StackedClus() {}
+    bool operator<(StackedClus) const;
     inline STACK_LAYER getLayer() const { return layer_; }
     inline int getModuleType() const { return moduletype_; }
-    inline int getRawX() const { return rawx_; }
+    inline int getRawX() const { return rawx_; }  // location within single FE chip
     inline int getRawY() const { return rawy_; }
-    inline int getDigiX() const { return digix_; }
+    inline int getDigiX() const { return digix_; }  // location within sensor
     inline int getDigiY() const { return digiy_; }
-    inline int getSizeX() const { return sizex_; }
-    inline int getSide() const { return side_; }
+    inline int getSizeX() const { return sizex_; }  // cluster width
+    inline int getSide() const { return side_; }    // Which end of module: 0 or 1.
     inline int getThreshold() const { return threshold_; }
-    // get side and type, to map to concentrators (0 = S-left, 1 = S-right, 2 = P-left, 3 = P-right)
+    // get side and type, to map to concentrators (0 = P-left, 1 = P-right, 2 = S-left, 3 = S-right)
     inline int getSideType() const { return side_ + 2 * (1 - moduletype_) + 2 * layer_ * moduletype_; }
     inline int getChipId() const { return chipid_; }
     inline int getStripsX() const { return (moduletype_ == 1) ? PS_ROWS : (STRIPS_PER_CBC / 2); }
     void setPosSizeX(int, int);
     bool shouldSplit() const;
-    std::vector<stackedDigi> splitDigi() const;
+    std::vector<StackedClus> splitDigi() const;
 
   private:
     void calcchipid();
@@ -39,7 +46,7 @@ namespace Phase2Tracker {
     int chipid_;
   };
 
-  stackedDigi::stackedDigi(const Phase2TrackerCluster1D *digi, STACK_LAYER layer, int moduletype)
+  StackedClus::StackedClus(const Phase2TrackerCluster1D *digi, STACK_LAYER layer, int moduletype)
       : digix_(digi->firstStrip()),
         digiy_(digi->column()),
         sizex_(digi->size()),
@@ -49,24 +56,24 @@ namespace Phase2Tracker {
     calcchipid();
   }
 
-  stackedDigi::stackedDigi(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype)
+  StackedClus::StackedClus(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype)
       : digix_(digix), digiy_(digiy), sizex_(sizex), threshold_(0), layer_(layer), moduletype_(moduletype) {
     calcchipid();
   }
 
-  stackedDigi::stackedDigi(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype, int threshold)
+  StackedClus::StackedClus(int digix, int digiy, int sizex, STACK_LAYER layer, int moduletype, int threshold)
       : digix_(digix), digiy_(digiy), sizex_(sizex), threshold_(threshold), layer_(layer), moduletype_(moduletype) {
     calcchipid();
   }
 
-  bool stackedDigi::shouldSplit() const {
+  bool StackedClus::shouldSplit() const {
     if (getSizeX() > 8 or getDigiX() % getStripsX() + getSizeX() > getStripsX())
       return true;
     return false;
   }
 
-  std::vector<stackedDigi> stackedDigi::splitDigi() const {
-    std::vector<stackedDigi> parts;
+  std::vector<StackedClus> StackedClus::splitDigi() const {
+    std::vector<StackedClus> parts;
     if (shouldSplit()) {
       int pos = getDigiX();
       int end = pos + getSizeX();
@@ -74,7 +81,7 @@ namespace Phase2Tracker {
       while (pos < end) {
         int nextchip = (pos / getStripsX() + 1) * getStripsX();
         isize = std::min(std::min(8, end - pos), nextchip - pos);
-        stackedDigi ndig(*this);
+        StackedClus ndig(*this);
         ndig.setPosSizeX(pos, isize);
         parts.push_back(ndig);
         pos += isize;
@@ -96,13 +103,13 @@ namespace Phase2Tracker {
     return parts;
   }
 
-  void stackedDigi::setPosSizeX(int pos, int size) {
+  void StackedClus::setPosSizeX(int pos, int size) {
     digix_ = pos;
     sizex_ = size;
     calcchipid();
   }
 
-  void stackedDigi::calcchipid() {
+  void StackedClus::calcchipid() {
     int x = digix_;
     int y = digiy_;
     side_ = 0;
@@ -145,13 +152,16 @@ namespace Phase2Tracker {
     }
   }
 
-  bool stackedDigi::operator<(const stackedDigi d2) const {
+  // Used for sorting of StackedCluss
+  bool StackedClus::operator<(const StackedClus d2) const {
+    // Ensures lower sensor before upper one. (lower is p-type for PS).
     if (layer_ < d2.getLayer()) {
       return true;
     }
     if (layer_ > d2.getLayer()) {
       return false;
     }
+    // Ensures if two digis have same layer, then ordered by left-end / right-end.
     if (chipid_ < d2.getChipId()) {
       return true;
     }
@@ -164,3 +174,5 @@ namespace Phase2Tracker {
     return false;
   }
 }  // namespace Phase2Tracker
+
+#endif

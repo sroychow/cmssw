@@ -6,9 +6,9 @@ process = cms.Process("DigiToRaw")
 #process.load( "FWCore.MessageLogger.MessageLogger_cfi" )
 process.MessageLogger = cms.Service(
   "MessageLogger", 
-   destinations = cms.untracked.vstring ('jobOutput'), # Name of output file
+   destinations = cms.untracked.vstring ('cout'), # Name of output file
    categories = cms.untracked.vstring('Phase2TrackerDigiToRawProducer','Phase2TrackerDigiProducer','Phase2TrackerFEDBuffer'),
-   jobOutput = cms.untracked.PSet(
+   cout = cms.untracked.PSet(
      enableStatistics = cms.untracked.bool(True),
      # Threshold=DEBUG for specified L1Trk categories (=argument of edm::Log*()) 
      # & threshold=ERROR for everything else (since WARNING limit=0).
@@ -25,14 +25,15 @@ process.MessageLogger = cms.Service(
 
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 # Input source
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring("/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root")
+    #fileNames = cms.untracked.vstring("file:/opt/ppd/data/cms/L1TrkMC/MCsamples1400_D98/RelVal/TTbar/PU200/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root")
 )
 
-process.load('DummyCablingTxt_cfi')
+process.load('P2TrackerCabling_cfi')
 process.load('EventFilter.Phase2TrackerRawToDigi.Phase2TrackerDigiToRawProducer_cfi')
 process.Phase2TrackerDigiToRawProducer.ProductLabel = cms.InputTag("siPhase2Clusters")
 

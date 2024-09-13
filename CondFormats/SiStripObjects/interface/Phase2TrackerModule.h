@@ -8,11 +8,11 @@
 
 class Phase2TrackerModule {
 public:
-  enum ModuleTypes { SS, PS };
+  enum ModuleTypes { SS, PS, DUMMY };
 
 public:
   // normal constructor... for now, nothing is mandatory
-  Phase2TrackerModule(ModuleTypes moduleType = SS,
+  Phase2TrackerModule(ModuleTypes moduleType = DUMMY,
                       uint32_t detid = 0,
                       uint32_t gbtid = 0,
                       uint32_t fedid = 0,
@@ -34,12 +34,13 @@ public:
   void setPowerGroup(uint32_t pg) { powerGroup_ = pg; }
   void setModuleType(ModuleTypes moduleType) { moduleType_ = moduleType; }
   void addI2cDevice(unsigned int dev) { i2cDevices_.push_back(dev); }
-  void setI2cDevices(std::vector<unsigned int> i2cd) { i2cDevices_ = i2cd; }
+  void setI2cDevices(const std::vector<unsigned int>& i2cd) { i2cDevices_ = i2cd; }
 
   // getters
+  bool connected() const { return (moduleType_ != DUMMY); }
   uint32_t getDetid() const { return detid_; }
   uint32_t getGbtid() const { return gbtid_; }
-  std::pair<unsigned int, unsigned int> getCh() const { return ch_; }
+  std::pair<unsigned int, unsigned int> getCh() const { return ch_; }  // DTC ID & input channel.
   uint32_t getCoolingLoop() const { return coolingLoop_; }
   uint32_t getPowerGroup() const { return powerGroup_; }
   ModuleTypes getModuleType() const { return moduleType_; }

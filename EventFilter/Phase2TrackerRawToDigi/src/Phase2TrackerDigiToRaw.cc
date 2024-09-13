@@ -10,13 +10,13 @@ namespace Phase2Tracker {
   const int MAX_NP = 31;  // max P clusters per concentrator i.e. per side
   const int MAX_NS = 31;  // same for S clusters
 
-  std::pair<int, int> SortExpandAndLimitClusters(std::vector<stackedDigi>& digis, int max_ns, int max_np) {
-    std::vector<stackedDigi> processed;
+  std::pair<int, int> SortExpandAndLimitClusters(std::vector<StackedClus>& scluss, int max_ns, int max_np) {
+    std::vector<StackedClus> processed;
     // number of clusters allowed : P-left, P-right, S-left, S-right
-    int roomleft[4] = {max_ns, max_ns, max_np, max_np};
+    int roomleft[4] = {max_np, max_np, max_ns, max_ns};
     // fill left and right vectors, expand big clusters
-    for (auto dig = digis.begin(); dig < digis.end(); dig++) {
-      std::vector<stackedDigi> parts = dig->splitDigi();
+    for (auto sclus = scluss.begin(); sclus < scluss.end(); sclus++) {
+      std::vector<StackedClus> parts = sclus->splitDigi();
       for (auto id = parts.begin(); id < parts.end(); id++) {
         if (roomleft[id->getSideType()] > 0) {
           processed.push_back(*id);
@@ -26,9 +26,9 @@ namespace Phase2Tracker {
     }
     // Sort vector
     std::sort(processed.begin(), processed.end());
-    // replace input vector
-    digis.swap(processed);
-    // return number of S and P clusters
+    // replace input vector with truncated one
+    scluss.swap(processed);
+    // return number of S and P clusters respectively
     return std::make_pair(2 * max_ns - roomleft[2] - roomleft[3], 2 * max_np - roomleft[0] - roomleft[1]);
   }
 
@@ -36,13 +36,13 @@ namespace Phase2Tracker {
                                                  const TrackerGeometry* tGeom,
                                                  const TrackerTopology* tTopo,
                                                  std::map<int, std::pair<int, int>> stackMap,
-                                                 edm::Handle<edmNew::DetSetVector<Phase2TrackerCluster1D>> digis_handle,
+                                                 edm::Handle<DetSetVecClus> cluss_handle,
                                                  int mode)
       : cabling_(cabling),
         tTopo_(tTopo),
         tGeom_(tGeom),
         stackMap_(stackMap),
-        digishandle_(digis_handle),
+        clusshandle_(cluss_handle),
         mode_(mode),
         FedDaqHeader_(0, 0, 0, DAQ_EVENT_TYPE_SIMULATED),  // TODO : add L1ID
         FedDaqTrailer_(0, 0) {
@@ -52,57 +52,71 @@ namespace Phase2Tracker {
   }
 
   void Phase2TrackerDigiToRaw::buildFEDBuffers(std::unique_ptr<FEDRawDataCollection>& rcollection) {
-    // store digis for a given fedid
-    std::vector<edmNew::DetSet<Phase2TrackerCluster1D>> digis_t;
-    // store active connections for a given fedid
+    // store all clusters for a given fedid
+    std::vector<DetSetVecClus::const_iterator> cluss_t;
+    // note which DTC input channels have one cluster in this event
     std::vector<bool> festatus(72, false);
-    // iterate on all possible channels
-    Phase2TrackerCabling::cabling conns = cabling_->orderedConnections(0);
-    Phase2TrackerCabling::cabling::const_iterator iconn = conns.begin(), end = conns.end(), icon2;
-    while (iconn != end) {
-      unsigned int fedid = (*iconn)->getCh().first;
-      for (icon2 = iconn; icon2 != end && (*icon2)->getCh().first == fedid; icon2++) {
-        int detidStack =  (*icon2)->getDetid() ;
-        // FIXME (when proper cabling exists) : because we use test cabling, we have some detids set to 0 : we should ignore them
-        // Note from Ian. DummyCablingTxt_cfi.py sets detid = 0 for any unconnected DTC channels. If we skip them here, why does it bother?
-        if (detidStack == 0)
-          continue;
-        if (stackMap_.find(detidStack) == stackMap_.end()) edm::LogError("Phase2TrackerDigiProducer") << "DetID "<< detidStack << " in cabling map is unknown to Tracker geometry";
+
+    std::vector<int> feds = cabling_->listFeds();
+    for (int fedIndex : feds) {                         // Loop over DTCs
+      for (int ife = 0; ife < MAX_FE_PER_FED; ife++) {  // Loop inputs of this DTC
+
+        // get detid from cabling
+        const Phase2TrackerModule& mod = cabling_->findFedCh(std::make_pair(fedIndex, ife));
+        if (not mod.connected())
+          continue;  // Skip unconnected DTC inputs.
+        int detidStack = mod.getDetid();
         // detid of first plane is detid of module + 1
         // FIXME (when it is implemented) : we should get this from the topology / geometry
         unsigned int detid = stackMap_[detidStack].first;
         // end of fixme
-        edmNew::DetSetVector<Phase2TrackerCluster1D>::const_iterator digis;
-        digis = digishandle_->find(detid);
-        if (digis != digishandle_->end()) {
-          digis_t.push_back(*digis);
-          festatus[(*icon2)->getCh().second] = true;
+
+        DetSetVecClus::const_iterator cluss;
+        cluss = clusshandle_->find(detid);
+        if (cluss != clusshandle_->end()) {
+          cluss_t.push_back(cluss);
+          festatus[ife] = true;
         }
-        digis = digishandle_->find(tTopo_->partnerDetId(detid));
-        if (digis != digishandle_->end()) {
-          digis_t.push_back(*digis);
-          festatus[(*icon2)->getCh().second] = true;
+        cluss = clusshandle_->find(tTopo_->partnerDetId(detid));
+        if (cluss != clusshandle_->end()) {
+          cluss_t.push_back(cluss);
+          festatus[ife] = true;
         }
+        std::cout << "FED CHANNEL " << fedIndex << " " << ife << " " << festatus[ife] << std::endl;
       }
       // save buffer
       FedHeader_.setFrontendStatus(festatus);
-      // write digis to buffer
-      std::vector<uint64_t> fedbuffer = makeBuffer(digis_t);
-      FEDRawData& frd = rcollection->FEDData(fedid);
+
+      // Write to buffer the clusters of one DTC.
+      // The vector cluss_t contains one entry for each silicon sensor that contains at
+      // least one cluster and is connected to this DTC.
+      std::vector<uint64_t> fedbuffer = makeBuffer(cluss_t);
+
+      std::cout << "BUFFERMADE " << cluss_t.size() << " ";
+      for (bool aa : festatus)
+        std::cout << aa;
+      std::cout << std::endl;
+
+      FEDRawData& frd = rcollection->FEDData(fedIndex);
       int size = fedbuffer.size() * 8;
       frd.resize(size);
       memcpy(frd.data(), &fedbuffer[0], size);
       festatus.assign(72, false);
-      digis_t.clear();
-      // advance connections pointer
-      iconn = icon2;
+      cluss_t.clear();
     }
   }
 
-  std::vector<uint64_t> Phase2TrackerDigiToRaw::makeBuffer(std::vector<edmNew::DetSet<Phase2TrackerCluster1D>> digis) {
+  // Build buffer for a single DTC, consisting of FEDDAQHeader & FEDHeader,
+  // and for each DTC input channel that receives at least one cluster,
+  // a FEDHeaderSparsified and all that channels clusters.
+
+  std::vector<uint64_t> Phase2TrackerDigiToRaw::makeBuffer(std::vector<DetSetVecClus::const_iterator> cluss) {
     uint64_t bitindex = 0;
     int moduletype = -1;
+    // IAN note: buffer size continually increased. Very inefficient. Should calculate size of buffer. Added call to reserve() to help.
     std::vector<uint64_t> fedbuffer;
+    constexpr unsigned int sizeGuess = 1000;
+    fedbuffer.reserve(sizeGuess);
     // add daq header
     fedbuffer.push_back(*(uint64_t*)FedDaqHeader_.data());
     bitindex += 64;
@@ -111,11 +125,11 @@ namespace Phase2Tracker {
     fedbuffer.push_back(*(uint64_t*)feh);
     fedbuffer.push_back(*(uint64_t*)(feh + 8));
     bitindex += 128;
-    // looping on detids
-    std::vector<edmNew::DetSet<Phase2TrackerCluster1D>>::const_iterator idigi;
-    for (idigi = digis.begin(); idigi != digis.end(); idigi++) {
-      // get id of stack
-      unsigned int detid = idigi->detId();
+    // loop on sensors in tracker modules read by this DTC.
+    std::vector<DetSetVecClus::const_iterator>::const_iterator sensor;
+    for (sensor = cluss.begin(); sensor != cluss.end(); sensor++) {
+      // get id of sensor
+      unsigned int detid = (*sensor)->detId();
       TrackerGeometry::ModuleType det_type = tGeom_->getDetectorType(detid);
       if (det_type == TrackerGeometry::ModuleType::Ph2PSP or det_type == TrackerGeometry::ModuleType::Ph2PSS) {
         moduletype = 1;
@@ -124,49 +138,51 @@ namespace Phase2Tracker {
       } else {
         // FIXME: raise exception : we should never be here
       }
-      // container for digis, to be sorted afterwards
-      std::vector<stackedDigi> digs_mod;
-      edmNew::DetSet<Phase2TrackerCluster1D>::const_iterator it;
-      // pair modules if there are digis for both
-      if (tTopo_->isLower(idigi->detId()) == 1) {
-        // digis for inner plane (P in case of PS)
-        if ((idigi + 1) != digis.end() and (int)(idigi + 1)->detId() == (int)tTopo_->partnerDetId(detid)) {
-          // next digi is the corresponding outer plane : join them
-          for (it = idigi->begin(); it != idigi->end(); it++) {
-            digs_mod.push_back(stackedDigi(it, LAYER_INNER, moduletype));
-          }
-          idigi++;
-          for (it = idigi->begin(); it != idigi->end(); it++) {
-            digs_mod.push_back(stackedDigi(it, LAYER_OUTER, moduletype));
-          }
-        } else {
-          // next digi is from another module, only use this one
-          for (it = idigi->begin(); it != idigi->end(); it++) {
-            digs_mod.push_back(stackedDigi(it, LAYER_INNER, moduletype));
+      // container for clusters in stacked module, to be sorted afterwards
+      std::vector<StackedClus> digs_stack;
+      DetSetClus::const_iterator it;
+      // pair sensors if there are clusters for both
+      if (tTopo_->isLower((*sensor)->detId()) == 1) {
+        // clusters for inner plane (P in case of PS)
+        for (it = (*sensor)->begin(); it != (*sensor)->end(); it++) {
+          digs_stack.push_back(StackedClus(it, LAYER_INNER, moduletype));
+        }
+        // If next digi is the corresponding outer plane : join them
+        if ((sensor + 1) != cluss.end() and (int)((*(sensor + 1))->detId()) == (int)tTopo_->partnerDetId(detid)) {
+          sensor++;
+          for (it = (*sensor)->begin(); it != (*sensor)->end(); it++) {
+            digs_stack.push_back(StackedClus(it, LAYER_OUTER, moduletype));
           }
         }
       } else {
-        // digis from outer plane (S in case of PS)
-        for (it = idigi->begin(); it != idigi->end(); it++) {
-          digs_mod.push_back(stackedDigi(it, LAYER_OUTER, moduletype));
+        // clusters from outer plane (S in case of PS)
+        for (it = (*sensor)->begin(); it != (*sensor)->end(); it++) {
+          digs_stack.push_back(StackedClus(it, LAYER_OUTER, moduletype));
         }
       }
       // here we:
-      // - sort all digis
+      // - sort all clusters -- order according to StackedClus::operator<(),
+      //      so lower-left, lower-right, upper-left, upper-right sensor.
       // - divide big clusters into 8-strips parts
-      // - count digis on each side/layer (concentrator)
-      // - remove extra digis
-      std::sort(digs_mod.begin(), digs_mod.end());
-      std::pair<int, int> nums = SortExpandAndLimitClusters(digs_mod, MAX_NS, MAX_NP);
+      // - count clusters on each side/layer (concentrator)
+      // - remove truncated clusters
+
+      // IAN: This writes one header per active DTC input channel,
+      // rather than one per CIC chip, as in latest DTC DAQ format.
+
+      std::sort(digs_stack.begin(), digs_stack.end());
+      std::pair<int, int> nums = SortExpandAndLimitClusters(digs_stack, MAX_NS, MAX_NP);
       // - write appropriate header
       writeFeHeaderSparsified(fedbuffer, bitindex, moduletype, nums.second, nums.first);
-      // - write the digis
-      std::vector<stackedDigi>::iterator its;
-      for (its = digs_mod.begin(); its != digs_mod.end(); its++) {
+      // - write the clusters
+      std::vector<StackedClus>::iterator its;
+      //std::cout<<"=== CHECK ORDER === "<<std::endl;
+      for (its = digs_stack.begin(); its != digs_stack.end(); its++) {
+        //  std::cout<<"    CLUS "<<" "<<its->getModuleType()<<" "<<its->getSide()<<" "<<its->getLayer()<<" "<<its->getChipId()<<std::endl;
         writeCluster(fedbuffer, bitindex, *its);
       }
 
-    }  // end idigi (FE) loop
+    }  // end stack (FE) loop
     // add daq trailer
     fedbuffer.push_back(*(uint64_t*)FedDaqTrailer_.data());
     return fedbuffer;
@@ -190,7 +206,9 @@ namespace Phase2Tracker {
   }
 
   // layer = 0 for inner, 1 for outer (-1 if irrelevant)
-  void Phase2TrackerDigiToRaw::writeCluster(std::vector<uint64_t>& buffer, uint64_t& bitpointer, stackedDigi digi) {
+  void Phase2TrackerDigiToRaw::writeCluster(std::vector<uint64_t>& buffer,
+                                            uint64_t& bitpointer,
+                                            const StackedClus& digi) {
     if (digi.getModuleType() == 0) {
       // 2S module
       writeSCluster(buffer, bitpointer, digi, false);
@@ -206,7 +224,7 @@ namespace Phase2Tracker {
 
   void Phase2TrackerDigiToRaw::writeSCluster(std::vector<uint64_t>& buffer,
                                              uint64_t& bitpointer,
-                                             stackedDigi digi,
+                                             const StackedClus& digi,
                                              bool threshold) {
     int csize = 15;
     uint16_t scluster = (digi.getChipId() & 0x0F) << 11;
@@ -230,7 +248,9 @@ namespace Phase2Tracker {
 #endif
   }
 
-  void Phase2TrackerDigiToRaw::writePCluster(std::vector<uint64_t>& buffer, uint64_t& bitpointer, stackedDigi digi) {
+  void Phase2TrackerDigiToRaw::writePCluster(std::vector<uint64_t>& buffer,
+                                             uint64_t& bitpointer,
+                                             const StackedClus& digi) {
     uint32_t pcluster = (digi.getChipId() & 0x0F) << 14;
     pcluster |= (digi.getRawX() & 0x7F) << 7;
     pcluster |= (digi.getRawY() & 0x0F) << 3;
